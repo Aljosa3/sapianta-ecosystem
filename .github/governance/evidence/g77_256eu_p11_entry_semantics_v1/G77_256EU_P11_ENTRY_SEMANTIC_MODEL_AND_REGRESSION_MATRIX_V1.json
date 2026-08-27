@@ -1,0 +1,190 @@
+{
+  "schema_id": "G77_256EU_P11_ENTRY_SEMANTIC_MODEL_ENVELOPE_V1",
+  "model": {
+    "schema_id": "G77_256EU_P11_ENTRY_SEMANTIC_MODEL_V1",
+    "model_version": "1.0.0",
+    "human_constitutional_decision": "P11_ENTRY_DEFINITION_V1",
+    "normative_contract_path": "docs/governance/G77_256EU_P11_ENTRY_DEFINITION_V1.md",
+    "required_baseline": {
+      "head": "34a6343e229042ab1d435444687fe5d665b90724",
+      "tree": "6c042e3fe1ccbab3389d4cab401e4598f6479adf",
+      "commit_identity": "34a6343e G77-256ET reduce P11 semantics and assess substrate freeze readiness"
+    },
+    "authority": {
+      "authority_origin": "EXPLICIT_HUMAN_G77_256EU_CONSTITUTIONAL_AUTHORIZATION",
+      "conversation_history_is_authority": false,
+      "model_is_independent_authority": false,
+      "prospective_only": true,
+      "historical_evidence_mutation_authorized": false,
+      "retroactive_e05_credit_authorized": false,
+      "new_p11_semantics_authorize_p12": false,
+      "new_p11_semantics_authorize_production": false,
+      "automatic_continuation_authorized": false
+    },
+    "event_vocabulary": [
+      "BOUNDARY_REQUEST",
+      "PRE_ATTEMPT_GATE_EVALUATION",
+      "PRE_ATTEMPT_DENIAL",
+      "P11_ATTEMPT_AUTHORIZED",
+      "P11_ATTEMPT_START",
+      "P11_ENTRY",
+      "P11_OPERATIONAL_INVOCATION",
+      "PROTECTED_EFFECT"
+    ],
+    "counter_vocabulary": [
+      "BOUNDARY_REQUEST_COUNT",
+      "PRE_ATTEMPT_DENIAL_COUNT",
+      "P11_ENTRY_COUNT",
+      "P11_OPERATIONAL_INVOCATION_COUNT",
+      "PROTECTED_EFFECT_COUNT",
+      "SECOND_PROTECTED_EFFECT_COUNT"
+    ],
+    "entry_conjunction": [
+      "BOUNDARY_REQUEST",
+      "PRE_ATTEMPT_GATES_PASS",
+      "P11_ATTEMPT_AUTHORIZED",
+      "P11_ATTEMPT_START"
+    ],
+    "invariants": {
+      "pre_attempt_denial": "PRE_ATTEMPT_DENIAL_IMPLIES_NOT_AUTHORIZED_AND_NOT_STARTED_AND_ZERO_ENTRY_INCREMENT",
+      "positive_entry": "ATTEMPT_START_IMPLIES_GATES_PASS_AND_AUTHORIZED_AND_EXACTLY_ONE_ENTRY_INCREMENT",
+      "single_attempt_cardinality": "ONE_ADMITTED_ATTEMPT_INCREMENTS_ENTRY_EXACTLY_ONCE",
+      "denial_visibility": "CLASSIFIABLE_PRE_ATTEMPT_DENIAL_REQUIRES_DENIAL_EVIDENCE",
+      "request_not_entry": "BOUNDARY_REQUEST_ALONE_DOES_NOT_IMPLY_P11_ENTRY",
+      "unknown_state": "UNCLASSIFIABLE_SEMANTIC_STATE_FAILS_CLOSED_WITH_ZERO_ENTRY_INCREMENT",
+      "counter_independence": [
+        "BOUNDARY_REQUEST_COUNT_IS_NOT_P11_ENTRY_COUNT",
+        "P11_ENTRY_COUNT_IS_NOT_P11_OPERATIONAL_INVOCATION_COUNT",
+        "P11_OPERATIONAL_INVOCATION_COUNT_IS_NOT_PROTECTED_EFFECT_COUNT"
+      ]
+    },
+    "normative_expected_model": {
+      "boundary_request_count": 2,
+      "pre_attempt_denial_count": 1,
+      "p11_entry_count": 1,
+      "p11_operational_invocation_count": 1,
+      "protected_effect_count": 1,
+      "second_protected_effect_count": 0
+    },
+    "event_record_fields": [
+      "boundary_request",
+      "pre_attempt_gate_evaluation",
+      "pre_attempt_gates_pass",
+      "p11_attempt_authorized",
+      "p11_attempt_start",
+      "p11_operational_invocation_increment",
+      "protected_effect_increment",
+      "second_protected_effect_increment",
+      "denial_evidence_present",
+      "semantic_state_classifiable"
+    ],
+    "semantic_regression_matrix": [
+      {
+        "id": "T01",
+        "name": "VALID_ENTRY",
+        "kind": "event",
+        "events": [{"boundary_request": true, "pre_attempt_gate_evaluation": true, "pre_attempt_gates_pass": true, "p11_attempt_authorized": true, "p11_attempt_start": true, "p11_operational_invocation_increment": 1, "protected_effect_increment": 1, "second_protected_effect_increment": 0, "denial_evidence_present": false, "semantic_state_classifiable": true}],
+        "expected": {"boundary_request_count": 1, "p11_entry_count": 1}
+      },
+      {
+        "id": "T02",
+        "name": "WRONG_CALLER",
+        "kind": "event",
+        "events": [{"boundary_request": true, "pre_attempt_gate_evaluation": true, "pre_attempt_gates_pass": false, "p11_attempt_authorized": false, "p11_attempt_start": false, "p11_operational_invocation_increment": 0, "protected_effect_increment": 0, "second_protected_effect_increment": 0, "denial_evidence_present": true, "semantic_state_classifiable": true}],
+        "expected": {"boundary_request_count": 1, "pre_attempt_denial_count": 1, "p11_entry_count": 0, "protected_effect_count": 0}
+      },
+      {
+        "id": "T03",
+        "name": "EXPIRED_AUTHORITY",
+        "kind": "event",
+        "events": [{"boundary_request": true, "pre_attempt_gate_evaluation": true, "pre_attempt_gates_pass": false, "p11_attempt_authorized": false, "p11_attempt_start": false, "p11_operational_invocation_increment": 0, "protected_effect_increment": 0, "second_protected_effect_increment": 0, "denial_evidence_present": true, "semantic_state_classifiable": true}],
+        "expected": {"p11_entry_count": 0}
+      },
+      {
+        "id": "T04",
+        "name": "UNKNOWN_AUTHORITY",
+        "kind": "event",
+        "events": [{"boundary_request": true, "pre_attempt_gate_evaluation": true, "pre_attempt_gates_pass": false, "p11_attempt_authorized": false, "p11_attempt_start": false, "p11_operational_invocation_increment": 0, "protected_effect_increment": 0, "second_protected_effect_increment": 0, "denial_evidence_present": true, "semantic_state_classifiable": true}],
+        "expected": {"p11_entry_count": 0}
+      },
+      {
+        "id": "T05",
+        "name": "CONSUMED_REUSE",
+        "kind": "event",
+        "events": [{"boundary_request": true, "pre_attempt_gate_evaluation": true, "pre_attempt_gates_pass": false, "p11_attempt_authorized": false, "p11_attempt_start": false, "p11_operational_invocation_increment": 0, "protected_effect_increment": 0, "second_protected_effect_increment": 0, "denial_evidence_present": true, "semantic_state_classifiable": true}],
+        "expected": {"boundary_request_count": 1, "pre_attempt_denial_count": 1, "p11_entry_count": 0, "second_protected_effect_count": 0}
+      },
+      {
+        "id": "T06",
+        "name": "TWO_REQUESTS_ONE_ENTRY",
+        "kind": "event",
+        "events": [
+          {"boundary_request": true, "pre_attempt_gate_evaluation": true, "pre_attempt_gates_pass": true, "p11_attempt_authorized": true, "p11_attempt_start": true, "p11_operational_invocation_increment": 1, "protected_effect_increment": 1, "second_protected_effect_increment": 0, "denial_evidence_present": false, "semantic_state_classifiable": true},
+          {"boundary_request": true, "pre_attempt_gate_evaluation": true, "pre_attempt_gates_pass": false, "p11_attempt_authorized": false, "p11_attempt_start": false, "p11_operational_invocation_increment": 0, "protected_effect_increment": 0, "second_protected_effect_increment": 0, "denial_evidence_present": true, "semantic_state_classifiable": true}
+        ],
+        "expected": {"boundary_request_count": 2, "pre_attempt_denial_count": 1, "p11_entry_count": 1, "p11_operational_invocation_count": 1, "protected_effect_count": 1, "second_protected_effect_count": 0}
+      },
+      {
+        "id": "T07",
+        "name": "DENIAL_REMAINS_VISIBLE",
+        "kind": "event",
+        "events": [{"boundary_request": true, "pre_attempt_gate_evaluation": true, "pre_attempt_gates_pass": false, "p11_attempt_authorized": false, "p11_attempt_start": false, "p11_operational_invocation_increment": 0, "protected_effect_increment": 0, "second_protected_effect_increment": 0, "denial_evidence_present": true, "semantic_state_classifiable": true}],
+        "expected": {"pre_attempt_denial_count": 1, "denial_evidence_count": 1}
+      },
+      {
+        "id": "T08",
+        "name": "ATTEMPT_START_DEPENDENCY",
+        "kind": "event",
+        "events": [{"boundary_request": true, "pre_attempt_gate_evaluation": true, "pre_attempt_gates_pass": true, "p11_attempt_authorized": true, "p11_attempt_start": true, "p11_operational_invocation_increment": 0, "protected_effect_increment": 0, "second_protected_effect_increment": 0, "denial_evidence_present": false, "semantic_state_classifiable": true}],
+        "expected": {"p11_entry_count": 1}
+      },
+      {
+        "id": "T09",
+        "name": "NO_DOUBLE_ENTRY",
+        "kind": "event",
+        "events": [{"boundary_request": true, "pre_attempt_gate_evaluation": true, "pre_attempt_gates_pass": true, "p11_attempt_authorized": true, "p11_attempt_start": true, "p11_operational_invocation_increment": 1, "protected_effect_increment": 0, "second_protected_effect_increment": 0, "denial_evidence_present": false, "semantic_state_classifiable": true}],
+        "expected": {"p11_entry_count": 1}
+      },
+      {
+        "id": "T10",
+        "name": "EFFECT_COUNTER_INDEPENDENCE",
+        "kind": "event",
+        "events": [{"boundary_request": true, "pre_attempt_gate_evaluation": true, "pre_attempt_gates_pass": false, "p11_attempt_authorized": false, "p11_attempt_start": false, "p11_operational_invocation_increment": 0, "protected_effect_increment": 0, "second_protected_effect_increment": 0, "denial_evidence_present": true, "semantic_state_classifiable": true}],
+        "expected": {"boundary_request_count": 1, "protected_effect_count": 0}
+      },
+      {"id": "T11", "name": "NO_P12_AUTHORITY", "kind": "policy", "path": ["authority", "new_p11_semantics_authorize_p12"], "expected_value": false},
+      {"id": "T12", "name": "NO_PRODUCTION_AUTHORITY", "kind": "policy", "path": ["authority", "new_p11_semantics_authorize_production"], "expected_value": false},
+      {"id": "T13", "name": "HISTORICAL_IMMUTABILITY", "kind": "policy", "path": ["authority", "historical_evidence_mutation_authorized"], "expected_value": false},
+      {"id": "T14", "name": "NO_RETROACTIVE_CREDIT", "kind": "policy", "path": ["authority", "retroactive_e05_credit_authorized"], "expected_value": false},
+      {
+        "id": "T15",
+        "name": "FAIL_CLOSED_UNKNOWN_SEMANTIC_STATE",
+        "kind": "event",
+        "events": [{"boundary_request": true, "pre_attempt_gate_evaluation": false, "pre_attempt_gates_pass": null, "p11_attempt_authorized": false, "p11_attempt_start": false, "p11_operational_invocation_increment": 0, "protected_effect_increment": 0, "second_protected_effect_increment": 0, "denial_evidence_present": false, "semantic_state_classifiable": false}],
+        "expected": {"boundary_request_count": 1, "p11_entry_count": 0, "unclassifiable_request_count": 1}
+      },
+      {
+        "id": "T16",
+        "name": "REQUEST_NOT_ENTRY",
+        "kind": "event",
+        "events": [{"boundary_request": true, "pre_attempt_gate_evaluation": false, "pre_attempt_gates_pass": null, "p11_attempt_authorized": false, "p11_attempt_start": false, "p11_operational_invocation_increment": 0, "protected_effect_increment": 0, "second_protected_effect_increment": 0, "denial_evidence_present": false, "semantic_state_classifiable": false}],
+        "expected": {"boundary_request_count": 1, "p11_entry_count": 0}
+      },
+      {
+        "id": "T17",
+        "name": "ADVERSARIAL_START_WITHOUT_GATES",
+        "kind": "rejected_event",
+        "events": [{"boundary_request": true, "pre_attempt_gate_evaluation": true, "pre_attempt_gates_pass": false, "p11_attempt_authorized": true, "p11_attempt_start": true, "p11_operational_invocation_increment": 0, "protected_effect_increment": 0, "second_protected_effect_increment": 0, "denial_evidence_present": false, "semantic_state_classifiable": true}],
+        "expected_error": "ATTEMPT_START_REQUIRES_GATES_PASS_AND_AUTHORIZATION"
+      },
+      {
+        "id": "T18",
+        "name": "ADVERSARIAL_EFFECT_WITHOUT_INVOCATION",
+        "kind": "rejected_event",
+        "events": [{"boundary_request": true, "pre_attempt_gate_evaluation": true, "pre_attempt_gates_pass": true, "p11_attempt_authorized": true, "p11_attempt_start": true, "p11_operational_invocation_increment": 0, "protected_effect_increment": 1, "second_protected_effect_increment": 0, "denial_evidence_present": false, "semantic_state_classifiable": true}],
+        "expected_error": "PROTECTED_EFFECT_REQUIRES_INVOCATION"
+      }
+    ]
+  },
+  "model_sha256": "ff545e5d6d6e179526c5ef13156296a837787a603cb7b00d4a22a5a1049f106a"
+}

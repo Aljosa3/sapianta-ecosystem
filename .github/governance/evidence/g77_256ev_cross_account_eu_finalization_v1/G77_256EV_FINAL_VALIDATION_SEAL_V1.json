@@ -1,0 +1,113 @@
+{
+  "schema_id": "G77_256EV_FINAL_VALIDATION_SEAL_ENVELOPE_V1",
+  "seal": {
+    "schema_id": "G77_256EV_FINAL_VALIDATION_SEAL_V1",
+    "generation_identity": "G77_256EV_CROSS_ACCOUNT_SPCE_CONTINUATION_AND_FAIL_CLOSED_FINALIZATION_OF_INTERRUPTED_G77_256EU_V1",
+    "mode": "REPOSITORY_ONLY_FINALIZATION",
+    "required_head": "34a6343e229042ab1d435444687fe5d665b90724",
+    "required_tree": "6c042e3fe1ccbab3389d4cab401e4598f6479adf",
+    "interruption_state": "STATE_C__EU_FUNCTIONAL_WORK_COMPLETE_FINALIZATION_INCOMPLETE",
+    "final_artifact_bindings": [
+      {
+        "identity": "P11_ENTRY_DEFINITION_V1",
+        "path": "docs/governance/G77_256EU_P11_ENTRY_DEFINITION_V1.md",
+        "sha256": "8640ff72c6e33348d1d49a1c17869b775de595ad75fe7be97fd06ca57775e003"
+      },
+      {
+        "identity": "G77_256EU_SEMANTIC_MODEL",
+        "path": ".github/governance/evidence/g77_256eu_p11_entry_semantics_v1/G77_256EU_P11_ENTRY_SEMANTIC_MODEL_AND_REGRESSION_MATRIX_V1.json",
+        "sha256": "c9e58bdd21d1a30eb55fdd610d5658b6d50eff5a11ece6dc8496f65678d75b61",
+        "inner_sha256": "ff545e5d6d6e179526c5ef13156296a837787a603cb7b00d4a22a5a1049f106a"
+      },
+      {
+        "identity": "G77_256EU_SEMANTIC_VALIDATOR",
+        "path": ".github/governance/evidence/g77_256eu_p11_entry_semantics_v1/validator/G77_256EU_P11_ENTRY_SEMANTICS_VALIDATOR_V1.py",
+        "sha256": "2d161df2bf3d1e01e3d44772f08e8dfa6d2b8aaa97c6fb05eaca2f87f01663cd"
+      },
+      {
+        "identity": "G77_256EU_G48_REPORT",
+        "path": "docs/governance/G77_256EU_HUMAN_CONSTITUTIONAL_P11_ENTRY_SEMANTICS_COUNTER_MODEL_AND_REUSABLE_SUBSTRATE_FREEZE_HARDENING_V1.md",
+        "sha256": "159830c858753eac17a7a9ed96742d9a44dd1106e9b7a5f7445f79382d1bb681"
+      },
+      {
+        "identity": "G77_256EU_FINALIZED_CHECKPOINT",
+        "path": ".github/governance/evidence/g77_256eu_p11_entry_semantics_v1/G77_256EU_SPCE_PHASE_D_FINAL_CHECKPOINT_V1.json",
+        "sha256": "3f6601b7f44e129dfd3fed5b02ed5a7cbc2d3ebef80288ca85825bcf36e1c469",
+        "inner_sha256": "ef05f713804c2c547106befc878ec31abba1f1e7225a05cfe9e5d7c052e18b4b"
+      },
+      {
+        "identity": "G77_256EV_CONTINUATION_CHECKPOINT",
+        "path": ".github/governance/evidence/g77_256ev_cross_account_eu_finalization_v1/G77_256EV_SPCE_CROSS_ACCOUNT_CONTINUATION_CHECKPOINT_V1.json",
+        "sha256": "6b58151e2c4f4fbfe572545c6d5a0950e0816711166cf78038bf8dc7a495a726",
+        "inner_sha256": "322f80a1432e69e7d38278012b982f782f4c000c4848d1a2a098f1078348ef83"
+      }
+    ],
+    "semantic_results": {
+      "p11_entry_semantics_result": "PASS__PROSPECTIVE_DEFINITION_FORMALIZED_AND_MACHINE_TESTED",
+      "p11_counter_model_result": "PASS__BOUNDARY_REQUEST_DENIAL_ENTRY_INVOCATION_AND_EFFECT_COUNTERS_DISTINCT",
+      "regression_total": 18,
+      "regression_pass": 18,
+      "regression_fail": 0,
+      "historical_er_es_compatibility_assessment": "PARTIAL",
+      "consumed_lifecycle_functional_result": "PASS",
+      "consumed_constitutional_credit": "UNSATISFIED",
+      "e05": "5/18",
+      "e05_remaining": 13
+    },
+    "freeze_results": {
+      "freeze_readiness": "PARTIAL",
+      "reusable_p11_spce_execution_substrate": "PARTIAL",
+      "component_classification_delta_count": 0,
+      "certified_reusable_component_count": 4,
+      "evidence_supported_reusable_component_count": 12,
+      "requires_additional_hardening_component_count": 3,
+      "vector_specific_component_count": 3,
+      "remaining_freeze_blocker_count": 6
+    },
+    "spce_results": {
+      "spce_repository_resumability": "PASS",
+      "spce_cross_account_resumability": "PASS__EMPIRICALLY_OBSERVED_BY_EV",
+      "spce_operational_resumability": "NOT_APPLICABLE__REPOSITORY_ONLY_NO_OPERATIONAL_STATE",
+      "cross_account_continuation_readiness": "PASS__EVIDENCE_SUPPORTED_NOT_SEPARATELY_CERTIFIED",
+      "cross_llm_continuation_used": "NOT_INDEPENDENTLY_ESTABLISHED",
+      "cross_llm_continuation_readiness": "NOT_VERIFIED",
+      "clrec_empirical_support": "PARTIAL__CROSS_ACCOUNT_SUPPORTED__CROSS_LLM_NOT_ESTABLISHED",
+      "clrec_constitutionally_certified": false
+    },
+    "operational_counters": {
+      "vm_creation_count": 0,
+      "vm_boot_count": 0,
+      "second_vm_count": 0,
+      "commissioning_execution_count": 0,
+      "p11_operational_execution_count": 0,
+      "e05_case_execution_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0,
+      "execution_replay_count": 0,
+      "materialization_replay_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0
+    },
+    "repository_results": {
+      "required_head_preserved": true,
+      "required_tree_preserved": true,
+      "index_empty": true,
+      "historical_er_es_et_unchanged": true,
+      "no_eu_ev_cache_residue": true,
+      "nothing_staged": true,
+      "nothing_committed": true,
+      "nothing_pushed": true
+    },
+    "reuse_impact": {
+      "existing_capability_reachability_change": "NONE",
+      "parallel_flow_created": false,
+      "production_route_delta": 0,
+      "execution_path_delta": 0
+    },
+    "final_validation": "PASS__AUTHENTICATED_EU_FUNCTIONAL_WORK_AND_COMPLETED_ONLY_AUTHORIZED_FINALIZATION__NO_OPERATIONAL_OR_CREDIT_EFFECT",
+    "exact_next_constitutional_frontier": "SEPARATE_HUMAN_AUTHORIZATION_FOR_REPOSITORY_ONLY_REUSABLE_SUBSTRATE_FREEZE_HARDENING__PRIORITIZE_PROSPECTIVE_COUNTER_INSTRUMENTATION_PERSISTENT_LAUNCH_RECEIPT_VERSIONED_BASE_IMAGE_CUSTODY_COMMON_RAW_EVIDENCE_PROFILE_AND_AGGREGATE_SUBSTRATE_MANIFEST__THEN_SEPARATE_HUMAN_SUBSTRATE_CERTIFICATION_DECISION__BEFORE_ANOTHER_FRESH_E05_OPERATIONAL_GENERATION",
+    "seal_is_authority": false,
+    "auto_continuable": false
+  },
+  "seal_sha256": "21d2ae272ee446d88a9a4b974aa16034674c027ef8a8256866d28cb023ed0a66"
+}
