@@ -1,0 +1,25 @@
+{
+  "algorithm": "SHA256_DOMAIN_U64BE_ARGC_REPEATED_U64BE_UTF8_BYTE_LENGTH_AND_BYTES",
+  "argv0_included": true,
+  "baseline_sha256": "11845d691a48b20d215c8d48f48b220195f09c989d0e790915f46b7417c37463",
+  "environment_expansion_allowed": false,
+  "negative_results": {
+    "deletion": true,
+    "duplicate_argument": true,
+    "empty_argument": true,
+    "empty_vs_absent": true,
+    "executable_identity": true,
+    "framing_domain_change": true,
+    "image_argument": true,
+    "insertion": true,
+    "network_argument": true,
+    "order": true,
+    "path": true,
+    "seed_argument": true,
+    "token_boundary_ab_c_vs_a_bc": true,
+    "whitespace": true
+  },
+  "normalization_allowed": false,
+  "result": "PASS",
+  "schema_id": "G77_256ER_CANONICAL_QEMU_ARGV_VALIDATION_MATRIX_V1"
+}

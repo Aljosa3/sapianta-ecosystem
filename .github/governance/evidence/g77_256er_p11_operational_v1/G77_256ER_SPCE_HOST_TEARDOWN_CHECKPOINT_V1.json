@@ -1,0 +1,58 @@
+{
+  "schema_id": "G77_256ER_SPCE_HOST_TEARDOWN_CHECKPOINT_ENVELOPE_V1",
+  "seal": {
+    "schema_id": "G77_256ER_SPCE_HOST_TEARDOWN_CHECKPOINT_V1",
+    "generation_identity": "G77_256ER_ONE_FRESH_BOUNDED_NON_PRODUCTION_E05_CONSUMED_REUSE_P11_GENERATION_V1",
+    "continuation_identity": "G77_256ES_CROSS_ACCOUNT_SPCE_FAIL_CLOSED_FINALIZATION_V1",
+    "required_head": "574b1c02f64df3c586ee4ad7214e2f677edf2dc3",
+    "source_tree": "f6a66f07785ec3a825311a796f0e8e6fd1fc3408",
+    "host_pre_teardown_checkpoint": {
+      "path": ".github/governance/evidence/g77_256er_p11_operational_v1/G77_256ER_SPCE_HOST_PRE_TEARDOWN_CHECKPOINT_V1.json",
+      "file_sha256": "dbb4df31e0564bd2420b9d706f94dad577d9a711919c42a5d1ba898014c0d3c7",
+      "inner_sha256": "18f5fafc0fe91dee05f95acbeb7010e3698227df73835f414b4392fb6330642e"
+    },
+    "host_teardown": {
+      "scope": "ONLY_AUTHENTICATED_TRANSIENT_ROOT_/tmp/g77_256er",
+      "qemu_process_count": 0,
+      "er_mount_count": 0,
+      "transient_root_absent": true,
+      "overlay_absent": true,
+      "seed_absent": true,
+      "temporary_checkout_absent": true,
+      "serial_transient_source_absent": true,
+      "persistent_decisive_evidence_preserved": true,
+      "teardown_state": "COMPLETE"
+    },
+    "base_image": {
+      "path": "/tmp/g77_256cw.IkqZJN/noble-server-cloudimg-amd64.img",
+      "sha256_before": "6e40c07ae715f744f84af0bec76415cc1987dd115b4b8de437818561f01a3733",
+      "sha256_after": "6e40c07ae715f744f84af0bec76415cc1987dd115b4b8de437818561f01a3733",
+      "byte_identical": true,
+      "qemu_img_check": "PASS"
+    },
+    "execution_counters": {
+      "fresh_candidate_count": 1,
+      "vm_creation_count": 1,
+      "vm_boot_count": 1,
+      "second_vm_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0,
+      "execution_replay_count": 0,
+      "materialization_replay_count": 0,
+      "commissioning_execution_count": 1,
+      "commissioning_pass_count": 1,
+      "p11_entry_count": 2,
+      "p11_operational_invocation_count": 1,
+      "p12_entry_count": 0,
+      "production_route_count": 0
+    },
+    "first_authoritative_failure": "P11_ENTRY_COUNT_BOUND_EXCEEDED",
+    "credit_awarded": false,
+    "e05_before": "5/18",
+    "e05_after": "5/18",
+    "exact_next_legal_action": "PERSIST_FINAL_EXECUTION_SEAL_PHASE_D_CHECKPOINT_AND_G48_REPORT_ONLY__NO_EXECUTION_REPLAY",
+    "checkpoint_is_authority": false,
+    "auto_continuable": false
+  },
+  "seal_sha256": "0fc11253323b8bf181c5cae19edf9ce76597ec3eeec524ee12fd6ebb2062e4cb"
+}
