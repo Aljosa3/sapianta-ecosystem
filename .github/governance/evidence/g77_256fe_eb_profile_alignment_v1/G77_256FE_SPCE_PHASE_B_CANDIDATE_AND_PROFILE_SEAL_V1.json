@@ -1,0 +1,82 @@
+{
+  "schema_id": "G77_256FE_SPCE_PHASE_B_CANDIDATE_AND_PROFILE_SEAL_ENVELOPE_V1",
+  "checkpoint": {
+    "schema_id": "G77_256FE_SPCE_PHASE_B_CANDIDATE_AND_PROFILE_SEAL_V1",
+    "generation_identity": "G77_256FE_REPOSITORY_ONLY_EB_CANONICAL_VALIDATION_PROFILE_ALIGNMENT_AND_DU_EB_EE_PREFLIGHT_V1",
+    "phase_a_binding": {
+      "path": ".github/governance/evidence/g77_256fe_eb_profile_alignment_v1/G77_256FE_SPCE_PHASE_A_CHECKPOINT_V1.json",
+      "file_sha256": "a3514aca4ec6b11ab188b8393945d8c3a0249013577c5914f8850b507a21cb60",
+      "inner_sha256": "8dad047aad00eac71ea177e6bb6e33dbe822c94d7460f5b6ed07a75682c1c236"
+    },
+    "failure_classification": "CALLER_ORCHESTRATION_ERROR",
+    "fd_candidate_reuse_admissibility": "INADMISSIBLE__GENERATION_HEAD_TREE_BINDING",
+    "fresh_fe_candidate_required": true,
+    "eb_profile_alignment": {
+      "canonical_profile_id": "CANONICAL_V1_PRE_MATERIALIZATION_FOUR_GATE_CANDIDATE_BOUND_V1",
+      "canonical_profile_source": ".github/governance/evidence/g77_256eb_candidate_bound_validation_receipt_v1/validator/G77_256EB_CANDIDATE_BOUND_PRE_MATERIALIZATION_VALIDATOR_V1.py:27",
+      "supplied_profile_id": "CANONICAL_V1_PRE_MATERIALIZATION_FOUR_GATE_CANDIDATE_BOUND_V1",
+      "profile_match": "PASS__STATIC_PRE_INVOCATION",
+      "caller_path": ".github/governance/evidence/g77_256fe_eb_profile_alignment_v1/orchestration/G77_256FE_CANONICAL_EB_PROFILE_CALLER_V1.py",
+      "caller_sha256": "daa6c6b2d60d1d1cf21d5f11975878ab3fe86f85a2a0faedbaa2b282d3ac2165",
+      "eb_validator_sha256": "8e8171f757213f064cec463868408364175772e766615bd276ed7f0e28306b43",
+      "common_validator_modified": false
+    },
+    "candidate": {
+      "path": ".github/governance/evidence/g77_256fe_eb_profile_alignment_v1/raw/G77_256FE_CANONICAL_CONTINUATION_MANIFEST_PREFLIGHT_V1.json",
+      "file_sha256": "82a09c73f3abcd8ef33f3e6644131a3a52c19c4dcfd93bb4055b931cc2dce322",
+      "inner_sha256": "e99e435b5e515bcc0d0529b9dffeba0ce46d63d82d9ddd953d63430415aa7a55",
+      "selected_case_fields": [
+        "case_class",
+        "case_id"
+      ],
+      "sealed_and_immutable": true
+    },
+    "runtime_projection": {
+      "path": ".github/governance/evidence/g77_256fe_eb_profile_alignment_v1/runtime/G77_256FE_CONTINUATION_MANIFEST_V1.json",
+      "file_sha256": "82a09c73f3abcd8ef33f3e6644131a3a52c19c4dcfd93bb4055b931cc2dce322",
+      "candidate_runtime_byte_identity": "PASS"
+    },
+    "static_adapter": {
+      "path": ".github/governance/evidence/g77_256fe_eb_profile_alignment_v1/binding/G77_256FE_WRONG_ATTEMPT_PREFLIGHT_ADAPTER_V1.py",
+      "sha256": "73d0037c94df390b0246ef7ebd4cb19ecfc06e24f1cfbc3930015276396f95fd",
+      "raw_root": "/mnt/g77-evidence",
+      "continuation_manifest_path": "/mnt/g77-evidence/G77_256FE_CONTINUATION_MANIFEST_V1.json",
+      "operational_authority": false
+    },
+    "builder": {
+      "path": ".github/governance/evidence/g77_256fe_eb_profile_alignment_v1/builder/G77_256FE_WRONG_ATTEMPT_CANDIDATE_BUILDER_V1.py",
+      "sha256": "475804541fa8f7fa52afcca39d3120668c2cb532b05b5406de32b49d364183c1"
+    },
+    "generation_wide_counters": {
+      "fd_candidate_reused_count": 0,
+      "fe_fresh_candidate_count": 1,
+      "second_candidate_count": 0,
+      "replacement_candidate_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0,
+      "du_invocation_count": 0,
+      "eb_invocation_count": 0,
+      "ee_invocation_count": 0,
+      "materialization_count": 0,
+      "vm_creation_count": 0,
+      "vm_boot_count": 0,
+      "qemu_execution_count": 0,
+      "p11_request_count": 0,
+      "pre_attempt_denial_count": 0,
+      "p11_entry_count": 0,
+      "p11_invocation_count": 0,
+      "protected_effect_count": 0,
+      "e05_case_execution_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0,
+      "production_effect_count": 0
+    },
+    "e05_before": "6/18",
+    "e05_after": "6/18",
+    "wrong_attempt_state_after": "UNSATISFIED",
+    "checkpoint_is_authority": false,
+    "auto_continuable": false,
+    "exact_next_legal_action": "RUN_CANONICAL_DU_EXACTLY_ONCE_AND_STOP_ON_FAILURE"
+  },
+  "checkpoint_sha256": "9bb170f2f48ae7d0b0ad8f45202d527098c63de7dabe900ee8e2cef3b0d7ddd9"
+}

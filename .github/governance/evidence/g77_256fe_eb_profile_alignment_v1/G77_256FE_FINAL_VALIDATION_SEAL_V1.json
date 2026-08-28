@@ -1,0 +1,128 @@
+{
+  "schema_id": "G77_256FE_FINAL_VALIDATION_SEAL_ENVELOPE_V1",
+  "seal": {
+    "schema_id": "G77_256FE_FINAL_VALIDATION_SEAL_V1",
+    "generation_identity": "G77_256FE_REPOSITORY_ONLY_EB_CANONICAL_VALIDATION_PROFILE_ALIGNMENT_AND_DU_EB_EE_PREFLIGHT_V1",
+    "required_head": "1f29ecc1d8f70d66abb9f0e532edd8c4ab11c25b",
+    "required_tree": "48ff619755cdae77a73b34b3d5bbd39c8d768b7e",
+    "required_subject": "G77-256FD align WRONG_ATTEMPT schema and fail closed at EB",
+    "bindings": [
+      {
+        "identity": "G77_256FE_PHASE_A_CHECKPOINT",
+        "path": ".github/governance/evidence/g77_256fe_eb_profile_alignment_v1/G77_256FE_SPCE_PHASE_A_CHECKPOINT_V1.json",
+        "sha256": "a3514aca4ec6b11ab188b8393945d8c3a0249013577c5914f8850b507a21cb60"
+      },
+      {
+        "identity": "G77_256FE_PHASE_B_CANDIDATE_AND_PROFILE_SEAL",
+        "path": ".github/governance/evidence/g77_256fe_eb_profile_alignment_v1/G77_256FE_SPCE_PHASE_B_CANDIDATE_AND_PROFILE_SEAL_V1.json",
+        "sha256": "e75bec5f648b99aba8f5aeb38d4116bad1d2395c3af59274584dddce021594ae"
+      },
+      {
+        "identity": "G77_256FE_PHASE_C_PREFLIGHT_CHECKPOINT",
+        "path": ".github/governance/evidence/g77_256fe_eb_profile_alignment_v1/G77_256FE_SPCE_PHASE_C_PREFLIGHT_CHECKPOINT_V1.json",
+        "sha256": "83343a2f27792a9bafe68bf6f5d2d83ead5d4bc5d53410094ccaa266bbfb19d9"
+      },
+      {
+        "identity": "G77_256FE_PHASE_D_FINAL_REDUCTION",
+        "path": ".github/governance/evidence/g77_256fe_eb_profile_alignment_v1/G77_256FE_SPCE_PHASE_D_FINAL_REDUCTION_V1.json",
+        "sha256": "a8603cfcffc1c84717fa96b3b751581b236c9c4923864008202ec534ae8472ff"
+      },
+      {
+        "identity": "G77_256FE_CANONICAL_EB_PROFILE_CALLER",
+        "path": ".github/governance/evidence/g77_256fe_eb_profile_alignment_v1/orchestration/G77_256FE_CANONICAL_EB_PROFILE_CALLER_V1.py",
+        "sha256": "daa6c6b2d60d1d1cf21d5f11975878ab3fe86f85a2a0faedbaa2b282d3ac2165"
+      },
+      {
+        "identity": "G77_256FE_STATIC_PREFLIGHT_ADAPTER",
+        "path": ".github/governance/evidence/g77_256fe_eb_profile_alignment_v1/binding/G77_256FE_WRONG_ATTEMPT_PREFLIGHT_ADAPTER_V1.py",
+        "sha256": "73d0037c94df390b0246ef7ebd4cb19ecfc06e24f1cfbc3930015276396f95fd"
+      },
+      {
+        "identity": "G77_256FE_CANDIDATE_BUILDER",
+        "path": ".github/governance/evidence/g77_256fe_eb_profile_alignment_v1/builder/G77_256FE_WRONG_ATTEMPT_CANDIDATE_BUILDER_V1.py",
+        "sha256": "475804541fa8f7fa52afcca39d3120668c2cb532b05b5406de32b49d364183c1"
+      },
+      {
+        "identity": "G77_256FE_SEALED_CANDIDATE",
+        "path": ".github/governance/evidence/g77_256fe_eb_profile_alignment_v1/raw/G77_256FE_CANONICAL_CONTINUATION_MANIFEST_PREFLIGHT_V1.json",
+        "sha256": "82a09c73f3abcd8ef33f3e6644131a3a52c19c4dcfd93bb4055b931cc2dce322"
+      },
+      {
+        "identity": "G77_256FE_RUNTIME_PROJECTION",
+        "path": ".github/governance/evidence/g77_256fe_eb_profile_alignment_v1/runtime/G77_256FE_CONTINUATION_MANIFEST_V1.json",
+        "sha256": "82a09c73f3abcd8ef33f3e6644131a3a52c19c4dcfd93bb4055b931cc2dce322"
+      },
+      {
+        "identity": "G77_256FE_EB_RECEIPT",
+        "path": ".github/governance/evidence/g77_256fe_eb_profile_alignment_v1/raw/G77_256FE_CANDIDATE_BOUND_EB_RECEIPT_V1.json",
+        "sha256": "5a36e1c9b418e74323739324440fc2b629d8b0d7c66efb3aae2c0b8ab6d3a8c9"
+      },
+      {
+        "identity": "G77_256FE_EE_RECEIPT",
+        "path": ".github/governance/evidence/g77_256fe_eb_profile_alignment_v1/raw/G77_256FE_RUNTIME_CONSUMER_EE_RECEIPT_V1.json",
+        "sha256": "0c4fffc6cbfccfc22d8258659e9ab37721671224bb315ff903681b2085b49448"
+      },
+      {
+        "identity": "G77_256FE_G48_REPORT",
+        "path": "docs/governance/G77_256FE_EB_CANONICAL_PROFILE_ALIGNMENT_AND_DU_EB_EE_PREFLIGHT_V1.md",
+        "sha256": "23e13f3462a37aa3e719d1d683f0ae1789d8255d956f9b1d392d1708d5f66ca1"
+      }
+    ],
+    "fd_authentication": "PASS",
+    "fd_historical_mutation_count": 0,
+    "eb_profile_failure_class": "CALLER_ORCHESTRATION_ERROR",
+    "fd_candidate_reuse_admissibility": "INADMISSIBLE__GENERATION_HEAD_TREE_BINDING",
+    "fe_fresh_candidate_required": true,
+    "fe_fresh_candidate_count": 1,
+    "second_candidate_count": 0,
+    "replacement_candidate_count": 0,
+    "eb_canonical_profile_id": "CANONICAL_V1_PRE_MATERIALIZATION_FOUR_GATE_CANDIDATE_BOUND_V1",
+    "eb_supplied_profile_id": "CANONICAL_V1_PRE_MATERIALIZATION_FOUR_GATE_CANDIDATE_BOUND_V1",
+    "eb_profile_match": "PASS",
+    "du_result": "PASS",
+    "du_result_source": "FRESH_FE_VALIDATION",
+    "eb_result": "PASS",
+    "ee_result": "PASS",
+    "b6_repository_precondition": "PASS",
+    "du_invocation_count": 1,
+    "eb_invocation_count": 1,
+    "ee_invocation_count": 1,
+    "automatic_retry_count": 0,
+    "repair_and_continue_count": 0,
+    "candidate_immutability": "PASS",
+    "common_substrate_reconstruction_count": 0,
+    "new_common_component_count": 0,
+    "new_common_infrastructure_count": 0,
+    "common_validators_created": 0,
+    "parallel_flow_created": false,
+    "production_path_delta": 0,
+    "materialization_count": 0,
+    "vm_creation_count": 0,
+    "vm_boot_count": 0,
+    "qemu_execution_count": 0,
+    "p11_request_count": 0,
+    "pre_attempt_denial_count": 0,
+    "p11_entry_count": 0,
+    "p11_invocation_count": 0,
+    "protected_effect_count": 0,
+    "e05_case_execution_count": 0,
+    "p12_entry_count": 0,
+    "production_route_count": 0,
+    "production_effect_count": 0,
+    "constitutional_credit_result": "NOT_AWARDED__REPOSITORY_ONLY_GENERATION",
+    "e05_before": "6/18",
+    "e05_after": "6/18",
+    "e05_remaining": 12,
+    "wrong_attempt_state_after": "UNSATISFIED",
+    "files_created": 13,
+    "files_modified": 0,
+    "lines_added": 1265,
+    "lines_removed": 0,
+    "final_validation": "PASS__EB_CANONICAL_PROFILE_ALIGNED__DU_EB_EE_PREFLIGHT_PASS__REPOSITORY_ONLY",
+    "fe_preflight_result": "PASS__WRONG_ATTEMPT_PATTERN_REPOSITORY_ADMISSIBLE_FOR_FUTURE_SEPARATELY_AUTHORIZED_OPERATIONAL_GENERATION",
+    "human_authorization_required": true,
+    "auto_continuable": false,
+    "seal_is_authority": false
+  },
+  "seal_sha256": "634d06124bd7800f424ee4ade5076c7b99bb23ffe476316acbbf62062eac6f92"
+}
