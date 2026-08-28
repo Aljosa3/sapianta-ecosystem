@@ -1,0 +1,91 @@
+{
+  "schema_id": "G77_256EY_SPCE_PHASE_E_FINAL_CHECKPOINT_ENVELOPE_V1",
+  "checkpoint": {
+    "schema_id": "G77_256EY_SPCE_PHASE_E_FINAL_CHECKPOINT_V1",
+    "generation_identity": "G77_256EY_FIRST_ONE_BOUNDED_OPERATIONAL_E05_CONSUMER_OF_CERTIFIED_P11_SPCE_COMMON_SUBSTRATE_V1",
+    "required_head": "de2fcd66f61e3263e243949f18b0a2cef3a94f8b",
+    "required_tree": "e06cfcff68c63db691587167bad6bb5410f104ac",
+    "phase_results": {
+      "phase_a": "PASS__BASELINE_SUBSTRATE_CONSUMED_STATE_AND_HUMAN_SELECTION_AUTHENTICATED",
+      "phase_b": "PASS__ONE_CONSUMED_CANDIDATE__DU_AND_EB_PASS__ZERO_COMMON_RECONSTRUCTION",
+      "phase_c": "FAIL_CLOSED__EE_HARNESS_EXPECTED_PATH_DECLARATION_MISSING",
+      "phase_d": "NOT_RUN__PRE_OPERATIONAL_FIRST_FAILURE",
+      "phase_e": "PASS__TRUTHFUL_FAIL_CLOSED_ZERO_EXECUTION_REDUCTION"
+    },
+    "phase_c_binding": {
+      "path": ".github/governance/evidence/g77_256ey_consumed_operational_v1/G77_256EY_SPCE_PHASE_C_PRE_OPERATIONAL_FAILURE_V1.json",
+      "sha256": "74b304f873c71c3d6d79aec843e85aa57b01c318d81bb1022e14a52cef5513be",
+      "inner_sha256": "ec39cde7914689814f42dd95de01d120d10924df0df877beab2a13dd6b2d40b4"
+    },
+    "selection": {
+      "human_selected_vector": "CONSUMED",
+      "selection_basis": "EXPLICIT_HUMAN_SELECTION_AFTER_AUTHENTICATED_WITHIN_E05_UNDERDETERMINATION",
+      "admissibility": "PASS"
+    },
+    "substrate_reuse": {
+      "substrate_authentication": "PASS",
+      "certified_common_components_available": 17,
+      "certified_common_components_reused": 17,
+      "certified_common_components_reconstructed": 0,
+      "common_substrate_reconstruction_count": 0,
+      "common_validators_created": 0,
+      "common_manifests_created": 0,
+      "successor_common_manifest_count": 0,
+      "parallel_execution_path_count": 0,
+      "reuse_architecture_regression": false
+    },
+    "acceptance_results": {
+      "B1": "NOT_RUN__B6_PRE_OPERATIONAL_FIRST_FAILURE",
+      "B2": "NOT_COMPLETED__B6_PRE_OPERATIONAL_FIRST_FAILURE",
+      "B6": "FAIL__CERTIFIED_EE_RUNTIME_CONSUMER_BINDING_NOT_ESTABLISHED"
+    },
+    "functional_and_credit_reduction": {
+      "vector_functional_result": "NOT_RUN",
+      "constitutional_credit_result": "NOT_AWARDED__FAIL_CLOSED_BEFORE_MATERIALIZATION",
+      "e05_before": "5/18",
+      "e05_after": "5/18",
+      "e05_remaining": 13,
+      "consumed_state_after": "UNSATISFIED",
+      "g2_state": "OPEN",
+      "g3_entry_authorized": false,
+      "p12_entry_authorized": false,
+      "production_route_authorized": false
+    },
+    "operational_counters": {
+      "fresh_operational_candidate_count": 1,
+      "vm_creation_count": 0,
+      "vm_boot_count": 0,
+      "second_vm_count": 0,
+      "second_vector_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0,
+      "e05_case_execution_count": 0,
+      "p11_operational_invocation_count": 0,
+      "first_protected_effect_count": 0,
+      "post_consumed_request_count": 0,
+      "post_consumed_entry_count": 0,
+      "post_consumed_invocation_count": 0,
+      "post_consumed_protected_effect_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0,
+      "execution_replay_count": 0,
+      "materialization_replay_count": 0
+    },
+    "reuse_benchmark": {
+      "repetitive_proof_load": "LOW__CERTIFIED_COMMON_AUTHENTICATION_REUSED__OPERATIONAL_BENCHMARK_STOPPED_AT_EE",
+      "common_proof_reuse_ratio": "COMPONENT_COUNT_17_OF_22__WORK_RATIO_NOT_MEASURED",
+      "vector_specific_proof_ratio": "NOT_MEASURED__ONE_VECTOR_ADAPTER_CREATED",
+      "expected_future_e05_complexity_reduction": "SUPPORTED_FOR_PHASE_A_B__NOT_ESTABLISHED_FOR_OPERATIONAL_PHASE_D",
+      "token_benchmark": "NOT_MEASURED",
+      "prompt_context_reuse_ratio": "NOT_MEASURED",
+      "llm_cost_reduction_ratio": "NOT_MEASURED",
+      "lcrr": "NOT_MEASURED"
+    },
+    "first_authoritative_failure": "B6_PRE_OPERATIONAL_RUNTIME_CONSUMER_BINDING__HARNESS_EXPECTED_PATH_DECLARATION_MISSING",
+    "exact_next_constitutional_frontier": "HUMAN_REVIEW_AND_OPTIONAL_COMMIT_OF_EY_FAIL_CLOSED_EVIDENCE__THEN_SEPARATE_REPOSITORY_ONLY_HARDENING_OF_A_STATIC_EE_AUTHENTICATABLE_EY_RUNTIME_PATH_DECLARATION_BEFORE_ANY_NEW_OPERATIONAL_AUTHORIZATION",
+    "recommended_next_generation": "G77_256EZ_REPOSITORY_ONLY_EY_PRE_OPERATIONAL_RUNTIME_PATH_BINDING_HARDENING__NO_VM_OR_E05_EXECUTION",
+    "checkpoint_is_authority": false,
+    "auto_continuable": false
+  },
+  "checkpoint_sha256": "10e2d891ea2154f58dbb21c7a7ca44e516800a749b5705a8de5c18189bcac13e"
+}

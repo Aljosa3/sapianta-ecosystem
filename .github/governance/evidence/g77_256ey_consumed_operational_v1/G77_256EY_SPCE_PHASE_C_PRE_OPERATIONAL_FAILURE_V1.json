@@ -1,0 +1,68 @@
+{
+  "schema_id": "G77_256EY_SPCE_PHASE_C_PRE_OPERATIONAL_FAILURE_ENVELOPE_V1",
+  "checkpoint": {
+    "schema_id": "G77_256EY_SPCE_PHASE_C_PRE_OPERATIONAL_FAILURE_V1",
+    "generation_identity": "G77_256EY_FIRST_ONE_BOUNDED_OPERATIONAL_E05_CONSUMER_OF_CERTIFIED_P11_SPCE_COMMON_SUBSTRATE_V1",
+    "phase_b_binding": {
+      "path": ".github/governance/evidence/g77_256ey_consumed_operational_v1/G77_256EY_SPCE_PHASE_B_CHECKPOINT_V1.json",
+      "sha256": "1d12099a311a6f7c019a7131bb514c59d61475f67d662a270c7d1453642ce985",
+      "inner_sha256": "f4e34d999bd15e4f3699e504b36b404b681cadb01f5497fecdcbdd16f77ff810"
+    },
+    "selected_vector_id": "CONSUMED",
+    "first_authoritative_failure": {
+      "gate": "B6_PRE_OPERATIONAL_RUNTIME_CONSUMER_BINDING",
+      "validator_identity": "G77_256EE_RUNTIME_CONSUMER_BINDING_VALIDATOR_V1",
+      "validator_sha256": "5e4b35b3c7e7e23e5b7209c5f56e8a70055eac9a3deef32bc288b210e80f9410",
+      "failure_code": "HARNESS_EXPECTED_PATH_DECLARATION_MISSING",
+      "overall_result": "FAIL_CLOSED",
+      "pre_materialization_runtime_path_binding_pass_claimed": false,
+      "cause": "EY_ADAPTER_CONFIGURES_THE_RUNTIME_MANIFEST_PATH_DYNAMICALLY_WHILE_THE_CERTIFIED_EE_VALIDATOR_REQUIRES_STATIC_AUTHENTICATED_RAW_ROOT_AND_CONTINUATION_MANIFEST_PATH_DECLARATIONS",
+      "repair_prohibited_reason": "THE_SINGLE_CANDIDATE_ALREADY_HASH_BINDS_THE_ADAPTER_AND_USER_DATA__CHANGING_THEM_AND_REGENERATING_WOULD_REQUIRE_A_SECOND_CANDIDATE_OR_REPAIR_AND_CONTINUE"
+    },
+    "acceptance_results": {
+      "B1": "NOT_RUN__B6_PRE_OPERATIONAL_FIRST_FAILURE",
+      "B2": "NOT_COMPLETED__B6_PRE_OPERATIONAL_FIRST_FAILURE",
+      "B6": "FAIL__CERTIFIED_EE_RUNTIME_CONSUMER_BINDING_NOT_ESTABLISHED",
+      "candidate_identity": "PASS__ONE_CANDIDATE_ONLY",
+      "single_vm_limit": "PASS__ZERO_VM_CREATED",
+      "no_retry_rule": "PASS__ZERO_RETRY",
+      "teardown_path": "NOT_APPLICABLE__NO_MATERIALIZATION"
+    },
+    "constitutional_disposition": {
+      "operational_execution_authorized_after_failure": false,
+      "materialization_performed": false,
+      "vm_created": false,
+      "vm_booted": false,
+      "e05_case_executed": false,
+      "credit_awarded": false,
+      "consumed_state_after": "UNSATISFIED",
+      "e05_before": "5/18",
+      "e05_after": "5/18",
+      "e05_remaining": 13
+    },
+    "operational_counters": {
+      "fresh_operational_candidate_count": 1,
+      "vm_creation_count": 0,
+      "vm_boot_count": 0,
+      "second_vm_count": 0,
+      "second_vector_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0,
+      "e05_case_execution_count": 0,
+      "p11_operational_invocation_count": 0,
+      "first_protected_effect_count": 0,
+      "post_consumed_request_count": 0,
+      "post_consumed_entry_count": 0,
+      "post_consumed_invocation_count": 0,
+      "post_consumed_protected_effect_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0,
+      "execution_replay_count": 0,
+      "materialization_replay_count": 0
+    },
+    "exact_next_legal_action": "FINAL_REDUCTION_REPORT_AND_SEAL_ONLY__NO_MATERIALIZATION_BOOT_RETRY_OR_SECOND_CANDIDATE",
+    "checkpoint_is_authority": false,
+    "auto_continuable": false
+  },
+  "checkpoint_sha256": "ec39cde7914689814f42dd95de01d120d10924df0df877beab2a13dd6b2d40b4"
+}

@@ -1,0 +1,75 @@
+{
+  "schema_id": "G77_256EY_SPCE_PHASE_A_CHECKPOINT_ENVELOPE_V1",
+  "checkpoint": {
+    "schema_id": "G77_256EY_SPCE_PHASE_A_CHECKPOINT_V1",
+    "generation_identity": "G77_256EY_FIRST_ONE_BOUNDED_OPERATIONAL_E05_CONSUMER_OF_CERTIFIED_P11_SPCE_COMMON_SUBSTRATE_V1",
+    "required_head": "de2fcd66f61e3263e243949f18b0a2cef3a94f8b",
+    "required_tree": "e06cfcff68c63db691587167bad6bb5410f104ac",
+    "entry_gate": "PASS__EXACT_CLEAN_COMMITTED_EX_BASELINE__EMPTY_INDEX",
+    "same_generation_resumption": "PASS__PREVIOUS_EY_STOP_CREATED_ZERO_ARTIFACTS_AND_ZERO_OPERATIONAL_EFFECT",
+    "human_selection": {
+      "selected_vector_id": "CONSUMED",
+      "selection_basis": "EXPLICIT_HUMAN_SELECTION_AFTER_AUTHENTICATED_WITHIN_E05_UNDERDETERMINATION",
+      "admissibility": "PASS__COMMITTED_EM_MATRIX_IDENTIFIES_CONSUMED_AS_ONE_OF_13_UNSATISFIED_OBLIGATIONS",
+      "selection_scope": "ONE_VECTOR_ONLY"
+    },
+    "substrate_authentication": {
+      "result": "PASS",
+      "ex_certificate_path": ".github/governance/evidence/g77_256ex_common_substrate_certification_v1/G77_256EX_P11_SPCE_COMMON_SUBSTRATE_CERTIFICATION_V1.json",
+      "ex_certificate_sha256": "91c477171147c56516c0f473ab887c12173c4bab225f2733c274b32467824b2f",
+      "ex_certificate_inner_sha256": "0aead8523a01fbd4d15b7622580ee0e04f623e3ca514fb92d294fc2330915e96",
+      "ex_validator_sha256": "1d124424f5bb99e1b2845421eff1712efebf81ef292a54d37f371558d9988d2e",
+      "ew_manifest_sha256": "42744ccb19767a9f90ed909f3d99b05622053fd00e97886d8a331bcadfe8675c",
+      "ew_manifest_inner_sha256": "affea45b58f265c094a921b65932d9f9d69c95e6fe4d4359af07432482f6660f",
+      "eu_model_sha256": "ff545e5d6d6e179526c5ef13156296a837787a603cb7b00d4a22a5a1049f106a",
+      "ex_regressions": "12_OF_12_PASS",
+      "ew_regressions": "17_OF_17_PASS",
+      "eu_regressions": "18_OF_18_PASS",
+      "invalidation_trigger_count": 13,
+      "active_invalidation_trigger_count": 0
+    },
+    "proof_classification": {
+      "A_REUSED_CERTIFIED_COMMON": "17_EX_CERTIFIED_COMMON_COMPONENTS__REFERENCED_NOT_COPIED",
+      "B_GENERATION_BOUND": "CURRENT_GIT_IDENTITY__HUMAN_SELECTION__CANDIDATE_AND_PHASE_CHECKPOINTS",
+      "C_VECTOR_SPECIFIC": "CONSUMED_FIRST_EFFECT_AND_POST_CONSUMED_DENIAL_DELTA",
+      "D_FRESH_OPERATIONAL": "B1_EXECUTED_ARGV__B2_PHYSICAL_CUSTODY__B6_COUNTER_ADOPTION__EXECUTION__TEARDOWN"
+    },
+    "anti_reconstruction": {
+      "certified_common_components_available": 17,
+      "certified_common_components_reconstructed": 0,
+      "common_substrate_reconstruction_count": 0,
+      "successor_common_manifest_count": 0,
+      "duplicate_common_validator_count": 0,
+      "parallel_execution_path_count": 0,
+      "reuse_architecture_regression": false
+    },
+    "frontier_before": {
+      "e05": "5/18",
+      "e05_remaining": 13,
+      "consumed_state": "UNSATISFIED",
+      "g2_state": "OPEN",
+      "g3_entry_authorized": false,
+      "p12_entry_authorized": false,
+      "production_route_authorized": false
+    },
+    "operational_counters": {
+      "fresh_operational_candidate_count": 0,
+      "vm_creation_count": 0,
+      "vm_boot_count": 0,
+      "second_vm_count": 0,
+      "second_vector_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0,
+      "e05_case_execution_count": 0,
+      "p11_operational_invocation_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0,
+      "execution_replay_count": 0,
+      "materialization_replay_count": 0
+    },
+    "exact_next_legal_action": "CREATE_MINIMUM_CONSUMED_VECTOR_DELTA_AND_RUN_REPOSITORY_ONLY_PHASE_B_VALIDATION",
+    "checkpoint_is_authority": false,
+    "auto_continuable": false
+  },
+  "checkpoint_sha256": "2ad320fa599f6da42fbad80a0b392f8b5be041984ee0cc9b4d1f8023c6463b1e"
+}
