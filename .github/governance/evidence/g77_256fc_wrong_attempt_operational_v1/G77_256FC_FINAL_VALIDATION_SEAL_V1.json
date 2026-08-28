@@ -1,0 +1,74 @@
+{
+  "schema_id": "G77_256FC_FINAL_VALIDATION_SEAL_ENVELOPE_V1",
+  "seal": {
+    "schema_id": "G77_256FC_FINAL_VALIDATION_SEAL_V1",
+    "generation_identity": "G77_256FC_ONE_FRESH_HUMAN_AUTHORIZED_WRONG_ATTEMPT_OPERATIONAL_COMMISSIONING_V1",
+    "required_head": "f2626906b9a95631d921e6bb9a6947400c03a028",
+    "required_tree": "977a5a5a43350dbe2270778a806dd20d6a31e87b",
+    "artifact_bindings": [
+      {"identity":"FC_PHASE_A_CHECKPOINT","path":".github/governance/evidence/g77_256fc_wrong_attempt_operational_v1/G77_256FC_SPCE_PHASE_A_CHECKPOINT_V1.json","sha256":"e631d583ee5a0fa1b47a4ccdd3977944f6f1c8d6a76444c236d0d109ca13e998","inner_sha256":"4244b56140bdcd94854edf1007c75d2ff3f0ad1e61f774efd41e25e77b813e99"},
+      {"identity":"FC_PHASE_B_FAIL_CLOSED_CHECKPOINT","path":".github/governance/evidence/g77_256fc_wrong_attempt_operational_v1/G77_256FC_SPCE_PHASE_B_FAIL_CLOSED_CHECKPOINT_V1.json","sha256":"b73a44658f2cd601d721235d0d680e63ded33a7e48758dae5fb0086c66084a73","inner_sha256":"ce3664ab6a53945c1d1ba3a23b2bf7cf53b4aa65ec302bcec46cbd78d28917aa"},
+      {"identity":"FC_PHASE_D_FAIL_CLOSED_CHECKPOINT","path":".github/governance/evidence/g77_256fc_wrong_attempt_operational_v1/G77_256FC_SPCE_PHASE_D_FAIL_CLOSED_CHECKPOINT_V1.json","sha256":"636f402a1efe7f1c7951f6a94e0b37ad0974c2fe707c8e3952a29a904ef9d71e","inner_sha256":"676765e9214bb4e86c4744f5ada2435ca0b2c4602922bc7d4f5fcce3a0cc48ef"},
+      {"identity":"FC_G48_REPORT","path":"docs/governance/G77_256FC_CROSS_ACCOUNT_ONE_SHOT_WRONG_ATTEMPT_OPERATIONAL_COMMISSIONING_V1.md","sha256":"7babe48cf2932c8c011cdc27b732573479b656db4a6fd12694230a575ce9ccf4"},
+      {"identity":"FC_REJECTED_CANDIDATE","path":".github/governance/evidence/g77_256fc_wrong_attempt_operational_v1/raw/G77_256FC_CANONICAL_CONTINUATION_MANIFEST_PRE_MATERIALIZATION_V1.json","sha256":"0b1133abee4dbd4a67755726096a46a09a7b0603d00ce855fb8ce997254ace7a"},
+      {"identity":"FC_UNEXECUTED_RUNTIME_PROJECTION","path":".github/governance/evidence/g77_256fc_wrong_attempt_operational_v1/raw/G77_256FC_CONTINUATION_MANIFEST_V1.json","sha256":"0b1133abee4dbd4a67755726096a46a09a7b0603d00ce855fb8ce997254ace7a"}
+    ],
+    "first_authoritative_failure": "DU_UNKNOWN_FIELD_IN_SELECTED_CASE",
+    "failure_stage": "PHASE_B_FIRST_CANDIDATE_DU_STRUCTURAL_SCHEMA_VALIDATION",
+    "failure_class": "VECTOR_SPECIFIC_CANDIDATE_SCHEMA_INCOMPATIBILITY",
+    "operational_reduction": {
+      "vector_functional_result": "NOT_RUN",
+      "wrong_attempt_isolation_result": "NOT_ESTABLISHED",
+      "b1": "NOT_RUN",
+      "b2": "NOT_RUN",
+      "b6": "NOT_RUN",
+      "constitutional_credit_result": "NOT_AWARDED",
+      "e05_before": "6/18",
+      "e05_after": "6/18",
+      "e05_remaining": 12,
+      "wrong_attempt_state_after": "UNSATISFIED"
+    },
+    "one_shot_preservation": {
+      "candidate_count": 1,
+      "second_candidate_count": 0,
+      "replacement_candidate_count": 0,
+      "materialization_count": 0,
+      "vm_creation_count": 0,
+      "vm_boot_count": 0,
+      "qemu_execution_count": 0,
+      "e05_case_execution_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0
+    },
+    "repository_state": {
+      "head_unchanged": true,
+      "tree_unchanged": true,
+      "index_empty": true,
+      "nothing_staged": true,
+      "nothing_committed": true,
+      "nothing_pushed": true,
+      "protected_lineage_unchanged": true,
+      "qemu_process_count": 0,
+      "transient_execution_root_absent": true
+    },
+    "validation": {
+      "entry_gate": "PASS",
+      "phase_a_inner_hash": "PASS",
+      "phase_b_inner_hash": "PASS",
+      "phase_d_inner_hash": "PASS",
+      "candidate_runtime_byte_identity": "PASS",
+      "candidate_unchanged_after_failure": "PASS",
+      "du": "FAIL_CLOSED__UNKNOWN_FIELD",
+      "eb": "NOT_RUN",
+      "ee": "NOT_RUN",
+      "json_unique_keys": "PASS",
+      "g48_structure": "PASS__EXACT_SIX_TOP_LEVEL_SECTIONS",
+      "git_diff_check": "PASS__TRACKED_DIFF_AND_UNTRACKED_SCOPE_WHITESPACE",
+      "final_validation": "PASS__TRUTHFUL_FAIL_CLOSED_FINALIZATION__OPERATIONAL_OBJECTIVE_NOT_ACHIEVED"
+    },
+    "exact_next_constitutional_frontier": "HUMAN_REVIEW__E05_REMAINS_6_OF_18__SEPARATE_AUTHORIZATION_REQUIRED_FOR_ANY_FRESH_CANDIDATE__NO_P12_OR_PRODUCTION",
+    "seal_is_authority": false,
+    "auto_continuable": false
+  },
+  "seal_sha256": "f031d6dc7e7b3081aa75d330f8239497ba5947440a4b73d799640d1857f3b22d"
+}

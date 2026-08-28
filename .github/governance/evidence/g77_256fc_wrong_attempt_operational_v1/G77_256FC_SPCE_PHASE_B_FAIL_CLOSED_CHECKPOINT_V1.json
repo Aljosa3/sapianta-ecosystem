@@ -1,0 +1,101 @@
+{
+  "schema_id": "G77_256FC_SPCE_PHASE_B_FAIL_CLOSED_CHECKPOINT_ENVELOPE_V1",
+  "checkpoint": {
+    "schema_id": "G77_256FC_SPCE_PHASE_B_FAIL_CLOSED_CHECKPOINT_V1",
+    "generation_identity": "G77_256FC_ONE_FRESH_HUMAN_AUTHORIZED_WRONG_ATTEMPT_OPERATIONAL_COMMISSIONING_V1",
+    "phase_a_binding": {
+      "path": ".github/governance/evidence/g77_256fc_wrong_attempt_operational_v1/G77_256FC_SPCE_PHASE_A_CHECKPOINT_V1.json",
+      "sha256": "e631d583ee5a0fa1b47a4ccdd3977944f6f1c8d6a76444c236d0d109ca13e998",
+      "inner_sha256": "4244b56140bdcd94854edf1007c75d2ff3f0ad1e61f774efd41e25e77b813e99"
+    },
+    "candidate_binding": {
+      "path": ".github/governance/evidence/g77_256fc_wrong_attempt_operational_v1/raw/G77_256FC_CANONICAL_CONTINUATION_MANIFEST_PRE_MATERIALIZATION_V1.json",
+      "sha256": "0b1133abee4dbd4a67755726096a46a09a7b0603d00ce855fb8ce997254ace7a",
+      "runtime_projection_path": ".github/governance/evidence/g77_256fc_wrong_attempt_operational_v1/raw/G77_256FC_CONTINUATION_MANIFEST_V1.json",
+      "runtime_projection_sha256": "0b1133abee4dbd4a67755726096a46a09a7b0603d00ce855fb8ce997254ace7a",
+      "candidate_runtime_byte_identity": "PASS",
+      "candidate_identity": "sha256:0b1133abee4dbd4a67755726096a46a09a7b0603d00ce855fb8ce997254ace7a",
+      "generation_identity": "G77_256FC_ONE_FRESH_HUMAN_AUTHORIZED_WRONG_ATTEMPT_OPERATIONAL_COMMISSIONING_V1",
+      "authorized_attempt_identity": "G77_256FC_E05_AUTHORIZED_ATTEMPT_001",
+      "supplied_wrong_attempt_identity": "G77_256FC_E05_SUPPLIED_WRONG_ATTEMPT_002",
+      "candidate_sealed_unchanged_after_failure": true
+    },
+    "artifact_bindings": {
+      "builder_sha256": "e10defbfaf6303f5887f20316bfc2738e559d6769ccb146b62577d696f042db5",
+      "adapter_sha256": "ef564f54fc764ed3968d94365a56a09f06025ea1f534c4a08f818183ddef2e8d",
+      "meta_data_sha256": "9bbc9af65fbd1e8d9f064a9e4f8892c57ba68f69e8b0a5f52ad409d6e66a43d7",
+      "network_config_sha256": "639b6f419a9ac49312b218e12395dc7e7d623d96202c3315a92dcd19d6fa02ba",
+      "user_data_sha256": "827625e594a820d794f8678cb44c274e67e231066198b26ac5013edf588adf3b"
+    },
+    "repository_preflight": {
+      "candidate_runtime_identity": "PASS",
+      "du_cryptographic_authenticity": "NOT_REACHED__STRUCTURAL_SCHEMA_FAILED_FIRST",
+      "du_structural_schema_validity": "FAIL_CLOSED__UNKNOWN_FIELD",
+      "du_semantic_contract_compatibility": "NOT_REACHED",
+      "du_constitutional_admissibility": "NOT_REACHED",
+      "du_result": "FAIL_CLOSED__UNKNOWN_FIELD",
+      "du_error": "UNKNOWN_FIELD: selected_case has unknown fields ['authorized_attempt_identity', 'isolated_semantic_mutation_field', 'obligation_id', 'other_vector_mutation_count', 'supplied_wrong_attempt_identity']",
+      "eb_result": "NOT_RUN__DU_FAILED_FIRST",
+      "ee_result": "NOT_RUN__DU_FAILED_FIRST",
+      "b6_repository_precondition": "NOT_ESTABLISHED__DU_FAILED_BEFORE_EB_EE",
+      "wrong_attempt_isolation_result": "NOT_ESTABLISHED__CANDIDATE_NOT_ADMITTED",
+      "ex_reuse_check": "PASS__REFERENCED_COMMON_SUBSTRATE_NOT_RECONSTRUCTED"
+    },
+    "first_authoritative_failure": {
+      "failure": "DU_UNKNOWN_FIELD_IN_SELECTED_CASE",
+      "stage": "PHASE_B_FIRST_CANDIDATE_DU_STRUCTURAL_SCHEMA_VALIDATION",
+      "class": "VECTOR_SPECIFIC_CANDIDATE_SCHEMA_INCOMPATIBILITY",
+      "authoritative_source": "G77_256DU_CONTINUATION_MANIFEST_COMPATIBILITY_VALIDATOR_V1",
+      "operational_attempt_consumed": false,
+      "candidate_budget_consumed": true,
+      "repair_permitted": false,
+      "replacement_candidate_permitted": false
+    },
+    "candidate_bounds": {
+      "fresh_operational_candidate_count": 1,
+      "second_candidate_count": 0,
+      "replacement_candidate_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0
+    },
+    "operational_counters": {
+      "materialization_count": 0,
+      "vm_creation_count": 0,
+      "vm_boot_count": 0,
+      "qemu_execution_count": 0,
+      "second_vm_count": 0,
+      "second_boot_count": 0,
+      "e05_case_execution_count": 0,
+      "p11_request_count": 0,
+      "pre_attempt_denial_count": 0,
+      "p11_entry_count": 0,
+      "p11_invocation_count": 0,
+      "protected_effect_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0,
+      "production_effect_count": 0
+    },
+    "reuse": {
+      "certified_common_components_available": 17,
+      "certified_common_components_applicable": 17,
+      "certified_common_components_reused": 17,
+      "certified_common_components_reconstructed": 0,
+      "common_substrate_reconstruction_count": 0,
+      "common_validators_reused": 4,
+      "common_validators_created": 0,
+      "new_common_component_count": 0,
+      "new_common_infrastructure_count": 0,
+      "vector_specific_component_count": 2,
+      "fresh_operational_component_count": 0,
+      "reuse_architecture_regression": false,
+      "duplicate_proof_path_created": false,
+      "parallel_flow_created": false,
+      "production_path_delta": 0
+    },
+    "phase_b_result": "FAIL_CLOSED__FIRST_CANDIDATE_NOT_DU_ADMISSIBLE__NO_OPERATIONAL_PROGRESSION",
+    "exact_next_legal_action": "FINALIZATION_ONLY__PRESERVE_CANDIDATE_AND_FAILURE__NO_REPAIR_REPLACEMENT_MATERIALIZATION_VM_BOOT_OR_EXECUTION",
+    "checkpoint_is_authority": false,
+    "auto_continuable": false
+  },
+  "checkpoint_sha256": "ce3664ab6a53945c1d1ba3a23b2bf7cf53b4aa65ec302bcec46cbd78d28917aa"
+}
