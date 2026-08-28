@@ -1,0 +1,110 @@
+{
+  "schema_id": "G77_256EZ_SPCE_PHASE_C_CHECKPOINT_ENVELOPE_V1",
+  "checkpoint": {
+    "schema_id": "G77_256EZ_SPCE_PHASE_C_CHECKPOINT_V1",
+    "generation_identity": "G77_256EZ_CROSS_ACCOUNT_REPOSITORY_ONLY_STATIC_EE_RUNTIME_PATH_BINDING_HARDENING_V1",
+    "phase_b_binding": {
+      "path": ".github/governance/evidence/g77_256ez_static_ee_binding_hardening_v1/G77_256EZ_SPCE_PHASE_B_CHECKPOINT_V1.json",
+      "sha256": "9f8c3699c2e15c18821919b8e6578972179390038e1b5fd2787772d664578ab3",
+      "inner_sha256": "25fe76ff1be4cd9bb2cd17ca6ef6ce8cf5b72895862d607f1bfdfed8bef5bea9"
+    },
+    "implementation_bindings": [
+      {
+        "identity": "EZ_STATIC_EE_RUNTIME_PATH_BINDING_FIXTURE",
+        "classification": "NEW_REPOSITORY_BINDING",
+        "path": ".github/governance/evidence/g77_256ez_static_ee_binding_hardening_v1/binding/G77_256EZ_STATIC_EE_RUNTIME_PATH_BINDING_FIXTURE_V1.py",
+        "sha256": "45c293ec33f76c35880958490b05e22f23be9c43d6c16b28dc2ab56bb3e12017"
+      },
+      {
+        "identity": "EZ_STATIC_EE_RUNTIME_PATH_BINDING_REGRESSION",
+        "classification": "REGRESSION_EVIDENCE",
+        "path": ".github/governance/evidence/g77_256ez_static_ee_binding_hardening_v1/validation/G77_256EZ_STATIC_EE_RUNTIME_PATH_BINDING_REGRESSION_V1.py",
+        "sha256": "b097bd0b5f7aa6063ade8cff68a34ed5e2b4b94c46aef8d178393849d9c8cdd4"
+      },
+      {
+        "identity": "EZ_STATIC_EE_RUNTIME_PATH_BINDING_REGRESSION_EVIDENCE",
+        "classification": "REGRESSION_EVIDENCE",
+        "path": ".github/governance/evidence/g77_256ez_static_ee_binding_hardening_v1/G77_256EZ_STATIC_EE_RUNTIME_PATH_BINDING_REGRESSION_EVIDENCE_V1.json",
+        "sha256": "9eae3576f4e08893801d50db9c177a72be8d4af4760721cdf543a30452cb425b"
+      }
+    ],
+    "positive_regression": {
+      "static_raw_root_declaration": "AUTHENTICATABLE",
+      "static_continuation_manifest_path_declaration": "AUTHENTICATABLE",
+      "du_candidate_validation": "PASS__TRANSIENT_SYNTHETIC_FIXTURE_ONLY",
+      "eb_candidate_binding": "PASS__TRANSIENT_SYNTHETIC_FIXTURE_ONLY",
+      "ee_runtime_consumer_binding": "PASS_FOR_REPOSITORY_PRECONDITION",
+      "candidate_runtime_byte_identity": "PASS",
+      "candidate_runtime_semantic_identity": "PASS",
+      "post_binding_artifact_reauthentication": "PASS",
+      "persistent_candidate_created": false
+    },
+    "negative_regression": {
+      "case_count": 11,
+      "pass_count": 11,
+      "fail_count": 0,
+      "all_invalid_cases_fail_closed": true,
+      "covered_cases": [
+        "MISSING_RAW_ROOT",
+        "MISSING_CONTINUATION_MANIFEST_PATH",
+        "DYNAMIC_ONLY_RAW_ROOT",
+        "DYNAMIC_ONLY_CONTINUATION_MANIFEST_PATH",
+        "DECLARED_PATH_MISMATCH",
+        "UNEXPECTED_PATH_MUTATION",
+        "CANDIDATE_HASH_MISMATCH",
+        "WRONG_MANIFEST_IDENTITY",
+        "WRONG_GENERATION_IDENTITY",
+        "MALFORMED_STATIC_DECLARATION",
+        "DUPLICATE_OR_AMBIGUOUS_DECLARATION"
+      ]
+    },
+    "hardening_reduction": {
+      "static_ee_runtime_path_binding": "PASS__REPOSITORY_PRECONDITION_HARDENED",
+      "b6_repository_precondition": "PASS__STATIC_EE_BINDING_HARDENED",
+      "b6_operational_state": "OPEN__FRESH_OPERATIONAL_PRODUCER_CONSUMER_EVIDENCE_REQUIRED",
+      "b1_state": "OPEN__FRESH_OPERATIONAL_EVIDENCE_REQUIRED",
+      "b2_state": "REPOSITORY_CONTRACT_CERTIFIED__FRESH_PHYSICAL_CUSTODY_EVIDENCE_REQUIRED",
+      "ee_validator_modified": false,
+      "ee_validation_strength_weakened": false,
+      "historical_ey_modified": false
+    },
+    "reuse": {
+      "certified_common_components_available": 17,
+      "certified_common_components_applicable": 17,
+      "certified_common_components_reused": 17,
+      "certified_common_components_reconstructed": 0,
+      "common_substrate_reconstruction_count": 0,
+      "common_validators_reused": 3,
+      "common_validators_created": 0,
+      "common_manifests_reused": 1,
+      "common_manifests_created": 0,
+      "ey_failure_artifacts_reused": 10,
+      "new_repository_binding_artifacts": 1,
+      "new_common_infrastructure_count": 0,
+      "reuse_architecture_regression": false
+    },
+    "zero_operational_effect": {
+      "materialization_count": 0,
+      "vm_creation_count": 0,
+      "vm_boot_count": 0,
+      "qemu_execution_count": 0,
+      "p11_operational_invocation_count": 0,
+      "e05_case_execution_count": 0,
+      "protected_effect_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0,
+      "production_effect_count": 0,
+      "temporary_regression_residue_count": 0
+    },
+    "frontier": {
+      "e05_before": "5/18",
+      "e05_after": "5/18",
+      "e05_remaining": 13,
+      "consumed_state": "UNSATISFIED"
+    },
+    "exact_next_legal_action": "INDEPENDENT_REDUCTION_G48_REPORT_AND_FINAL_VALIDATION_SEAL_ONLY",
+    "checkpoint_is_authority": false,
+    "auto_continuable": false
+  },
+  "checkpoint_sha256": "79aa9c5b0f52b8a08f41cbccd98b7ee736e25727da5b10e109f722cbcf67a765"
+}

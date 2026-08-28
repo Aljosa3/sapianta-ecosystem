@@ -1,0 +1,69 @@
+{
+  "schema_id": "G77_256EZ_SPCE_PHASE_B_CHECKPOINT_ENVELOPE_V1",
+  "checkpoint": {
+    "schema_id": "G77_256EZ_SPCE_PHASE_B_CHECKPOINT_V1",
+    "generation_identity": "G77_256EZ_CROSS_ACCOUNT_REPOSITORY_ONLY_STATIC_EE_RUNTIME_PATH_BINDING_HARDENING_V1",
+    "phase_a_binding": {
+      "path": ".github/governance/evidence/g77_256ez_static_ee_binding_hardening_v1/G77_256EZ_SPCE_PHASE_A_CHECKPOINT_V1.json",
+      "sha256": "501fe82dcd5f6a9bcd5afa4e28a6b736d55ff46edbdc23c96dec85c269f3a664",
+      "inner_sha256": "858fd972ad98e827bfb8b4a1055f1df13aa5481a36ed45eb512b9f37c7be3991"
+    },
+    "ey_failure_reproduction": {
+      "validator_identity": "G77_256EE_RUNTIME_CONSUMER_BINDING_VALIDATOR_V1",
+      "validator_sha256": "5e4b35b3c7e7e23e5b7209c5f56e8a70055eac9a3deef32bc288b210e80f9410",
+      "immutable_ey_adapter_path": ".github/governance/evidence/g77_256ey_consumed_operational_v1/harness/G77_256EY_CONSUMED_VECTOR_ADAPTER_V1.py",
+      "immutable_ey_adapter_sha256": "d56c48cb93e6e174fade9d18c843f4c64924f360441da7e61794ab0447f34823",
+      "expected_failure_code": "HARNESS_EXPECTED_PATH_DECLARATION_MISSING",
+      "observed_failure_code": "HARNESS_EXPECTED_PATH_DECLARATION_MISSING",
+      "result": "PASS__EXACT_COMMITTED_EY_EE_FAILURE_REPRODUCED_WITHOUT_EXECUTING_ADAPTER"
+    },
+    "defect_reduction": {
+      "expected_static_declaration": [
+        "RAW_ROOT = Path(ABSOLUTE_RUNTIME_ROOT)",
+        "CONTINUATION_MANIFEST_PATH = RAW_ROOT / LITERAL_RUNTIME_FILENAME"
+      ],
+      "actual_ey_declaration": [
+        "RAW_ROOT_IS_ONE_TOP_LEVEL_STATIC_ASSIGNMENT",
+        "CONTINUATION_MANIFEST_PATH_IS_ONLY_ASSIGNED_AS_ER_ATTRIBUTE_INSIDE_CONFIGURE"
+      ],
+      "missing_binding": "TOP_LEVEL_SINGLE_NAME_CONTINUATION_MANIFEST_PATH_ASSIGNMENT_IN_CANDIDATE_BOUND_HARNESS_BYTES",
+      "ee_authentication_method": "PYTHON_AST_PARSE_WITHOUT_IMPORT_OR_EXECUTION__THEN_HARNESS_FILE_SHA256_BINDING_IN_EE_RECEIPT",
+      "candidate_bound_bytes": "EY_CANDIDATE_EXTENSION_BINDING_HASHES_THE_EXACT_ADAPTER_BYTES__EB_HASH_BINDS_CANDIDATE__EE_BINDS_HARNESS_CANDIDATE_RUNTIME_AND_EB_RECEIPT",
+      "dynamic_assignment_rejection_reason": "EE_DOES_NOT_EXECUTE_CONFIGURE_AND_ONLY_EXTRACTS_MODULE_LEVEL_AST_ASSIGNMENTS_TO_RAW_ROOT_AND_CONTINUATION_MANIFEST_PATH",
+      "responsible_existing_boundary": "PRODUCER_CONSUMER_INTERFACE__VECTOR_ADAPTER_STATIC_DECLARATION_FORM",
+      "defect_scope": "GENERATION_AND_VECTOR_SPECIFIC_BINDING_FORM_USING_EXISTING_CERTIFIED_EE_CONTRACT",
+      "minimum_correction": "FUTURE_GENERATION_ADAPTER_MUST_DECLARE_BOTH_PATHS_ONCE_AT_MODULE_SCOPE_USING_THE_EXISTING_EE_STATIC_PATH_EXPRESSION_GRAMMAR_BEFORE_CANDIDATE_HASH_BINDING",
+      "ex_invalidation_status": "NOT_ACTIVATED",
+      "active_ex_invalidation_trigger_count": 0
+    },
+    "artifact_role_classification": {
+      "ex_ew_eu_ei_du_eb_ee": "REUSED_CERTIFIED_COMMON",
+      "ey_report_checkpoints_seal_candidate_runtime_adapter_eb_receipt": "REUSED_COMMITTED_EY_FAILURE",
+      "literal_static_path_fixture_and_unambiguous_declaration_contract": "NEW_REPOSITORY_BINDING",
+      "positive_and_negative_runner_and_receipt": "REGRESSION_EVIDENCE",
+      "ez_checkpoints_report_and_seal": "FINAL_REDUCTION"
+    },
+    "minimum_hardening_plan": {
+      "new_common_component_count": 0,
+      "new_generation_binding_count": 1,
+      "new_vector_specific_binding_count": 0,
+      "new_common_infrastructure_count": 0,
+      "why_new_artifact_required": "HISTORICAL_EY_BYTES_ARE_IMMUTABLE__A_NON_OPERATIONAL_LITERAL_FIXTURE_IS_REQUIRED_TO_PROVE_THE_EXACT_FUTURE_ADAPTER_DECLARATION_FORM_WITHOUT_CREATING_A_CANDIDATE",
+      "existing_ee_declaration_language_reused": true,
+      "ee_validator_modified": false
+    },
+    "anti_reconstruction": {
+      "common_substrate_reconstruction_count": 0,
+      "successor_common_manifest_count": 0,
+      "duplicate_common_validator_count": 0,
+      "parallel_common_proof_stack_count": 0,
+      "parallel_execution_path_count": 0,
+      "duplicate_proof_path_created": false,
+      "reuse_architecture_regression": false
+    },
+    "exact_next_legal_action": "IMPLEMENT_ONE_LITERAL_NON_OPERATIONAL_STATIC_BINDING_FIXTURE_AND_REPOSITORY_ONLY_REGRESSION_RUNNER",
+    "checkpoint_is_authority": false,
+    "auto_continuable": false
+  },
+  "checkpoint_sha256": "25fe76ff1be4cd9bb2cd17ca6ef6ce8cf5b72895862d607f1bfdfed8bef5bea9"
+}

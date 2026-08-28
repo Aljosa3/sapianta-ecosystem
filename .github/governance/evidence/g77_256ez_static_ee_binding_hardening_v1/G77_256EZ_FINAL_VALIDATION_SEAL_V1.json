@@ -1,0 +1,152 @@
+{
+  "schema_id": "G77_256EZ_FINAL_VALIDATION_SEAL_ENVELOPE_V1",
+  "seal": {
+    "schema_id": "G77_256EZ_FINAL_VALIDATION_SEAL_V1",
+    "generation_identity": "G77_256EZ_CROSS_ACCOUNT_REPOSITORY_ONLY_STATIC_EE_RUNTIME_PATH_BINDING_HARDENING_V1",
+    "baseline": {
+      "required_head": "dd54760d41999bc13541b251b3716fa896444d67",
+      "required_tree": "144c39e25956371927644ce03c4a18b60bf8c835",
+      "required_subject": "G77-256EY fail closed CONSUMED at EE runtime binding",
+      "entry_gate": "PASS"
+    },
+    "artifact_bindings": [
+      {
+        "identity": "EZ_PHASE_A_CHECKPOINT",
+        "path": ".github/governance/evidence/g77_256ez_static_ee_binding_hardening_v1/G77_256EZ_SPCE_PHASE_A_CHECKPOINT_V1.json",
+        "sha256": "501fe82dcd5f6a9bcd5afa4e28a6b736d55ff46edbdc23c96dec85c269f3a664",
+        "inner_sha256": "858fd972ad98e827bfb8b4a1055f1df13aa5481a36ed45eb512b9f37c7be3991"
+      },
+      {
+        "identity": "EZ_PHASE_B_CHECKPOINT",
+        "path": ".github/governance/evidence/g77_256ez_static_ee_binding_hardening_v1/G77_256EZ_SPCE_PHASE_B_CHECKPOINT_V1.json",
+        "sha256": "9f8c3699c2e15c18821919b8e6578972179390038e1b5fd2787772d664578ab3",
+        "inner_sha256": "25fe76ff1be4cd9bb2cd17ca6ef6ce8cf5b72895862d607f1bfdfed8bef5bea9"
+      },
+      {
+        "identity": "EZ_STATIC_BINDING_FIXTURE",
+        "path": ".github/governance/evidence/g77_256ez_static_ee_binding_hardening_v1/binding/G77_256EZ_STATIC_EE_RUNTIME_PATH_BINDING_FIXTURE_V1.py",
+        "sha256": "45c293ec33f76c35880958490b05e22f23be9c43d6c16b28dc2ab56bb3e12017"
+      },
+      {
+        "identity": "EZ_REGRESSION_RUNNER",
+        "path": ".github/governance/evidence/g77_256ez_static_ee_binding_hardening_v1/validation/G77_256EZ_STATIC_EE_RUNTIME_PATH_BINDING_REGRESSION_V1.py",
+        "sha256": "b097bd0b5f7aa6063ade8cff68a34ed5e2b4b94c46aef8d178393849d9c8cdd4"
+      },
+      {
+        "identity": "EZ_REGRESSION_EVIDENCE",
+        "path": ".github/governance/evidence/g77_256ez_static_ee_binding_hardening_v1/G77_256EZ_STATIC_EE_RUNTIME_PATH_BINDING_REGRESSION_EVIDENCE_V1.json",
+        "sha256": "9eae3576f4e08893801d50db9c177a72be8d4af4760721cdf543a30452cb425b"
+      },
+      {
+        "identity": "EZ_PHASE_C_CHECKPOINT",
+        "path": ".github/governance/evidence/g77_256ez_static_ee_binding_hardening_v1/G77_256EZ_SPCE_PHASE_C_CHECKPOINT_V1.json",
+        "sha256": "fabfe165c3ae7027609b400f1600f5fffc302c049dcf695afc1797a642074e1c",
+        "inner_sha256": "79aa9c5b0f52b8a08f41cbccd98b7ee736e25727da5b10e109f722cbcf67a765"
+      },
+      {
+        "identity": "EZ_G48_REPORT",
+        "path": "docs/governance/G77_256EZ_CROSS_ACCOUNT_REPOSITORY_ONLY_STATIC_EE_RUNTIME_PATH_BINDING_HARDENING_V1.md",
+        "sha256": "668e283ccb9b24f00165070ab3ed28bd3652d574e940c43ca1904f2546e982c9"
+      },
+      {
+        "identity": "EZ_PHASE_D_FINAL_CHECKPOINT",
+        "path": ".github/governance/evidence/g77_256ez_static_ee_binding_hardening_v1/G77_256EZ_SPCE_PHASE_D_FINAL_CHECKPOINT_V1.json",
+        "sha256": "f910d779a087607da3c689536160c897fb2fd968eb361fa856c27cf3491009b4",
+        "inner_sha256": "8cbbce416eca1512686c443c7fb8f656fdf56a2018e860ec26f30e929216a647"
+      }
+    ],
+    "historical_ey_authentication": {
+      "first_authenticated_failure": "B6_PRE_OPERATIONAL_RUNTIME_CONSUMER_BINDING__HARNESS_EXPECTED_PATH_DECLARATION_MISSING",
+      "final_validation": "PASS__TRUTHFUL_FAIL_CLOSED_PRE_OPERATIONAL_FINALIZATION",
+      "adapter_sha256": "d56c48cb93e6e174fade9d18c843f4c64924f360441da7e61794ab0447f34823",
+      "candidate_sha256": "5ce7e1a85078b856cdaf8880147252b58de42a68ee86a94dd2a0826dd7a6ef5c",
+      "runtime_projection_sha256": "5ce7e1a85078b856cdaf8880147252b58de42a68ee86a94dd2a0826dd7a6ef5c",
+      "eb_receipt_sha256": "862809c2612546bfccd7d7eafd33f86ec788e185f79a58e1036270ccbe45f5a6",
+      "final_seal_sha256": "497acbab8fb985ccdcdeff8fa0e1697a94912eb965bda7cab8b26619396788ca",
+      "historical_mutation_count": 0,
+      "candidate_repaired": false,
+      "retroactive_credit": false
+    },
+    "validation": {
+      "final_validation": "PASS__REPOSITORY_PRECONDITION_HARDENED__OPERATIONAL_EVIDENCE_EXCLUDED",
+      "cross_account_reconstruction": "PASS",
+      "substrate_authentication": "PASS__EX_12_OF_12__EW_17_OF_17__EU_18_OF_18",
+      "ey_hash_and_inner_identity": "PASS",
+      "exact_ey_failure_reproduction": "PASS",
+      "static_raw_root_authentication": "PASS",
+      "static_continuation_manifest_path_authentication": "PASS",
+      "du_transient_synthetic_validation": "PASS",
+      "eb_transient_synthetic_binding": "PASS",
+      "ee_repository_precondition": "PASS",
+      "negative_regressions": "PASS__11_OF_11",
+      "json_unique_keys": "PASS",
+      "checkpoint_inner_hashes": "PASS",
+      "cross_artifact_hashes": "PASS",
+      "g48_structure": "PASS__EXACT_SIX_TOP_LEVEL_SECTIONS",
+      "anti_reconstruction": "PASS__ZERO_COMMON_RECONSTRUCTION",
+      "anti_parallelism": "PASS__NO_PARALLEL_FLOW",
+      "git_diff_check": "PASS",
+      "process_and_temp_hygiene": "PASS"
+    },
+    "boundary_reduction": {
+      "static_ee_runtime_path_binding_result": "PASS__REPOSITORY_PRECONDITION_HARDENED",
+      "b1_state": "OPEN__FRESH_OPERATIONAL_EVIDENCE_REQUIRED",
+      "b2_state": "REPOSITORY_CONTRACT_CERTIFIED__FRESH_PHYSICAL_CUSTODY_EVIDENCE_REQUIRED",
+      "b6_repository_precondition": "PASS__STATIC_EE_BINDING_HARDENED",
+      "b6_operational_state": "OPEN__FRESH_OPERATIONAL_PRODUCER_CONSUMER_EVIDENCE_REQUIRED"
+    },
+    "reuse": {
+      "certified_common_components_available": 17,
+      "certified_common_components_applicable": 17,
+      "certified_common_components_reused": 17,
+      "certified_common_components_reconstructed": 0,
+      "common_substrate_reconstruction_count": 0,
+      "common_validators_created": 0,
+      "new_common_component_count": 0,
+      "new_generation_binding_count": 1,
+      "new_vector_specific_binding_count": 0,
+      "new_common_infrastructure_count": 0,
+      "reuse_architecture_regression": false,
+      "parallel_flow_created": false,
+      "production_path_delta": 0,
+      "capability_reachability_loss": "NONE",
+      "duplicate_proof_path_created": false
+    },
+    "zero_operational_effect": {
+      "materialization_count": 0,
+      "vm_creation_count": 0,
+      "vm_boot_count": 0,
+      "qemu_execution_count": 0,
+      "p11_operational_invocation_count": 0,
+      "e05_case_execution_count": 0,
+      "protected_effect_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0,
+      "production_effect_count": 0
+    },
+    "frontier": {
+      "e05_before": "5/18",
+      "e05_after": "5/18",
+      "e05_remaining": 13,
+      "consumed_state": "UNSATISFIED",
+      "exact_next_constitutional_frontier": "SEPARATELY_HUMAN_AUTHORIZED_FRESH_CONSUMED_OPERATIONAL_GENERATION",
+      "recommended_next_generation": "G77_256FA_SEPARATELY_HUMAN_AUTHORIZED_FRESH_CONSUMED_OPERATIONAL_GENERATION__NEW_CANDIDATE__FRESH_B1_B2_B6__AT_MOST_ONE_VM_ONE_BOOT_ONE_VECTOR"
+    },
+    "repository_state": {
+      "head_unchanged": true,
+      "tree_unchanged": true,
+      "index_empty": true,
+      "only_authorized_ez_untracked_files": true,
+      "ey_artifacts_unchanged": true,
+      "no_qemu_process": true,
+      "no_vm_or_overlay_or_seed": true,
+      "no_regression_temp_or_cache_residue": true,
+      "nothing_staged": true,
+      "nothing_committed": true,
+      "nothing_pushed": true
+    },
+    "seal_is_authority": false,
+    "auto_continuable": false
+  },
+  "seal_sha256": "742aaec9b59455f99a9a874edcfa7eba8ba4261f542e86195c8e35b82d7a8f1e"
+}

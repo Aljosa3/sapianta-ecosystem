@@ -1,0 +1,94 @@
+{
+  "schema_id": "G77_256EZ_SPCE_PHASE_D_FINAL_CHECKPOINT_ENVELOPE_V1",
+  "checkpoint": {
+    "schema_id": "G77_256EZ_SPCE_PHASE_D_FINAL_CHECKPOINT_V1",
+    "generation_identity": "G77_256EZ_CROSS_ACCOUNT_REPOSITORY_ONLY_STATIC_EE_RUNTIME_PATH_BINDING_HARDENING_V1",
+    "required_head": "dd54760d41999bc13541b251b3716fa896444d67",
+    "required_tree": "144c39e25956371927644ce03c4a18b60bf8c835",
+    "phase_c_binding": {
+      "path": ".github/governance/evidence/g77_256ez_static_ee_binding_hardening_v1/G77_256EZ_SPCE_PHASE_C_CHECKPOINT_V1.json",
+      "sha256": "fabfe165c3ae7027609b400f1600f5fffc302c049dcf695afc1797a642074e1c",
+      "inner_sha256": "79aa9c5b0f52b8a08f41cbccd98b7ee736e25727da5b10e109f722cbcf67a765"
+    },
+    "g48_report_binding": {
+      "path": "docs/governance/G77_256EZ_CROSS_ACCOUNT_REPOSITORY_ONLY_STATIC_EE_RUNTIME_PATH_BINDING_HARDENING_V1.md",
+      "sha256": "668e283ccb9b24f00165070ab3ed28bd3652d574e940c43ca1904f2546e982c9",
+      "structure": "PASS__EXACT_SIX_TOP_LEVEL_SECTIONS"
+    },
+    "phase_results": {
+      "phase_a": "PASS__EXACT_EY_BASELINE_AND_COMMITTED_FRONTIER_AUTHENTICATED_CROSS_ACCOUNT",
+      "phase_b": "PASS__EXACT_EY_EE_FAILURE_REPRODUCED_AND_MINIMUM_DEFECT_REDUCED",
+      "phase_c": "PASS__STATIC_EE_REPOSITORY_PRECONDITION_HARDENED__11_OF_11_NEGATIVES_FAIL_CLOSED",
+      "phase_d": "PASS__INDEPENDENT_REDUCTION__OPERATIONAL_BOUNDARIES_REMAIN_OPEN"
+    },
+    "independent_reduction": {
+      "static_ee_runtime_path_binding": "PASS__REPOSITORY_PRECONDITION_HARDENED",
+      "b6_repository_precondition": "PASS__STATIC_EE_BINDING_HARDENED",
+      "b6_operational_state": "OPEN__FRESH_OPERATIONAL_PRODUCER_CONSUMER_EVIDENCE_REQUIRED",
+      "b1_state": "OPEN__FRESH_OPERATIONAL_EVIDENCE_REQUIRED",
+      "b2_state": "REPOSITORY_CONTRACT_CERTIFIED__FRESH_PHYSICAL_CUSTODY_EVIDENCE_REQUIRED",
+      "candidate_capability": "STATIC_EE_AUTHENTICATABLE_FUTURE_CANDIDATE_BINDING__REPOSITORY_PRECONDITION_ONLY",
+      "historical_ey_result_unchanged": "PASS__TRUTHFUL_FAIL_CLOSED_PRE_OPERATIONAL_FINALIZATION",
+      "historical_ey_retroactive_credit": false
+    },
+    "constitutional_health": {
+      "evidence": "POSITIVE_PASS__11_OF_11_NEGATIVES_PASS__ZERO_EY_MUTATION__ZERO_OPERATIONAL_EFFECT__ZERO_COMMON_RECONSTRUCTION",
+      "result": "PASS__FAIL_CLOSED_STRENGTH_AND_HUMAN_BOUNDARIES_PRESERVED",
+      "ee_validation_strength_weakened": false,
+      "human_authorization_boundaries_preserved": true,
+      "anti_repair_preserved": true,
+      "anti_reconstruction_preserved": true
+    },
+    "reuse": {
+      "certified_common_components_available": 17,
+      "certified_common_components_applicable": 17,
+      "certified_common_components_reused": 17,
+      "certified_common_components_reconstructed": 0,
+      "common_substrate_reconstruction_count": 0,
+      "common_validators_created": 0,
+      "successor_common_manifest_count": 0,
+      "parallel_common_proof_stack_count": 0,
+      "new_common_infrastructure_count": 0,
+      "reuse_architecture_regression": false
+    },
+    "cross_account_reduction": {
+      "cross_account_continuation_used": true,
+      "cross_account_continuation_result": "PASS",
+      "conversation_history_required": false,
+      "full_history_reconstruction_required": false,
+      "repository_evidence_sufficient": true,
+      "cross_llm_continuation_used": false,
+      "clrec_constitutionally_certified": false
+    },
+    "frontier": {
+      "e05_before": "5/18",
+      "e05_after": "5/18",
+      "e05_remaining": 13,
+      "consumed_state": "UNSATISFIED",
+      "exact_next_constitutional_frontier": "SEPARATELY_HUMAN_AUTHORIZED_FRESH_CONSUMED_OPERATIONAL_GENERATION",
+      "recommended_next_generation": "G77_256FA_SEPARATELY_HUMAN_AUTHORIZED_FRESH_CONSUMED_OPERATIONAL_GENERATION__NEW_CANDIDATE__FRESH_B1_B2_B6__AT_MOST_ONE_VM_ONE_BOOT_ONE_VECTOR"
+    },
+    "zero_effect": {
+      "materialization_count": 0,
+      "vm_creation_count": 0,
+      "vm_boot_count": 0,
+      "qemu_execution_count": 0,
+      "p11_operational_invocation_count": 0,
+      "e05_case_execution_count": 0,
+      "protected_effect_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0,
+      "production_effect_count": 0
+    },
+    "production_path_invariant": {
+      "parallel_flow_created": false,
+      "production_path_delta": 0,
+      "capability_reachability_loss": "NONE",
+      "duplicate_proof_path_created": false
+    },
+    "final_validation": "PASS__REPOSITORY_PRECONDITION_HARDENED__OPERATIONAL_EVIDENCE_EXCLUDED",
+    "auto_continuable": false,
+    "checkpoint_is_authority": false
+  },
+  "checkpoint_sha256": "8cbbce416eca1512686c443c7fb8f656fdf56a2018e860ec26f30e929216a647"
+}

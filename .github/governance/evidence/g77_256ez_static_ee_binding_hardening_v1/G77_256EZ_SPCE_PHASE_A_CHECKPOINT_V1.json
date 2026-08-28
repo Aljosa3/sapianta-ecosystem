@@ -1,0 +1,101 @@
+{
+  "schema_id": "G77_256EZ_SPCE_PHASE_A_CHECKPOINT_ENVELOPE_V1",
+  "checkpoint": {
+    "schema_id": "G77_256EZ_SPCE_PHASE_A_CHECKPOINT_V1",
+    "generation_identity": "G77_256EZ_CROSS_ACCOUNT_REPOSITORY_ONLY_STATIC_EE_RUNTIME_PATH_BINDING_HARDENING_V1",
+    "entry_gate": {
+      "result": "PASS",
+      "authenticated_head": "dd54760d41999bc13541b251b3716fa896444d67",
+      "authenticated_tree": "144c39e25956371927644ce03c4a18b60bf8c835",
+      "authenticated_subject": "G77-256EY fail closed CONSUMED at EE runtime binding",
+      "worktree_before_ez": "CLEAN",
+      "index": "EMPTY"
+    },
+    "cross_account_continuation_baseline": "AUTHENTICATED__EXACT_COMMITTED_EY_FAIL_CLOSED_STATE",
+    "cross_account_authentication": {
+      "cross_account_continuation_used": true,
+      "conversation_history_required": false,
+      "full_history_reconstruction_required": false,
+      "repository_evidence_sufficient": true,
+      "result": "PASS__EXACT_FRONTIER_RECONSTRUCTED_FROM_COMMITTED_REPOSITORY_EVIDENCE"
+    },
+    "substrate_authentication": {
+      "result": "PASS",
+      "ex_certificate_path": ".github/governance/evidence/g77_256ex_common_substrate_certification_v1/G77_256EX_P11_SPCE_COMMON_SUBSTRATE_CERTIFICATION_V1.json",
+      "ex_certificate_sha256": "91c477171147c56516c0f473ab887c12173c4bab225f2733c274b32467824b2f",
+      "ex_certificate_inner_sha256": "0aead8523a01fbd4d15b7622580ee0e04f623e3ca514fb92d294fc2330915e96",
+      "ex_validator_sha256": "1d124424f5bb99e1b2845421eff1712efebf81ef292a54d37f371558d9988d2e",
+      "ew_manifest_sha256": "42744ccb19767a9f90ed909f3d99b05622053fd00e97886d8a331bcadfe8675c",
+      "ew_manifest_inner_sha256": "affea45b58f265c094a921b65932d9f9d69c95e6fe4d4359af07432482f6660f",
+      "eu_model_sha256": "c9e58bdd21d1a30eb55fdd610d5658b6d50eff5a11ece6dc8496f65678d75b61",
+      "eu_model_inner_sha256": "ff545e5d6d6e179526c5ef13156296a837787a603cb7b00d4a22a5a1049f106a",
+      "ex_regressions": "12_OF_12_PASS",
+      "ew_regressions": "17_OF_17_PASS",
+      "eu_regressions": "18_OF_18_PASS",
+      "certified_common_components_available": 17,
+      "certified_common_components_applicable": 17,
+      "certified_common_components_reused": 17,
+      "certified_common_components_reconstructed": 0,
+      "common_substrate_reconstruction_count": 0
+    },
+    "authenticated_ey_reduction": {
+      "final_validation": "PASS__TRUTHFUL_FAIL_CLOSED_PRE_OPERATIONAL_FINALIZATION",
+      "human_selected_vector": "CONSUMED",
+      "selected_vector_id": "CONSUMED",
+      "first_authoritative_failure": "B6_PRE_OPERATIONAL_RUNTIME_CONSUMER_BINDING__HARNESS_EXPECTED_PATH_DECLARATION_MISSING",
+      "b1_result": "NOT_RUN__B6_PRE_OPERATIONAL_FIRST_FAILURE",
+      "b2_result": "NOT_COMPLETED__B6_PRE_OPERATIONAL_FIRST_FAILURE",
+      "b6_result": "FAIL__CERTIFIED_EE_RUNTIME_CONSUMER_BINDING_NOT_ESTABLISHED",
+      "fresh_operational_candidate_count": 1,
+      "vm_creation_count": 0,
+      "vm_boot_count": 0,
+      "e05_case_execution_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0,
+      "vector_functional_result": "NOT_RUN",
+      "constitutional_credit_result": "NOT_AWARDED__FAIL_CLOSED_BEFORE_MATERIALIZATION",
+      "e05_before": "5/18",
+      "e05_after": "5/18",
+      "e05_remaining": 13,
+      "consumed_state_after": "UNSATISFIED"
+    },
+    "ey_artifact_authentication": {
+      "phase_a_sha256": "2c8b99926018f46290d8e1aaf8c7ada8e9f694f44b19729eabef7f97351f5ec3",
+      "phase_b_sha256": "1d12099a311a6f7c019a7131bb514c59d61475f67d662a270c7d1453642ce985",
+      "phase_c_failure_sha256": "74b304f873c71c3d6d79aec843e85aa57b01c318d81bb1022e14a52cef5513be",
+      "phase_e_sha256": "0e735f9fb9a36dfbdddf7f0e5b8f8cb117b18a9e8109c49feedc3e0183b2dc0d",
+      "final_seal_sha256": "497acbab8fb985ccdcdeff8fa0e1697a94912eb965bda7cab8b26619396788ca",
+      "candidate_sha256": "5ce7e1a85078b856cdaf8880147252b58de42a68ee86a94dd2a0826dd7a6ef5c",
+      "runtime_projection_sha256": "5ce7e1a85078b856cdaf8880147252b58de42a68ee86a94dd2a0826dd7a6ef5c",
+      "adapter_sha256": "d56c48cb93e6e174fade9d18c843f4c64924f360441da7e61794ab0447f34823",
+      "builder_sha256": "5c9454b80d1e877c8b6c2c34abbed26614f6cc7e4f84162ef27c9cf0682495de",
+      "eb_receipt_sha256": "862809c2612546bfccd7d7eafd33f86ec788e185f79a58e1036270ccbe45f5a6",
+      "g48_report_sha256": "96a3de07d343c31ca9e59860cfae78e695b79e30fa7fb23dc941b88a81753a88",
+      "all_sealed_outer_hashes": "PASS",
+      "all_sealed_inner_hashes": "PASS",
+      "candidate_runtime_exact_bytes_equal": true,
+      "historical_current_head_reuse": "FAIL_CLOSED__REQUIRED_HEAD_MISMATCH",
+      "ey_historical_mutation_count": 0
+    },
+    "proof_classification": {
+      "A_REUSED_CERTIFIED_COMMON": "EX_EW_EU_EI_DU_EB_EE_AND_17_COMPONENT_COMMON_STRUCTURE",
+      "B_REUSED_COMMITTED_EY_FAILURE": "EY_REPORT_CHECKPOINTS_SEAL_CANDIDATE_RUNTIME_ADAPTER_AND_EB_RECEIPT",
+      "C_NEW_REPOSITORY_BINDING": "ONE_LITERAL_STATIC_PATH_BINDING_FIXTURE_AND_THIN_CONTRACT_CHECK",
+      "D_REGRESSION_EVIDENCE": "ONE_REPOSITORY_ONLY_POSITIVE_AND_NEGATIVE_REGRESSION_RUNNER_AND_RECEIPT",
+      "E_FINAL_REDUCTION": "EZ_PHASE_CHECKPOINTS_G48_REPORT_AND_FINAL_SEAL"
+    },
+    "anti_reconstruction": {
+      "common_substrate_reconstruction_count": 0,
+      "successor_common_manifest_count": 0,
+      "duplicate_common_validator_count": 0,
+      "parallel_common_proof_stack_count": 0,
+      "parallel_execution_path_count": 0,
+      "duplicate_proof_path_created": false,
+      "reuse_architecture_regression": false
+    },
+    "exact_next_legal_action": "REPRODUCE_AND_REDUCE_THE_EXACT_EY_STATIC_EE_PATH_DECLARATION_FAILURE",
+    "checkpoint_is_authority": false,
+    "auto_continuable": false
+  },
+  "checkpoint_sha256": "858fd972ad98e827bfb8b4a1055f1df13aa5481a36ed45eb512b9f37c7be3991"
+}
