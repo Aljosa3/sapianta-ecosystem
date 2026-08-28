@@ -1,0 +1,53 @@
+{
+  "schema_id": "G77_256FA_B2_PHYSICAL_CUSTODY_RECEIPT_ENVELOPE_V1",
+  "receipt": {
+    "schema_id": "G77_256FA_B2_PHYSICAL_CUSTODY_RECEIPT_V1",
+    "generation_identity": "G77_256FA_ONE_FRESH_HUMAN_AUTHORIZED_CONSUMED_OPERATIONAL_COMMISSIONING_V1",
+    "required_head": "7297f014ec8ba0940bbe08994a5e48f00e0bb059",
+    "required_tree": "c1ad5878e05c8002cb806a5934108d65ca1efde7",
+    "expected_base_image": {
+      "identity": "noble-server-cloudimg-amd64.img",
+      "path": "/tmp/g77_256cw.IkqZJN/noble-server-cloudimg-amd64.img",
+      "sha256": "6e40c07ae715f744f84af0bec76415cc1987dd115b4b8de437818561f01a3733",
+      "format": "qcow2",
+      "virtual_size": 3758096384
+    },
+    "fresh_physical_observation": {
+      "actual_sha256": "6e40c07ae715f744f84af0bec76415cc1987dd115b4b8de437818561f01a3733",
+      "actual_size": 624447488,
+      "device": 66309,
+      "inode": 24258880,
+      "uid": 1000,
+      "gid": 1000,
+      "mode": "0664",
+      "mtime_epoch_seconds": 1787644047,
+      "qemu_img_check": "PASS__NO_ERRORS",
+      "dirty_flag": false,
+      "corrupt": false
+    },
+    "custody_provenance": [
+      {
+        "identity": "G77_256CW_AUTHORIZED_IMAGE_ACQUISITION_AND_EXPECTED_IDENTITY",
+        "path": "docs/governance/G77_256CW_P11_MINIMUM_LOCAL_VM_SUBSTRATE_AND_PUBLIC_LINUX_BOOT_IMAGE_ACQUISITION_AUTHORIZATION_BINDING_AND_EXECUTION_READINESS_V1.md",
+        "sha256": "51b16ae3a1f8bb36160667de0318020cc0597c1ee983e8ff6a4a0041796970a0"
+      },
+      {
+        "identity": "G77_256CX_INDEPENDENT_ACTUAL_IMAGE_VERIFICATION",
+        "path": "docs/governance/G77_256CX_P11_POST_INSTALL_LOCAL_VM_SUBSTRATE_INDEPENDENT_VERIFICATION_ACTUAL_HOST_DELTA_RECONCILIATION_AND_VM_MATERIALIZATION_READINESS_V1.md",
+        "sha256": "adb12ca4a9aa7cb8a6f874f4e7fab09405172f21132083c030b7d5adf855cb0a"
+      }
+    ],
+    "exact_fa_execution_binding": {
+      "overlay_path": "/tmp/g77_256fa/guest-overlay.qcow2",
+      "overlay_backing_file": "/tmp/g77_256cw.IkqZJN/noble-server-cloudimg-amd64.img",
+      "overlay_backing_format": "qcow2",
+      "overlay_sha256_pre_boot": "6ea4eed169518c646774cfbe2c7b8c00646a9cdead8798f7c94c786c6b6ce8b2",
+      "candidate_sha256": "56f4f19b23aa7986813cde33cce39ae8d8ff04e67bd5086c3ac6dbe26935746a",
+      "qemu_vector_sha256": "2c2a5165b48ab89efdc48332c6a0a871335db7ef8dbd150b13f638f0ba669265"
+    },
+    "b2_result": "PASS__FRESH_PHYSICAL_CUSTODY_EVIDENCE",
+    "receipt_is_authority": false,
+    "auto_continuable": false
+  },
+  "receipt_sha256": "13dc8d86241fb107e3a22847ae163a0755d1a54dfb821df2a9c635fb5c4b7c0c"
+}

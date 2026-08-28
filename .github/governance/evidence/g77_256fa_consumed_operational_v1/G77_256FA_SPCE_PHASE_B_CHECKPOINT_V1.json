@@ -1,0 +1,90 @@
+{
+  "schema_id": "G77_256FA_SPCE_PHASE_B_CHECKPOINT_ENVELOPE_V1",
+  "checkpoint": {
+    "schema_id": "G77_256FA_SPCE_PHASE_B_CHECKPOINT_V1",
+    "generation_identity": "G77_256FA_ONE_FRESH_HUMAN_AUTHORIZED_CONSUMED_OPERATIONAL_COMMISSIONING_V1",
+    "phase_a_binding": {
+      "path": ".github/governance/evidence/g77_256fa_consumed_operational_v1/G77_256FA_SPCE_PHASE_A_CHECKPOINT_V1.json",
+      "sha256": "2b94570de29d7e5efb158706853869964e002e6dab39b3e7c7cd4013640e77d9",
+      "inner_sha256": "045da000cb930bd8f2962096c26fefd20bcd60231e5549f8f398b682727e1974"
+    },
+    "fresh_identities": {
+      "generation_identity": "G77_256FA_ONE_FRESH_HUMAN_AUTHORIZED_CONSUMED_OPERATIONAL_COMMISSIONING_V1",
+      "adapter_identity": "G77_256FA_CONSUMED_VECTOR_ADAPTER_V1",
+      "candidate_identity": "sha256:56f4f19b23aa7986813cde33cce39ae8d8ff04e67bd5086c3ac6dbe26935746a",
+      "attempt_identity": "G77_256FA_E05_CONSUMED_REUSE_ATTEMPT_001",
+      "case_identity": "G77_256FA_E05_CONSUMED_AUTHORITY_REUSE_DENIAL_001"
+    },
+    "artifact_bindings": {
+      "builder_sha256": "f0f013f7a521e5c2283f13be123364a42e82f81b9bee9852355ed36fa113fbf6",
+      "adapter_sha256": "c6e311d383e218c3e22859b8fa026011254a961e35229960a15a97fc6db3e3fc",
+      "meta_data_sha256": "f96e4459fb41b7f500131f9fc34e5da688041fd564419ec0a3f7c06e74b092fd",
+      "network_config_sha256": "639b6f419a9ac49312b218e12395dc7e7d623d96202c3315a92dcd19d6fa02ba",
+      "user_data_sha256": "d137e19a6b7c66e534d0d9112acfb89c734024cbc5b9d7842692aa598b804f1f",
+      "candidate_sha256": "56f4f19b23aa7986813cde33cce39ae8d8ff04e67bd5086c3ac6dbe26935746a",
+      "runtime_projection_sha256": "56f4f19b23aa7986813cde33cce39ae8d8ff04e67bd5086c3ac6dbe26935746a",
+      "eb_receipt_sha256": "cbd9cd3599c17eb5ad65071b41b10a43fda1c08ad7ccfb12abb17d3f80b70f90",
+      "eb_receipt_inner_sha256": "cf8a0ffe23685b11b289f505cbfc49a7e4f2b522f0b028e080db527ee0af1dd1",
+      "ee_receipt_sha256": "694e6655b3a49da880e7159b709a3a536b68b7395c61b2405a1a63809eda044d",
+      "ee_receipt_inner_sha256": "795ae512358689b7acb24287d6fde64bc8abba0fed3b630f1a278a09d01f4998"
+    },
+    "static_path_binding": {
+      "raw_root_declaration_count": 1,
+      "continuation_manifest_path_declaration_count": 1,
+      "raw_root": "/mnt/g77-evidence",
+      "continuation_manifest_path": "/mnt/g77-evidence/G77_256FA_CONTINUATION_MANIFEST_V1.json",
+      "ez_static_binding_requirements": "PASS",
+      "ee_static_binding": "PASS",
+      "adapter_bytes_candidate_bound": true
+    },
+    "repository_preflight": {
+      "du_cryptographic_authenticity": "PASS",
+      "du_structural_schema_validity": "PASS",
+      "du_semantic_contract_compatibility": "PASS",
+      "du_constitutional_admissibility": "PASS",
+      "eb_candidate_binding": "PASS",
+      "ee_runtime_consumer_binding": "PASS",
+      "candidate_hash_binding": "PASS",
+      "runtime_projection_precondition": "PASS__BYTE_AND_SEMANTIC_IDENTITY",
+      "b6_repository_precondition": "PASS__STATIC_EE_BINDING_HARDENED"
+    },
+    "candidate_bounds": {
+      "fresh_operational_candidate_count": 1,
+      "second_candidate_count": 0,
+      "replacement_candidate_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0
+    },
+    "reuse": {
+      "certified_common_components_available": 17,
+      "certified_common_components_applicable": 17,
+      "certified_common_components_reused": 17,
+      "certified_common_components_reconstructed": 0,
+      "common_substrate_reconstruction_count": 0,
+      "common_validators_created": 0,
+      "ez_static_binding_reused": true,
+      "new_common_component_count": 0,
+      "new_vector_specific_component_count": 1,
+      "new_common_infrastructure_count": 0,
+      "reuse_architecture_regression": false
+    },
+    "operational_counters": {
+      "materialization_count": 0,
+      "vm_creation_count": 0,
+      "vm_boot_count": 0,
+      "second_vm_count": 0,
+      "second_boot_count": 0,
+      "e05_case_execution_count": 0,
+      "p11_request_count": 0,
+      "p11_entry_count": 0,
+      "p11_invocation_count": 0,
+      "protected_effect_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0
+    },
+    "exact_next_legal_action": "COLLECT_FRESH_B2_CUSTODY__PREPARE_FRESH_B1_AND_B6_BINDINGS__THEN_AT_MOST_ONE_MATERIALIZATION_AND_BOOT",
+    "checkpoint_is_authority": false,
+    "auto_continuable": false
+  },
+  "checkpoint_sha256": "48a5fa717c41e8c7083933b9149e658e8a31aff403808ea2333b1d78acd7a319"
+}
