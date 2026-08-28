@@ -1,0 +1,81 @@
+{
+  "schema_id": "G77_256FD_SPCE_PHASE_B_CANDIDATE_SEAL_ENVELOPE_V1",
+  "checkpoint": {
+    "schema_id": "G77_256FD_SPCE_PHASE_B_CANDIDATE_SEAL_V1",
+    "generation_identity": "G77_256FD_REPOSITORY_ONLY_WRONG_ATTEMPT_CANDIDATE_SCHEMA_ALIGNMENT_AND_PREFLIGHT_V1",
+    "cross_account_continuation_used": true,
+    "resumption_state": "STATE_C__PHASE_A_AUTHENTICATED__PARTIAL_VECTOR_DELTA__NO_CANDIDATE",
+    "continuation_entry_gate": "PASS__EXACT_FC_BASELINE__EMPTY_INDEX__ONLY_EXPECTED_FD_STATE",
+    "phase_a_continuation_authentication": "PASS__REUSED_WITHOUT_RECONSTRUCTION",
+    "phase_a_path": ".github/governance/evidence/g77_256fd_wrong_attempt_schema_alignment_v1/G77_256FD_SPCE_PHASE_A_CHECKPOINT_V1.json",
+    "phase_a_file_sha256": "30680009fa71a83cc5654c676a49f2a3eb26eea058e8ff2d1245ce5906893082",
+    "phase_a_inner_sha256": "c5b0b5304e90ce14e1ec3f0d6adbb4e6467adfd916f0482a46c9e00ddf9c854b",
+    "phase_a_reconstruction_count": 0,
+    "existing_adapter_authentication": "PASS__STATIC_EE_PATH_DECLARATIONS__VECTOR_LOCAL__NO_AUTHORITY",
+    "existing_adapter_path": ".github/governance/evidence/g77_256fd_wrong_attempt_schema_alignment_v1/binding/G77_256FD_WRONG_ATTEMPT_PREFLIGHT_ADAPTER_V1.py",
+    "existing_adapter_sha256": "ba9767aa2437bc76ffb2fdb8eee2c5281333a3e963f8e8d632d5525d7b0b2910",
+    "existing_adapter_reused": true,
+    "existing_adapter_modified": false,
+    "existing_fd_artifact_reconstruction_count": 0,
+    "canonical_schema_result": "PASS__SELECTED_CASE_EXACTLY_CASE_CLASS_AND_CASE_ID",
+    "du_modification_required": false,
+    "wrong_attempt_semantic_preservation": "PASS__FIVE_DISPLACED_FACTS_HASH_BOUND_OUTSIDE_SELECTED_CASE",
+    "vector_evidence_path": ".github/governance/evidence/g77_256fd_wrong_attempt_schema_alignment_v1/binding/G77_256FD_WRONG_ATTEMPT_VECTOR_EVIDENCE_V1.json",
+    "vector_evidence_sha256": "7408c00b00db9225fa77a52840b54a9ae3b13fa195af8580d1822dee14dc7faf",
+    "vector_evidence_inner_sha256": "687f6fb9f63c2a30add428ea33dbf67de6c21c87429cd02c5a62da5723ac20ac",
+    "other_vector_mutation_count": 0,
+    "candidate": {
+      "path": ".github/governance/evidence/g77_256fd_wrong_attempt_schema_alignment_v1/raw/G77_256FD_CANONICAL_CONTINUATION_MANIFEST_PREFLIGHT_V1.json",
+      "file_sha256": "b87e0e49815cb01755be8c983cc5751529dd996cd3a63788466e32ce22f5def9",
+      "inner_sha256": "908e9f6ae4421a02087db0039457f48a0ae016385108bfeea56af386479e377d",
+      "selected_case_fields": [
+        "case_class",
+        "case_id"
+      ],
+      "sealed_and_immutable": true
+    },
+    "runtime_projection": {
+      "path": ".github/governance/evidence/g77_256fd_wrong_attempt_schema_alignment_v1/runtime/G77_256FD_CONTINUATION_MANIFEST_V1.json",
+      "file_sha256": "b87e0e49815cb01755be8c983cc5751529dd996cd3a63788466e32ce22f5def9",
+      "candidate_runtime_byte_identity": "PASS"
+    },
+    "generation_wide_counters": {
+      "fd_candidate_count_before_continuation": 0,
+      "total_fd_candidate_count": 1,
+      "second_candidate_count": 0,
+      "replacement_candidate_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0,
+      "materialization_count": 0,
+      "vm_creation_count": 0,
+      "vm_boot_count": 0,
+      "qemu_execution_count": 0,
+      "p11_request_count": 0,
+      "p11_entry_count": 0,
+      "p11_invocation_count": 0,
+      "protected_effect_count": 0,
+      "e05_case_execution_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0,
+      "production_effect_count": 0
+    },
+    "ex_amortization": {
+      "certified_common_components_available": 17,
+      "certified_common_components_applicable": 17,
+      "certified_common_components_reused": 17,
+      "certified_common_components_reconstructed": 0,
+      "common_substrate_reconstruction_count": 0,
+      "new_common_component_count": 0,
+      "new_common_infrastructure_count": 0,
+      "common_validators_created": 0,
+      "parallel_common_proof_stack_count": 0
+    },
+    "e05_before": "6/18",
+    "e05_after": "6/18",
+    "wrong_attempt_state_after": "UNSATISFIED",
+    "checkpoint_is_authority": false,
+    "auto_continuable": false,
+    "exact_next_legal_action": "RUN_CANONICAL_DU_EXACTLY_ONCE_AND_STOP_ON_FAILURE"
+  },
+  "checkpoint_sha256": "d4215fd3abc29f92a63e3f465048c0a7703ca784e8bee3ae3b26c500ad681495"
+}

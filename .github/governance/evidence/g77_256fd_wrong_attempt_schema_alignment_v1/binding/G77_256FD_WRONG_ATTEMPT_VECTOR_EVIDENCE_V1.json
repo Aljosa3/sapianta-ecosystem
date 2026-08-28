@@ -1,0 +1,99 @@
+{
+  "schema_id": "G77_256FD_WRONG_ATTEMPT_VECTOR_EVIDENCE_ENVELOPE_V1",
+  "evidence": {
+    "schema_id": "G77_256FD_WRONG_ATTEMPT_VECTOR_EVIDENCE_V1",
+    "generation_identity": "G77_256FD_REPOSITORY_ONLY_WRONG_ATTEMPT_CANDIDATE_SCHEMA_ALIGNMENT_AND_PREFLIGHT_V1",
+    "evidence_class": "VECTOR_LOCAL_REPOSITORY_PREFLIGHT_SEMANTIC_BINDING",
+    "vector_identity": "P11-E05/NEGATIVE_AUTHORITY/WRONG_ATTEMPT",
+    "selected_case": {
+      "case_class": "E05_NEGATIVE_AUTHORITY_WRONG_ATTEMPT",
+      "case_id": "G77_256FD_E05_WRONG_ATTEMPT_PREFLIGHT_PATTERN_001"
+    },
+    "displaced_selected_case_facts": {
+      "authorized_attempt_identity": "G77_256FD_E05_AUTHORIZED_ATTEMPT_PATTERN_001",
+      "isolated_semantic_mutation_field": "attempt_identity",
+      "obligation_id": "P11-E05/NEGATIVE_AUTHORITY/WRONG_ATTEMPT",
+      "other_vector_mutation_count": 0,
+      "supplied_wrong_attempt_identity": "G77_256FD_E05_SUPPLIED_WRONG_ATTEMPT_PATTERN_002"
+    },
+    "canonical_placement": {
+      "authorized_attempt_identity": [
+        "P11_INPUT_ATTEMPT_IDENTITY",
+        "HUMAN_ACT_PAYLOAD_ATTEMPT_IDENTITY",
+        "PROTECTED_AUTHORITY_BINDING",
+        "VECTOR_ADAPTER",
+        "VECTOR_EVIDENCE_EXTENSION_BINDING"
+      ],
+      "isolated_semantic_mutation_field": [
+        "VECTOR_EVIDENCE_EXTENSION_BINDING",
+        "PREFLIGHT_ISOLATION_RECEIPT",
+        "FUTURE_OPERATIONAL_RAW_EVIDENCE"
+      ],
+      "obligation_id": [
+        "FRONTIER_STATE",
+        "LINEAGE_BINDING",
+        "OBSERVATION",
+        "VECTOR_EVIDENCE_EXTENSION_BINDING",
+        "FUTURE_OPERATIONAL_RAW_EVIDENCE"
+      ],
+      "other_vector_mutation_count": [
+        "VECTOR_EVIDENCE_EXTENSION_BINDING",
+        "PREFLIGHT_ISOLATION_RECEIPT",
+        "FUTURE_OPERATIONAL_RAW_EVIDENCE"
+      ],
+      "supplied_wrong_attempt_identity": [
+        "SUPPLIED_P11_INPUT_ATTEMPT_IDENTITY",
+        "VECTOR_ADAPTER",
+        "VECTOR_EVIDENCE_EXTENSION_BINDING",
+        "FUTURE_OPERATIONAL_RAW_EVIDENCE"
+      ]
+    },
+    "semantic_contract": {
+      "common_context": "VALID_PATTERN_REQUIRED",
+      "authorized_attempt_identity": "VALID_PATTERN_REQUIRED",
+      "supplied_attempt_identity_relation": "MUST_DIFFER_FROM_AUTHORIZED_ATTEMPT_IDENTITY",
+      "isolated_semantic_mutation_field": "attempt_identity",
+      "dependent_recomputed_field": "record_identity",
+      "all_non_target_dimensions": "VALID_PATTERN_REQUIRED",
+      "other_vector_mutation_count": 0,
+      "expected_denial_boundary": "D2_PRECLAIM_BEFORE_P11_ENTRY",
+      "semantic_preservation_result": "PASS__REPRESENTATION_PRESERVED_WITHOUT_SELECTED_CASE_EXTENSION",
+      "schema_alignment_is_semantic_deletion": false
+    },
+    "committed_semantic_proof": {
+      "operational_adapter_path": ".github/governance/evidence/g77_256fc_wrong_attempt_operational_v1/harness/G77_256FC_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py",
+      "operational_adapter_sha256": "ef564f54fc764ed3968d94365a56a09f06025ea1f534c4a08f818183ddef2e8d",
+      "proof_locations": [
+        "FC_ADAPTER_AUTHORIZED_INPUT_AND_ACT_BINDING",
+        "FC_ADAPTER_SUPPLIED_ATTEMPT_IDENTITY_SUBSTITUTION",
+        "FC_ADAPTER_EXACT_DIFFERING_FIELDS_COMPUTATION",
+        "FC_ADAPTER_SEMANTIC_MUTATION_IS_ATTEMPT_IDENTITY",
+        "FC_ADAPTER_OTHER_VECTOR_MUTATION_COUNT_ZERO"
+      ],
+      "du_schema_path": ".github/governance/evidence/g77_256du_continuation_manifest_contract_v1/G77_256DU_CANONICAL_CONTINUATION_MANIFEST_SCHEMA_V1.json",
+      "du_schema_sha256": "a21ba1567c65101a5f178afdfefb5d500c97fc2cc6a9eb9da6c9fb4cc914478e",
+      "du_validator_path": ".github/governance/evidence/g77_256du_continuation_manifest_contract_v1/validator/G77_256DU_CONTINUATION_MANIFEST_COMPATIBILITY_VALIDATOR_V1.py",
+      "du_validator_sha256": "27457993a4e6b778cc65356cd9b17a1bf2665f4e6147608d27dc233ff512304d",
+      "extension_binding_semantic_boundary": "BINDS_EXACT_EVIDENCE_BYTES_BUT_DOES_NOT_CHANGE_REQUIRED_DU_SEMANTICS"
+    },
+    "preflight_boundary": {
+      "repository_only": true,
+      "operational_authority": false,
+      "materialization_count": 0,
+      "vm_creation_count": 0,
+      "vm_boot_count": 0,
+      "qemu_execution_count": 0,
+      "p11_request_count": 0,
+      "p11_entry_count": 0,
+      "p11_invocation_count": 0,
+      "protected_effect_count": 0,
+      "e05_case_execution_count": 0,
+      "constitutional_credit_result": "NOT_AWARDED__REPOSITORY_ONLY_GENERATION",
+      "wrong_attempt_state_after": "UNSATISFIED",
+      "future_operational_proof_state": "NOT_ESTABLISHED"
+    },
+    "evidence_is_authority": false,
+    "auto_continuable": false
+  },
+  "evidence_sha256": "687f6fb9f63c2a30add428ea33dbf67de6c21c87429cd02c5a62da5723ac20ac"
+}

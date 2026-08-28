@@ -1,0 +1,102 @@
+{
+  "schema_id": "G77_256FD_FINAL_VALIDATION_SEAL_ENVELOPE_V1",
+  "seal": {
+    "schema_id": "G77_256FD_FINAL_VALIDATION_SEAL_V1",
+    "generation_identity": "G77_256FD_REPOSITORY_ONLY_WRONG_ATTEMPT_CANDIDATE_SCHEMA_ALIGNMENT_AND_PREFLIGHT_V1",
+    "required_head": "08b7e7406396b7d6d93023baa30bc689a3aa572f",
+    "required_tree": "b68657113493475e68a9cd36f02e69e0d53ab6b1",
+    "required_subject": "G77-256FC fail closed WRONG_ATTEMPT at DU",
+    "bindings": [
+      {
+        "identity": "G77_256FD_PHASE_A_CHECKPOINT",
+        "path": ".github/governance/evidence/g77_256fd_wrong_attempt_schema_alignment_v1/G77_256FD_SPCE_PHASE_A_CHECKPOINT_V1.json",
+        "sha256": "30680009fa71a83cc5654c676a49f2a3eb26eea058e8ff2d1245ce5906893082"
+      },
+      {
+        "identity": "G77_256FD_PHASE_B_CANDIDATE_SEAL",
+        "path": ".github/governance/evidence/g77_256fd_wrong_attempt_schema_alignment_v1/G77_256FD_SPCE_PHASE_B_CANDIDATE_SEAL_V1.json",
+        "sha256": "96e00d812f2cf58e59b50c8af6e69c767748048a7975bd2a831191ae7c13ab9a"
+      },
+      {
+        "identity": "G77_256FD_PHASE_C_PREFLIGHT_FAILURE",
+        "path": ".github/governance/evidence/g77_256fd_wrong_attempt_schema_alignment_v1/G77_256FD_SPCE_PHASE_C_PREFLIGHT_FAILURE_CHECKPOINT_V1.json",
+        "sha256": "0be11498428d6d7786fcb5d48da3c966d3b01659ef9bf6ec2f220f08a6534b5b"
+      },
+      {
+        "identity": "G77_256FD_PHASE_D_FAIL_CLOSED_REDUCTION",
+        "path": ".github/governance/evidence/g77_256fd_wrong_attempt_schema_alignment_v1/G77_256FD_SPCE_PHASE_D_FAIL_CLOSED_REDUCTION_V1.json",
+        "sha256": "186e79bbbdaa1281b0c3c65f9408b1d79d3f60c75c884b5ce0f3c7e96bd96420"
+      },
+      {
+        "identity": "G77_256FD_VECTOR_EVIDENCE",
+        "path": ".github/governance/evidence/g77_256fd_wrong_attempt_schema_alignment_v1/binding/G77_256FD_WRONG_ATTEMPT_VECTOR_EVIDENCE_V1.json",
+        "sha256": "7408c00b00db9225fa77a52840b54a9ae3b13fa195af8580d1822dee14dc7faf"
+      },
+      {
+        "identity": "G77_256FD_EXISTING_PREFLIGHT_ADAPTER",
+        "path": ".github/governance/evidence/g77_256fd_wrong_attempt_schema_alignment_v1/binding/G77_256FD_WRONG_ATTEMPT_PREFLIGHT_ADAPTER_V1.py",
+        "sha256": "ba9767aa2437bc76ffb2fdb8eee2c5281333a3e963f8e8d632d5525d7b0b2910"
+      },
+      {
+        "identity": "G77_256FD_CANDIDATE_BUILDER",
+        "path": ".github/governance/evidence/g77_256fd_wrong_attempt_schema_alignment_v1/builder/G77_256FD_WRONG_ATTEMPT_CANDIDATE_BUILDER_V1.py",
+        "sha256": "6f7839d722ce72e750dcd6dabda9a9cf89e3ccbfca66d7b78ac2b41a4b3d2a22"
+      },
+      {
+        "identity": "G77_256FD_SEALED_CANDIDATE",
+        "path": ".github/governance/evidence/g77_256fd_wrong_attempt_schema_alignment_v1/raw/G77_256FD_CANONICAL_CONTINUATION_MANIFEST_PREFLIGHT_V1.json",
+        "sha256": "b87e0e49815cb01755be8c983cc5751529dd996cd3a63788466e32ce22f5def9"
+      },
+      {
+        "identity": "G77_256FD_RUNTIME_PROJECTION",
+        "path": ".github/governance/evidence/g77_256fd_wrong_attempt_schema_alignment_v1/runtime/G77_256FD_CONTINUATION_MANIFEST_V1.json",
+        "sha256": "b87e0e49815cb01755be8c983cc5751529dd996cd3a63788466e32ce22f5def9"
+      },
+      {
+        "identity": "G77_256FD_G48_REPORT",
+        "path": "docs/governance/G77_256FD_CROSS_ACCOUNT_WRONG_ATTEMPT_SCHEMA_ALIGNMENT_AND_FAIL_CLOSED_EB_PREFLIGHT_V1.md",
+        "sha256": "d838fec8d3bcc5ed255b3739c9a24d2cef4b4d5589656760af5e7a6efcc1b93d"
+      }
+    ],
+    "continuation_result": "PASS__PERSISTED_UNCOMMITTED_SPCE_STATE_AUTHENTICATED_AND_REUSED",
+    "phase_a_reconstruction_count": 0,
+    "existing_adapter_modified": false,
+    "common_substrate_reconstruction_count": 0,
+    "total_fd_candidate_count": 1,
+    "second_candidate_count": 0,
+    "replacement_candidate_count": 0,
+    "du_result": "PASS",
+    "eb_result": "FAIL_CLOSED__VALIDATION_PROFILE_INVALID",
+    "ee_result": "NOT_RUN__EB_FAILED_FIRST",
+    "first_authoritative_failure": "EB_VALIDATION_PROFILE_INVALID",
+    "automatic_retry_count": 0,
+    "repair_and_continue_count": 0,
+    "candidate_unchanged_after_failure": "PASS",
+    "materialization_count": 0,
+    "vm_creation_count": 0,
+    "vm_boot_count": 0,
+    "qemu_execution_count": 0,
+    "p11_request_count": 0,
+    "p11_entry_count": 0,
+    "p11_invocation_count": 0,
+    "protected_effect_count": 0,
+    "e05_case_execution_count": 0,
+    "p12_entry_count": 0,
+    "production_route_count": 0,
+    "production_effect_count": 0,
+    "constitutional_credit_result": "NOT_AWARDED__REPOSITORY_ONLY_GENERATION",
+    "e05_before": "6/18",
+    "e05_after": "6/18",
+    "e05_remaining": 12,
+    "wrong_attempt_state_after": "UNSATISFIED",
+    "files_created": 11,
+    "files_modified": 0,
+    "lines_added": 1202,
+    "lines_removed": 0,
+    "final_validation": "FAIL_CLOSED__CROSS_ACCOUNT_SPCE_CONTINUATION_AUTHENTICATED__DU_PASS__EB_VALIDATION_PROFILE_INVALID__EE_NOT_RUN__REPOSITORY_ONLY",
+    "human_authorization_required": true,
+    "auto_continuable": false,
+    "seal_is_authority": false
+  },
+  "seal_sha256": "7a64ec51f6ae38e4d6b1de2ce99ca226f15c4f050a40166cedc517dc4e5cf37c"
+}

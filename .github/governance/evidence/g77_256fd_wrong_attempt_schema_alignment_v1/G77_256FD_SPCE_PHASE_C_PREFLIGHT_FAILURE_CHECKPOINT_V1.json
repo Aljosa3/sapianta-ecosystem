@@ -1,0 +1,78 @@
+{
+  "schema_id": "G77_256FD_SPCE_PHASE_C_PREFLIGHT_FAILURE_CHECKPOINT_ENVELOPE_V1",
+  "checkpoint": {
+    "schema_id": "G77_256FD_SPCE_PHASE_C_PREFLIGHT_FAILURE_CHECKPOINT_V1",
+    "generation_identity": "G77_256FD_REPOSITORY_ONLY_WRONG_ATTEMPT_CANDIDATE_SCHEMA_ALIGNMENT_AND_PREFLIGHT_V1",
+    "phase_b_candidate_seal": {
+      "path": ".github/governance/evidence/g77_256fd_wrong_attempt_schema_alignment_v1/G77_256FD_SPCE_PHASE_B_CANDIDATE_SEAL_V1.json",
+      "file_sha256": "96e00d812f2cf58e59b50c8af6e69c767748048a7975bd2a831191ae7c13ab9a",
+      "inner_sha256": "d4215fd3abc29f92a63e3f465048c0a7703ca784e8bee3ae3b26c500ad681495"
+    },
+    "sealed_candidate": {
+      "path": ".github/governance/evidence/g77_256fd_wrong_attempt_schema_alignment_v1/raw/G77_256FD_CANONICAL_CONTINUATION_MANIFEST_PREFLIGHT_V1.json",
+      "file_sha256_before_du": "b87e0e49815cb01755be8c983cc5751529dd996cd3a63788466e32ce22f5def9",
+      "file_sha256_after_eb_failure": "b87e0e49815cb01755be8c983cc5751529dd996cd3a63788466e32ce22f5def9",
+      "inner_sha256": "908e9f6ae4421a02087db0039457f48a0ae016385108bfeea56af386479e377d",
+      "candidate_unchanged_after_failure": "PASS"
+    },
+    "du_validation": {
+      "attempt_count": 1,
+      "result": "PASS",
+      "structural_schema_validity": "PASS",
+      "semantic_contract_compatibility": "PASS",
+      "cryptographic_authenticity": "PASS",
+      "constitutional_admissibility": "PASS"
+    },
+    "eb_validation": {
+      "attempt_count": 1,
+      "result": "FAIL_CLOSED__VALIDATION_PROFILE_INVALID",
+      "failure_code": "VALIDATION_PROFILE_INVALID",
+      "supplied_profile": "G77_256FD_WRONG_ATTEMPT_REPOSITORY_PREFLIGHT_V1",
+      "canonical_required_profile": "CANONICAL_V1_PRE_MATERIALIZATION_FOUR_GATE_CANDIDATE_BOUND_V1",
+      "candidate_validation_pass_claimed": false,
+      "receipt_created": false,
+      "exact_failure_output": "{\"candidate_validation_pass_claimed\":false,\"failure_code\":\"VALIDATION_PROFILE_INVALID\",\"overall_result\":\"FAIL_CLOSED\",\"schema_id\":\"G77_256EB_CANDIDATE_VALIDATION_FAILURE_V1\"}"
+    },
+    "ee_validation": {
+      "attempt_count": 0,
+      "result": "NOT_RUN__EB_FAILED_FIRST"
+    },
+    "first_authoritative_failure": "EB_VALIDATION_PROFILE_INVALID",
+    "failure_stage": "PHASE_B_CANONICAL_EB_CANDIDATE_BOUND_VALIDATION",
+    "failure_class": "ORCHESTRATION_INVOCATION_PROFILE_MISMATCH",
+    "fd_preflight_result": "FAIL_CLOSED__DU_PASS__EB_VALIDATION_PROFILE_INVALID__EE_NOT_RUN",
+    "b6_repository_precondition": "NOT_ESTABLISHED__EE_NOT_REACHED",
+    "retry_and_repair_boundary": {
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0,
+      "second_candidate_count": 0,
+      "replacement_candidate_count": 0,
+      "candidate_modified_after_seal": false,
+      "eb_retry_authorized": false
+    },
+    "operational_stop": {
+      "materialization_count": 0,
+      "vm_creation_count": 0,
+      "vm_boot_count": 0,
+      "qemu_execution_count": 0,
+      "p11_request_count": 0,
+      "p11_entry_count": 0,
+      "p11_invocation_count": 0,
+      "protected_effect_count": 0,
+      "e05_case_execution_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0,
+      "production_effect_count": 0
+    },
+    "constitutional_credit_result": "NOT_AWARDED__REPOSITORY_ONLY_GENERATION",
+    "e05_before": "6/18",
+    "e05_after": "6/18",
+    "e05_remaining": 12,
+    "wrong_attempt_state_after": "UNSATISFIED",
+    "checkpoint_is_authority": false,
+    "auto_continuable": false,
+    "human_authorization_required": true,
+    "exact_next_legal_action": "HUMAN_REVIEW_OF_FAIL_CLOSED_EB_INVOCATION__NO_AUTOMATIC_RETRY"
+  },
+  "checkpoint_sha256": "f227e45b571528badf6a2027eef562ba7cd1974d4091f916a1cec3900e506059"
+}

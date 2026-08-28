@@ -1,0 +1,175 @@
+{
+  "schema_id": "G77_256FD_SPCE_PHASE_D_FAIL_CLOSED_REDUCTION_ENVELOPE_V1",
+  "reduction": {
+    "schema_id": "G77_256FD_SPCE_PHASE_D_FAIL_CLOSED_REDUCTION_V1",
+    "generation_identity": "G77_256FD_REPOSITORY_ONLY_WRONG_ATTEMPT_CANDIDATE_SCHEMA_ALIGNMENT_AND_PREFLIGHT_V1",
+    "independent_reduction": true,
+    "required_head": "08b7e7406396b7d6d93023baa30bc689a3aa572f",
+    "required_tree": "b68657113493475e68a9cd36f02e69e0d53ab6b1",
+    "required_subject": "G77-256FC fail closed WRONG_ATTEMPT at DU",
+    "bound_evidence": [
+      {
+        "identity": "G77_256FD_PHASE_A_CHECKPOINT",
+        "path": ".github/governance/evidence/g77_256fd_wrong_attempt_schema_alignment_v1/G77_256FD_SPCE_PHASE_A_CHECKPOINT_V1.json",
+        "file_sha256": "30680009fa71a83cc5654c676a49f2a3eb26eea058e8ff2d1245ce5906893082",
+        "inner_sha256": "c5b0b5304e90ce14e1ec3f0d6adbb4e6467adfd916f0482a46c9e00ddf9c854b"
+      },
+      {
+        "identity": "G77_256FD_PHASE_B_CANDIDATE_SEAL",
+        "path": ".github/governance/evidence/g77_256fd_wrong_attempt_schema_alignment_v1/G77_256FD_SPCE_PHASE_B_CANDIDATE_SEAL_V1.json",
+        "file_sha256": "96e00d812f2cf58e59b50c8af6e69c767748048a7975bd2a831191ae7c13ab9a",
+        "inner_sha256": "d4215fd3abc29f92a63e3f465048c0a7703ca784e8bee3ae3b26c500ad681495"
+      },
+      {
+        "identity": "G77_256FD_PHASE_C_PREFLIGHT_FAILURE",
+        "path": ".github/governance/evidence/g77_256fd_wrong_attempt_schema_alignment_v1/G77_256FD_SPCE_PHASE_C_PREFLIGHT_FAILURE_CHECKPOINT_V1.json",
+        "file_sha256": "0be11498428d6d7786fcb5d48da3c966d3b01659ef9bf6ec2f220f08a6534b5b",
+        "inner_sha256": "f227e45b571528badf6a2027eef562ba7cd1974d4091f916a1cec3900e506059"
+      },
+      {
+        "identity": "G77_256FD_SEALED_CANDIDATE",
+        "path": ".github/governance/evidence/g77_256fd_wrong_attempt_schema_alignment_v1/raw/G77_256FD_CANONICAL_CONTINUATION_MANIFEST_PREFLIGHT_V1.json",
+        "file_sha256": "b87e0e49815cb01755be8c983cc5751529dd996cd3a63788466e32ce22f5def9",
+        "inner_sha256": "908e9f6ae4421a02087db0039457f48a0ae016385108bfeea56af386479e377d"
+      }
+    ],
+    "cross_account_spce": {
+      "cross_account_continuation_used": true,
+      "cross_account_continuation_result": "PASS__PERSISTED_UNCOMMITTED_SPCE_STATE_AUTHENTICATED_AND_REUSED",
+      "previous_session_checkpoint_reused": true,
+      "phase_a_reconstruction_count": 0,
+      "existing_fd_artifact_reconstruction_count": 0,
+      "conversation_history_required": false,
+      "full_history_reconstruction_required": false,
+      "candidate_reconstruction_required": false,
+      "execution_replay_required": false,
+      "materialization_replay_required": false,
+      "spce_repository_resumability": "PASS",
+      "spce_cross_account_resumability": "PASS",
+      "spce_operational_resumability": "NOT_ESTABLISHED__NO_OPERATIONAL_EXECUTION"
+    },
+    "schema_alignment": {
+      "canonical_selected_case": "EXACTLY_CASE_CLASS_AND_CASE_ID",
+      "du_modification_required": false,
+      "wrong_attempt_semantic_preservation": "PASS",
+      "schema_alignment_is_semantic_deletion": false,
+      "other_vector_mutation_count": 0,
+      "candidate_selected_case_field_count": 2,
+      "displaced_fact_count": 5,
+      "extension_binding_mechanism": "PASS__EXACT_VECTOR_EVIDENCE_HASH_BOUND"
+    },
+    "validation_reduction": {
+      "du_result": "PASS",
+      "du_attempt_count": 1,
+      "eb_result": "FAIL_CLOSED__VALIDATION_PROFILE_INVALID",
+      "eb_attempt_count": 1,
+      "ee_result": "NOT_RUN__EB_FAILED_FIRST",
+      "ee_attempt_count": 0,
+      "first_authoritative_failure": "EB_VALIDATION_PROFILE_INVALID",
+      "failure_stage": "PHASE_B_CANONICAL_EB_CANDIDATE_BOUND_VALIDATION",
+      "failure_class": "ORCHESTRATION_INVOCATION_PROFILE_MISMATCH",
+      "candidate_unchanged_after_failure": "PASS",
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0
+    },
+    "ex_amortization": {
+      "certified_common_components_available": 17,
+      "certified_common_components_applicable": 17,
+      "certified_common_components_reused": 17,
+      "certified_common_components_reconstructed": 0,
+      "common_substrate_reconstruction_count": 0,
+      "common_validators_reused": 3,
+      "common_validators_created": 0,
+      "new_common_component_count": 0,
+      "new_common_infrastructure_count": 0,
+      "vector_specific_component_count": 3,
+      "parallel_common_proof_stack_count": 0,
+      "duplicate_proof_path_created": false,
+      "reuse_architecture_regression": false,
+      "ex_amortization_result": "PASS__COMMON_REUSE_DOMINATED__BOUNDED_VECTOR_SCHEMA_DELTA"
+    },
+    "reuse_impact_assessment": {
+      "certified_component_reuse_count": 17,
+      "persisted_fd_artifact_reuse_count": 2,
+      "new_common_component_count": 0,
+      "vector_specific_component_count": 3,
+      "capability_reachability_loss": "NONE_PROVEN",
+      "parallel_flow_created": false,
+      "production_path_delta": 0,
+      "duplicate_proof_path_created": false
+    },
+    "operational_boundary": {
+      "b1_result": "NOT_RUN__REPOSITORY_ONLY_GENERATION",
+      "b2_result": "NOT_RUN__REPOSITORY_ONLY_GENERATION",
+      "b6_repository_precondition": "NOT_ESTABLISHED__EE_NOT_REACHED",
+      "b6_operational_state": "NOT_RUN__REPOSITORY_ONLY_GENERATION",
+      "materialization_count": 0,
+      "vm_creation_count": 0,
+      "vm_boot_count": 0,
+      "qemu_execution_count": 0,
+      "p11_request_count": 0,
+      "p11_entry_count": 0,
+      "p11_invocation_count": 0,
+      "protected_effect_count": 0,
+      "e05_case_execution_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0,
+      "production_effect_count": 0
+    },
+    "frontier": {
+      "constitutional_frontier_distance": "NOT_MEASURED__MULTIDIMENSIONAL_FRONTIER",
+      "constitutional_frontier_distance_e05": "FACT__12_CASES_REMAIN",
+      "wrong_attempt_frontier": "BLOCKED__EB_CANONICAL_PROFILE_VALIDATION_NOT_ESTABLISHED",
+      "e05_before": "6/18",
+      "e05_after": "6/18",
+      "e05_remaining": 12,
+      "wrong_attempt_state_after": "UNSATISFIED",
+      "constitutional_credit_result": "NOT_AWARDED__REPOSITORY_ONLY_GENERATION"
+    },
+    "generation_wide_counters": {
+      "total_fd_candidate_count": 1,
+      "second_candidate_count": 0,
+      "replacement_candidate_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0,
+      "phase_a_reconstruction_count": 0,
+      "existing_fd_artifact_reconstruction_count": 0,
+      "common_substrate_reconstruction_count": 0
+    },
+    "shadow_automation": {
+      "shadow_automation_state": "PARTIAL__REPOSITORY_TO_CANDIDATE_TO_DU_PROVEN__EB_INVOCATION_FAILED_CLOSED__EE_NOT_REACHED",
+      "shadow_automation_readiness": "BLOCKED__CANONICAL_EB_PROFILE_ORCHESTRATION_REQUIRES_SEPARATE_HUMAN_DECISION",
+      "automated_preflight_readiness": "NOT_ESTABLISHED",
+      "candidate_capability": "DU_ADMITTED_WRONG_ATTEMPT_SCHEMA_ALIGNED_REPOSITORY_CANDIDATE__EB_AND_EE_NOT_ADMITTED"
+    },
+    "cognition_provenance": {
+      "human_continuation_authorization": "HUMAN_AUTHORIZATION",
+      "committed_fc_baseline": "CONSTITUTIONAL_REPOSITORY_AUTHORITY",
+      "certified_ex_substrate": "CONSTITUTIONAL_CERTIFICATION",
+      "persisted_fd_phase_a_evidence": "REAUTHENTICATED_RESUMABLE_EVIDENCE",
+      "persisted_fd_adapter": "REAUTHENTICATED_RESUMABLE_VECTOR_LOCAL_ARTIFACT",
+      "deterministic_du_eb_ee_results": "DU_PASS__EB_FAIL_CLOSED__EE_NOT_RUN",
+      "previous_codex_derived_root_cause": "NON_AUTHORITATIVE_UNTIL_REAUTHENTICATED",
+      "current_codex_reauthenticated_reasoning": "DERIVED_FROM_COMMITTED_SCHEMA_VALIDATOR_AND_VECTOR_ADAPTER",
+      "previous_codex_conversation_context": "NON_CONSTITUTIONAL",
+      "persisted_uncommitted_fd_evidence": "RESUMABLE_ONLY_IF_AUTHENTICATED_AGAINST_COMMITTED_AUTHORITY"
+    },
+    "telemetry": {
+      "codex_session_id": "NOT_MEASURED",
+      "context_total": "NOT_MEASURED",
+      "context_used_at_start": "NOT_MEASURED",
+      "context_used_at_end": "NOT_MEASURED",
+      "five_hour_limit_remaining_at_start": "NOT_MEASURED",
+      "five_hour_limit_remaining_at_end": "NOT_MEASURED",
+      "seven_day_limit_remaining_at_start": "NOT_MEASURED",
+      "seven_day_limit_remaining_at_end": "NOT_MEASURED",
+      "elapsed_time": "NOT_MEASURED"
+    },
+    "final_validation": "FAIL_CLOSED__CROSS_ACCOUNT_SPCE_CONTINUATION_AUTHENTICATED__DU_PASS__EB_VALIDATION_PROFILE_INVALID__EE_NOT_RUN__REPOSITORY_ONLY",
+    "fd_preflight_result": "FAIL_CLOSED__DU_PASS__EB_VALIDATION_PROFILE_INVALID__EE_NOT_RUN",
+    "human_authorization_required": true,
+    "auto_continuable": false,
+    "reduction_is_authority": false
+  },
+  "reduction_sha256": "537c5c6051965934338f1c1890ec8682878548e5da634fe9af698cd0d8728fab"
+}
