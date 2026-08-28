@@ -1,0 +1,159 @@
+{
+  "schema_id": "G77_256EX_SPCE_PHASE_D_FINAL_CHECKPOINT_ENVELOPE_V1",
+  "checkpoint": {
+    "schema_id": "G77_256EX_SPCE_PHASE_D_FINAL_CHECKPOINT_V1",
+    "generation_identity": "G77_256EX_HUMAN_CERTIFICATION_AND_REPOSITORY_ONLY_CLOSURE_HARDENING_OF_REUSABLE_P11_SPCE_SUBSTRATE_V1",
+    "mode": "REPOSITORY_ONLY",
+    "required_head": "8295ddd2f2639e7130eaecf2520b6d0d8174f8c7",
+    "required_tree": "db309e74925ea0a47365285d2a0a88316c742ddc",
+    "entry_gate": {
+      "result": "PASS",
+      "head_exact": true,
+      "tree_exact": true,
+      "worktree_clean_before_mutation": true,
+      "index_empty": true,
+      "expected_head_subject": "G77-256EW harden reusable P11 SPCE substrate"
+    },
+    "source_authentication": {
+      "ew_manifest_outer_sha256": "42744ccb19767a9f90ed909f3d99b05622053fd00e97886d8a331bcadfe8675c",
+      "ew_manifest_inner_sha256": "affea45b58f265c094a921b65932d9f9d69c95e6fe4d4359af07432482f6660f",
+      "ew_validator_sha256": "6d2e0f18fa9369e8b0dfceda3b767b1f11f3f778aca21408d3fda19bbcf74856",
+      "ew_regression": "17_OF_17_PASS",
+      "eu_semantic_regression": "18_OF_18_PASS"
+    },
+    "spce_phases": {
+      "phase_a": "PASS__ENTRY_EW_EU_LINEAGE_AND_BLOCKER_STATE_AUTHENTICATED",
+      "phase_b": "PASS__B2_AND_B6_REPOSITORY_PORTIONS_HARDENED__B1_PROSPECTIVE_MECHANISM_FORMALIZED__NO_OPERATIONAL_PHASE",
+      "phase_c": "PASS__EXACT_22_COMPONENT_CERTIFICATION_MATRIX_AND_PROOF_CLASSES_FROZEN__FUTURE_E05_CONTRACT_BOUND",
+      "phase_d": "PASS__BOUNDED_CERTIFICATION_REPORT_CHECKPOINT_AND_SEAL_PREPARED"
+    },
+    "artifact_bindings": [
+      {
+        "identity": "EX_HUMAN_READABLE_CERTIFICATION_CONTRACT",
+        "path": "docs/governance/G77_256EX_P11_SPCE_COMMON_SUBSTRATE_CERTIFICATION_AND_FUTURE_E05_CONSUMPTION_CONTRACT_V1.md",
+        "sha256": "856c9408a0449fb5dd54b94632ff8cb52eafc88affeabe343e74721c46ade99f"
+      },
+      {
+        "identity": "EX_CERTIFICATION_VALIDATOR",
+        "path": ".github/governance/evidence/g77_256ex_common_substrate_certification_v1/validator/G77_256EX_COMMON_SUBSTRATE_CERTIFICATION_VALIDATOR_V1.py",
+        "sha256": "1d124424f5bb99e1b2845421eff1712efebf81ef292a54d37f371558d9988d2e"
+      },
+      {
+        "identity": "EX_MACHINE_READABLE_CERTIFICATE",
+        "path": ".github/governance/evidence/g77_256ex_common_substrate_certification_v1/G77_256EX_P11_SPCE_COMMON_SUBSTRATE_CERTIFICATION_V1.json",
+        "sha256": "91c477171147c56516c0f473ab887c12173c4bab225f2733c274b32467824b2f",
+        "inner_sha256": "0aead8523a01fbd4d15b7622580ee0e04f623e3ca514fb92d294fc2330915e96"
+      },
+      {
+        "identity": "EX_G48_REPORT",
+        "path": "docs/governance/G77_256EX_HUMAN_CERTIFICATION_AND_REPOSITORY_ONLY_CLOSURE_HARDENING_OF_REUSABLE_P11_SPCE_SUBSTRATE_V1.md",
+        "sha256": "0f0e95c9bb919c57b61365cf7a8fbf8a5676a6a50ca7942e785958c5fa7b8132"
+      }
+    ],
+    "resumption": {
+      "state": "STATE_C__FUNCTIONALLY_COMPLETE_EX_WORK_PERSISTED__FINAL_VALIDATION_INCOMPLETE",
+      "same_session_resumability": "PASS__SIX_EX_ARTIFACTS_REAUTHENTICATED_AND_FINAL_VALIDATION_RESUMED_WITHOUT_REGENERATION",
+      "artifact_disposition": "MINIMALLY_FINALIZED",
+      "regenerated": false
+    },
+    "human_authorization": {
+      "result": "SUFFICIENT_FOR_EXACT_BOUNDED_SCOPE",
+      "origin": "EXPLICIT_HUMAN_G77_256EX_AUTHORIZATION",
+      "scope": "EXACT_COMMITTED_EW_MANIFEST_COMMON_REPOSITORY_SUBSTRATE_WITH_EXPLICIT_EXCLUSIONS",
+      "successor_inherits_authority": false
+    },
+    "validation": {
+      "final_validation": "PASS__EX_REPOSITORY_ONLY_BOUNDED_CERTIFICATION__NO_OPERATIONAL_OR_CREDIT_EFFECT",
+      "certificate_unique_key_json": "PASS",
+      "certificate_inner_hash": "PASS",
+      "certificate_scope": "PASS__EXACT_EW_SCOPE_WITH_FRESH_OPERATIONAL_VECTOR_AND_CREDIT_EXCLUSIONS",
+      "source_manifest_bindings": "PASS",
+      "ex_regression_total": 12,
+      "ex_regression_pass": 12,
+      "ex_regression_fail": 0,
+      "ew_regression_total": 17,
+      "ew_regression_pass": 17,
+      "ew_regression_fail": 0,
+      "eu_semantic_regression_total": 18,
+      "eu_semantic_regression_pass": 18,
+      "eu_semantic_regression_fail": 0,
+      "anti_parallelism": "PASS__NO_OPERATIONAL_STACK_LAUNCH_PATH_OR_SUCCESSOR_MANIFEST",
+      "operational_effect": 0,
+      "authority_effect": "BOUNDED_CERTIFICATION_ONLY",
+      "credit_effect": 0
+    },
+    "blocker_status": {
+      "B1": "OPEN__OPERATIONAL_EVIDENCE_REQUIRED",
+      "B2": "PARTIALLY_CLOSED__REPOSITORY_CONTRACT_CERTIFIED__OPERATIONAL_CUSTODY_EVIDENCE_OPEN",
+      "B3": "CLOSED__CERTIFIED",
+      "B4": "CLOSED__CERTIFIED_CANONICAL_IDENTITY",
+      "B5": "CLOSED__HUMAN_AUTHORITY_EXERCISED_BY_EX",
+      "B6": "PARTIALLY_CLOSED__REPOSITORY_BINDING_CERTIFIED__OPERATIONAL_BINDING_OPEN"
+    },
+    "component_counts": {
+      "before": {
+        "CERTIFIED": 4,
+        "EVIDENCE_SUPPORTED": 13,
+        "REQUIRES_HARDENING": 2,
+        "VECTOR_SPECIFIC": 3
+      },
+      "after": {
+        "CERTIFIED": 17,
+        "EVIDENCE_SUPPORTED": 0,
+        "REQUIRES_HARDENING": 2,
+        "VECTOR_SPECIFIC": 3
+      },
+      "classification_delta_count": 13,
+      "only_transition": "EVIDENCE_SUPPORTED_TO_CERTIFIED_FOR_EXACT_AUTHORIZED_COMMON_COMPONENT_ALLOWLIST"
+    },
+    "proof_load": {
+      "repetitive_proof_load_before": "HIGH",
+      "repetitive_proof_load_after": "LOW_TO_MEDIUM__DERIVED__CERTIFIED_COMMON_SUBSTRATE_REPLACES_RECONSTRUCTION",
+      "common_proof_reuse_ratio": "DERIVED__17_CERTIFIED_COMMON_COMPONENTS__NO_NUMERIC_WORK_RATIO",
+      "vector_specific_proof_ratio": "DERIVED__3_MATRIX_COMPONENTS_ALWAYS_VECTOR_SPECIFIC__NO_NUMERIC_WORK_RATIO",
+      "expected_future_e05_complexity_reduction": "HIGH__DERIVED__CONDITIONAL_ON_UNCHANGED_SUBSTRATE_AND_FRESH_B1_B2_B6_ACCEPTANCE"
+    },
+    "frontier": {
+      "e05_before": "5/18",
+      "e05_after": "5/18",
+      "e05_remaining": 13,
+      "consumed_state": "UNSATISFIED",
+      "g2_state": "OPEN",
+      "g3_entry_authorized": false,
+      "p12_entry_authorized": false,
+      "production_route_authorized": false
+    },
+    "operational_counters": {
+      "fresh_operational_candidate_count": 0,
+      "vm_creation_count": 0,
+      "vm_boot_count": 0,
+      "second_vm_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0,
+      "commissioning_execution_count": 0,
+      "p11_operational_invocation_count": 0,
+      "e05_case_execution_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0,
+      "execution_replay_count": 0,
+      "materialization_replay_count": 0
+    },
+    "reuse_impact": {
+      "certified_component_reuse_count": 17,
+      "evidence_supported_component_reuse_count": 0,
+      "fresh_component_count": 2,
+      "vector_specific_component_count": 3,
+      "parallel_flow_created": false,
+      "production_path_delta": 0,
+      "capability_reachability_loss": "NONE",
+      "duplicate_proof_path_created": false
+    },
+    "freeze_decision": "CERTIFIED_COMMON_SUBSTRATE_WITH_EXPLICIT_FRESH_OPERATIONAL_BOUNDARIES",
+    "reusable_p11_spce_execution_substrate": "CONSTITUTIONALLY_CERTIFIED__COMMON_REPOSITORY_SUBSTRATE_ONLY__FRESH_OPERATIONAL_AND_VECTOR_BOUNDARIES_EXCLUDED",
+    "exact_next_constitutional_frontier": "HUMAN_REVIEW_AND_OPTIONAL_COMMIT_OF_EX__THEN_SEPARATELY_AUTHORIZED_EY_USING_THE_EX_CERTIFICATE__WITH_B1_B2_AND_B6_FRESH_OPERATIONAL_ACCEPTANCE_GATES__NO_AUTOMATIC_EXECUTION",
+    "recommended_next_generation": "G77_256EY_ONE_FRESH_BOUNDED_E05_GENERATION_USING_CERTIFIED_COMMON_SUBSTRATE_PLUS_VECTOR_DELTA_PLUS_REQUIRED_FRESH_OPERATIONAL_EVIDENCE",
+    "checkpoint_is_authority": false,
+    "auto_continuable": false
+  },
+  "checkpoint_sha256": "a187ed76fbcfa7eb70d67b469ed2320a0c3a3142be5cdc662b655405e2e3210a"
+}
