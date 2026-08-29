@@ -1,0 +1,75 @@
+{
+  "schema_id": "G77_256FJ_SPCE_PHASE_D_FINAL_REDUCTION_ENVELOPE_V1",
+  "checkpoint": {
+    "schema_id": "G77_256FJ_SPCE_PHASE_D_FINAL_REDUCTION_V1",
+    "generation_identity": "G77_256FJ_ONE_BOUNDED_WRONG_ATTEMPT_OPERATIONAL_COMMISSIONING_V1",
+    "reduction_timestamp": "2026-08-29T09:02:00+02:00",
+    "phase_chain": {
+      "phase_a_file_sha256": "314779ad6f7170c8dcfc67a09859470d0f905197d10f111d3322cc503597a5fb",
+      "phase_a_inner_sha256": "5dcaf8394aae1313696ec8b243197cc9cf733dbfb301194b975a2802fee2c649",
+      "phase_b_file_sha256": "b8413d61a36387ca142507755f2f08aeee55b1d18d1c2d45acea493dc987f883",
+      "phase_b_inner_sha256": "60aa0935b6cf8c7935c85a9bf454e81985646c40706bdf24dcafa45500febaa3",
+      "phase_c_file_sha256": "8ba4d63a86bd0271600364514b6fa26758040f253a19b029139fc11db561de4e",
+      "phase_c_inner_sha256": "11a69637644e8ca7035f76c2abd8c3306f0897ae45387e76e863a812f3cf013f",
+      "g48_report_path": ".github/governance/evidence/g77_256fj_wrong_attempt_operational_v1/G77_256FJ_G48_IMPLEMENTATION_REPORT_V1.md",
+      "g48_report_file_sha256": "c0d6e66418063003341c474472e191854dc78701d409cc5e2c7cf69a36600d39"
+    },
+    "constitutional_reduction": {
+      "starting_e05": "6/18",
+      "wrong_attempt": "UNSATISFIED",
+      "ending_e05": "6/18",
+      "credit_delta": 0,
+      "credit_rule": "NO_PARTIAL_CREDIT",
+      "reason": "OPERATION_FAILED_DURING_CHE_CORRELATION_CONSTRUCTION_BEFORE_ACT_CREATION_AND_WRONG_ATTEMPT_REQUEST"
+    },
+    "final_counters": {
+      "candidate_count": 1,
+      "materialization_count": 1,
+      "vm_creation_count": 1,
+      "vm_boot_count": 1,
+      "qemu_execution_count": 1,
+      "wrong_attempt_execution_count": 0,
+      "retry_count": 0,
+      "repair_count": 0,
+      "replay_count": 0,
+      "p11_entry_count": 0,
+      "p11_invocation_count": 0,
+      "protected_effect_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0,
+      "provider_invocation_count": 0,
+      "trusted_access_activation_count": 0
+    },
+    "cross_account_provenance": {
+      "generation_restart_count": 0,
+      "account_change_count": "AT_LEAST_1__EXACT_NOT_MEASURED",
+      "session_change_count": "AT_LEAST_1__EXACT_NOT_MEASURED",
+      "authority_reset_count": 0,
+      "counter_reset_count": 0,
+      "reconstruction_count": 0,
+      "previous_thread": "01a04c21-7801-7e72-89e6-9b46e0070169",
+      "current_thread": "01a04c46-f167-7e42-8df6-9e87e5e8a94d"
+    },
+    "final_state": {
+      "phase_a_reuse_count": 1,
+      "phase_a_reconstruction_count": 0,
+      "ex_certified_component_reuse_count": 17,
+      "ex_reconstruction_count": 0,
+      "one_shot_budget": "CONSUMED__NO_ADDITIONAL_OPERATIONAL_EXECUTION",
+      "guest_teardown": "COMPLETE",
+      "qemu_process_count": 0,
+      "auto_continuable": false,
+      "human_review_required": true
+    },
+    "known_defects": {
+      "operational_failure": "CHE evidence correlation identity is invalid",
+      "terminal_manifest_false_pass": "REJECTED",
+      "premature_raw_e05_counter": "REJECTED_FOR_CONSTITUTIONAL_CREDIT",
+      "repair_authorized": false
+    },
+    "phase_d_result": "FAIL_CLOSED__G77_256FJ_FINALIZED__WRONG_ATTEMPT_UNSATISFIED__E05_6_OF_18",
+    "checkpoint_is_authority": false,
+    "exact_next_legal_action": "STOP__HUMAN_REVIEW_REQUIRED__NO_RETRY_REPAIR_REPLAY_P12_PRODUCTION_STAGE_COMMIT_OR_PUSH"
+  },
+  "checkpoint_sha256": "f8092b8a31b05591c7b81a4d0db39357e64a5720fe6c8f02165692f48d27bedb"
+}

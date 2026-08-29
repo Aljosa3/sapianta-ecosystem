@@ -1,0 +1,74 @@
+{
+  "schema_id": "G77_256FJ_SPCE_PHASE_C_VALIDATION_ENVELOPE_V1",
+  "checkpoint": {
+    "schema_id": "G77_256FJ_SPCE_PHASE_C_VALIDATION_V1",
+    "generation_identity": "G77_256FJ_ONE_BOUNDED_WRONG_ATTEMPT_OPERATIONAL_COMMISSIONING_V1",
+    "validation_timestamp": "2026-08-29T08:59:00+02:00",
+    "phase_chain": {
+      "phase_a_file_sha256": "314779ad6f7170c8dcfc67a09859470d0f905197d10f111d3322cc503597a5fb",
+      "phase_a_inner_sha256": "5dcaf8394aae1313696ec8b243197cc9cf733dbfb301194b975a2802fee2c649",
+      "phase_b_file_sha256": "b8413d61a36387ca142507755f2f08aeee55b1d18d1c2d45acea493dc987f883",
+      "phase_b_inner_sha256": "60aa0935b6cf8c7935c85a9bf454e81985646c40706bdf24dcafa45500febaa3"
+    },
+    "validation": {
+      "authority_and_provenance": "PASS",
+      "candidate_unchanged": "PASS__371663c5afec8baa9513da0a6e14566ffe1a8f9f62d2e274a47a90dcd43f4447",
+      "new_candidate_count": 0,
+      "new_materialization_count": 0,
+      "new_vm_creation_count": 0,
+      "vm_boot_count": 1,
+      "qemu_execution_count": 1,
+      "wrong_attempt_execution_count": 0,
+      "retry_count": 0,
+      "repair_count": 0,
+      "replay_count": 0,
+      "ex_reuse": "PASS__17_OF_17__ZERO_RECONSTRUCTED",
+      "b1": "PASS__ONE_EXACT_QEMU_CALL__EXIT_ZERO",
+      "b2": "PASS__BASE_AND_SEED_IMMUTABLE__OVERLAY_VALID__TEARDOWN_COMPLETE",
+      "b6": "NOT_VERIFIED__WRONG_ATTEMPT_COUNTER_PRODUCERS_NOT_REACHED",
+      "wrong_attempt_vector": "NOT_VERIFIED__FAILURE_BEFORE_ACT_CREATION_AND_REQUEST",
+      "denial_and_effect": "NOT_VERIFIED__NO_WRONG_ATTEMPT_REQUEST__ZERO_OBSERVED_P11_ENTRY_INVOCATION_EFFECT",
+      "json_unique_keys": "PASS",
+      "checkpoint_seals": "PASS",
+      "no_network": "PASS__NIC_NONE__ONLY_LOOPBACK__EMPTY_ROUTE_TABLE",
+      "external_provider_invocation_count": 0,
+      "trusted_access_activation_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0,
+      "stage_count": 0,
+      "commit_count": 0,
+      "push_count": 0
+    },
+    "counter_reconciliation": {
+      "raw_e05_case_execution_count": 1,
+      "actual_wrong_attempt_request_count": 0,
+      "classification": "RAW_COUNTER_MISCLASSIFIED__SPECIALIZATION_PRESET_E05_COUNT_BEFORE_VECTOR_EXECUTION",
+      "constitutional_counter_selected": "ACTUAL_EVENT_EVIDENCE__WRONG_ATTEMPT_EXECUTION_COUNT_0",
+      "terminal_manifest_claim": "PASS__E05_WRONG_ATTEMPT_DENIAL__GUEST_TEARDOWN_COMPLETE",
+      "terminal_manifest_validation": "REJECTED__CONTRADICTED_BY_FIRST_FAILURE__ACT_CREATION_ZERO__MISSING_AUTHORITY_AND_EXECUTION_SEALS"
+    },
+    "failure_validation": {
+      "raw_first_failure": "RuntimeError: custody failed creating act: CHE evidence correlation identity is invalid",
+      "failure_boundary": "ACT_CREATE__BEFORE_ACT_SUBMIT__BEFORE_WRONG_ATTEMPT_REQUEST__BEFORE_P11_ENTRY",
+      "authority_checkpoint_present": false,
+      "guest_execution_seal_present": false,
+      "guest_teardown_seal_present": true,
+      "fail_closed_credit_rule": "NO_PARTIAL_CREDIT"
+    },
+    "budgets": {
+      "candidate_total": 1,
+      "materialization_total": 1,
+      "vm_creation_total": 1,
+      "boot_total": 1,
+      "qemu_execution_total": 1,
+      "wrong_attempt_total": 0,
+      "all_additional_operational_execution_prohibited": true
+    },
+    "phase_c_result": "PASS__FAIL_CLOSED_VALIDATION_OF_ONE_SHOT_OPERATIONAL_FAILURE__WRONG_ATTEMPT_NOT_PROVEN",
+    "checkpoint_is_authority": false,
+    "auto_continuable": false,
+    "human_review_required": true,
+    "exact_next_legal_action": "PHASE_D_FINAL_REDUCTION_AND_G48_REPORT_ONLY__NO_RETRY_REPAIR_REPLAY_P12_OR_PRODUCTION"
+  },
+  "checkpoint_sha256": "11a69637644e8ca7035f76c2abd8c3306f0897ae45387e76e863a812f3cf013f"
+}
