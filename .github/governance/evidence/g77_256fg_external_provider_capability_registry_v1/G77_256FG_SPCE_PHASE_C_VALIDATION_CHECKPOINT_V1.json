@@ -1,0 +1,111 @@
+{
+  "schema_id": "G77_256FG_SPCE_PHASE_C_VALIDATION_CHECKPOINT_ENVELOPE_V1",
+  "checkpoint": {
+    "schema_id": "G77_256FG_SPCE_PHASE_C_VALIDATION_CHECKPOINT_V1",
+    "generation_identity": "G77_256FG_REPOSITORY_ONLY_EXTERNAL_PROVIDER_TRUST_CAPABILITY_REGISTRY_AND_SUSPENDED_FF_PRESERVATION_V1",
+    "required_head": "92ccdedb2d846c91878bf7a5b2ac958c547d60a1",
+    "required_tree": "7cf4ab8dc22849db2445a80bf9e1dcae639747b0",
+    "phase_a_file_sha256": "f38fab327416de856f563d8e5932898f31077d49b89871f5269a4de262e58bbd",
+    "phase_a_inner_sha256": "7087da4782a9c22589a3f9b25be7e38f2c4c743683b1e1d7a4d82d353e97d884",
+    "phase_b_file_sha256": "77b61f9ead7b2132509e87c2e989d08698e160f31d9deef2d922ea6899fcc4c9",
+    "phase_b_inner_sha256": "598e679cdb55a30fcc7a426aed9834f3fe23b8b3065fb6b7bf8109eb853dc824",
+    "return_contract_file_sha256": "554b7c447c5d929a9cc5c29692b3a570adb804719abfaa2707154badfefc6871",
+    "return_contract_inner_sha256": "d701315d6b0a35cd2d5562dc1b42cf87813c68736a31e2d9beb529f8eee25ed1",
+    "executed_validation": {
+      "focused_capability_suite": {
+        "command": "python -m pytest -q tests/test_external_provider_capability_registry_v1.py",
+        "result": "PASS__16_PASSED"
+      },
+      "provider_registry_consumer_regression": {
+        "command": "rg -l aigol.provider.provider_registry tests | sort | xargs python -m pytest -q",
+        "result": "PASS__215_PASSED"
+      },
+      "governance_conformance_tests": {
+        "command": "python -m pytest -q tests/test_governance_conformance.py",
+        "result": "PASS__5_PASSED"
+      },
+      "governance_conformance_engine": {
+        "command": "python -m runtime.governance.governance_conformance_engine",
+        "result": "PASS__20_CHECKS__0_FAILURES__0_CRITICAL_VIOLATIONS",
+        "report_hash": "5b87813dac8851b2a30280c40c9c35f27fb922f234ab886a562b3a948bd604cd",
+        "scope_limitation": "FOCUSED_CURRENT_ENGINE_RESULT__DOES_NOT_RECLASSIFY_ANY_SEPARATELY_RECORDED_HISTORICAL_PARTIAL_CONFORMANCE"
+      },
+      "ex_validator": {
+        "command": "python -B .github/governance/evidence/g77_256ex_common_substrate_certification_v1/validator/G77_256EX_COMMON_SUBSTRATE_CERTIFICATION_VALIDATOR_V1.py",
+        "result": "PASS__12_OF_12_REGRESSIONS__17_CERTIFIED_COMPONENTS__0_OPERATIONAL_EFFECT__0_CREDIT_EFFECT"
+      },
+      "python_compilation": "PASS",
+      "json_unique_key_and_inner_hash_audit": "PASS_AFTER_TRAILING_NEWLINE_CANONICAL_SEAL_CORRECTION",
+      "git_diff_check": "PASS",
+      "index_state": "EMPTY",
+      "staging": "NOT_PERFORMED",
+      "commit": "NOT_PERFORMED",
+      "push": "NOT_PERFORMED"
+    },
+    "capability_validation_matrix": {
+      "unknown_capability_fails_closed": "PASS",
+      "unavailable_capability_fails_closed": "PASS",
+      "available_requires_evidence": "PASS",
+      "account_a_does_not_transfer_to_b": "PASS",
+      "workspace_a_does_not_transfer_to_b": "PASS",
+      "codex_path_does_not_imply_api_path": "PASS",
+      "api_path_does_not_imply_codex_path": "PASS",
+      "provider_capability_does_not_imply_human_authority": "PASS",
+      "provider_capability_does_not_imply_p11_authority": "PASS",
+      "p11_authority_does_not_imply_provider_capability": "PASS__P11_NOT_AN_INPUT_TO_PROVIDER_RESOLUTION",
+      "worker_eligibility_does_not_imply_execution_authority": "PASS",
+      "task_requiring_capability_excludes_worker_without_it": "PASS",
+      "eligible_worker_not_automatically_executed": "PASS",
+      "one_fact_supports_multiple_consumer_policies": "PASS__TWO_CONSUMERS__ONE_FACT_HASH",
+      "consumer_policy_can_differ_without_fact_duplication": "PASS__QUOTA_POLICY_DIFFERENCE",
+      "no_raw_secrets_enter_evidence": "PASS__REFERENCE_AND_SHA256_ONLY__SECRET_LIKE_NEGATIVE_PROBE",
+      "trusted_access_not_global_boolean": "PASS",
+      "new_provider_and_capability_structurally_extensible": "PASS__REGIONAL_AVAILABILITY_PROBE"
+    },
+    "ff_preservation_validation_matrix": {
+      "ff_candidate_unchanged": "PASS__371663c5afec8baa9513da0a6e14566ffe1a8f9f62d2e274a47a90dcd43f4447",
+      "ff_materialization_unchanged": "PASS__331877b9b824a0d33c3866174523a30aec7b0b3a40bf4681a740eec3daea1d7e",
+      "ff_phase_a_unchanged": "PASS__38d201062c3f1d4e02fbf1f1d7aa1ff4676d4a94f81c4096b4d1c20b5ae97b78",
+      "ff_pre_boot_placeholder_unchanged": "PASS__2deb5f5b3f8a8455737c4e2a9b6095e62fd2407692ac060f8dd1725385c4446c",
+      "ff_overlay_unchanged": "PASS__6ea4eed169518c646774cfbe2c7b8c00646a9cdead8798f7c94c786c6b6ce8b2",
+      "ff_seed_unchanged": "PASS__0c2b27f78dc165834a8772881a4c91fde27e26702b4cbe6af5c5d26b08579df7",
+      "ff_candidate_count": "PASS__1",
+      "ff_materialization_count": "PASS__1",
+      "ff_vm_creation_count": "PASS__1",
+      "ff_vm_boot_count": "PASS__0",
+      "ff_qemu_execution_count": "PASS__0__NO_QEMU_PROCESS",
+      "ff_wrong_attempt_execution_count": "PASS__0__NO_B1_RECEIPT_NO_SERIAL_NO_OPERATIONAL_EVIDENCE",
+      "ff_retry_count": "PASS__0",
+      "ff_repair_count": "PASS__0",
+      "ff_replay_count": "PASS__0",
+      "production_path_delta": "PASS__0"
+    },
+    "architecture_counts": {
+      "trust_capability_state_duplication_count": 0,
+      "capability_consumer_count_demonstrated": 2,
+      "central_capability_query_interface_count": 1,
+      "parallel_capability_registry_count": 0,
+      "parallel_flow_created": false,
+      "duplicate_provider_control_plane_created": false,
+      "duplicate_capability_state_created": false,
+      "new_service_count": 0,
+      "new_executor_count": 0,
+      "new_provider_control_plane_count": 0,
+      "new_capability_resolver_count": 1,
+      "production_path_delta": 0
+    },
+    "known_limitations": {
+      "current_worker_trusted_access_state": "NOT_ESTABLISHED",
+      "ff_required_external_capabilities": "NOT_ESTABLISHED",
+      "pre_boot_authorization": "FAIL__UNSEALED_PLACEHOLDER",
+      "pre_boot_sealing_decision": "NEW_AUTHORITY_OR_NEW_OPERATIONAL_ACTION_REQUIRED",
+      "consumer_runtime_integration": "NOT_IMPLEMENTED__CANONICAL_QUERY_INTERFACE_ONLY",
+      "actual_external_provider_activation_or_verification": "NOT_PERFORMED",
+      "full_repository_test_suite": "NOT_RUN__236_FOCUSED_TEST_INVOCATIONS_220_UNIQUE_TESTS_AND_EX_VALIDATOR_EXECUTED"
+    },
+    "checkpoint_is_authority": false,
+    "auto_continuable": false,
+    "exact_next_legal_action": "INDEPENDENT_PHASE_D_REDUCTION_AND_G48_REPORT__DO_NOT_BOOT_OR_EXECUTE_FF"
+  },
+  "checkpoint_sha256": "73f0d15aa50be95272559020c6b896e869d0e3d98fa51d8092ad0ae6d43d1cd9"
+}

@@ -1,0 +1,113 @@
+{
+  "schema_id": "G77_256FG_SPCE_PHASE_B_IMPLEMENTATION_CHECKPOINT_ENVELOPE_V1",
+  "checkpoint": {
+    "schema_id": "G77_256FG_SPCE_PHASE_B_IMPLEMENTATION_CHECKPOINT_V1",
+    "generation_identity": "G77_256FG_REPOSITORY_ONLY_EXTERNAL_PROVIDER_TRUST_CAPABILITY_REGISTRY_AND_SUSPENDED_FF_PRESERVATION_V1",
+    "required_head": "92ccdedb2d846c91878bf7a5b2ac958c547d60a1",
+    "required_tree": "7cf4ab8dc22849db2445a80bf9e1dcae639747b0",
+    "phase_a": {
+      "path": ".github/governance/evidence/g77_256fg_external_provider_capability_registry_v1/G77_256FG_SPCE_PHASE_A_CORRECTED_CONTINUATION_CHECKPOINT_V1.json",
+      "file_sha256": "f38fab327416de856f563d8e5932898f31077d49b89871f5269a4de262e58bbd",
+      "inner_sha256": "7087da4782a9c22589a3f9b25be7e38f2c4c743683b1e1d7a4d82d353e97d884",
+      "authentication": "PASS__SEALED_BEFORE_IMPLEMENTATION"
+    },
+    "implementation": {
+      "control_plane_decision": "EXTEND_EXISTING_AIGOL_PROVIDER_REGISTRY",
+      "provider_registry_path": "aigol/provider/provider_registry.py",
+      "provider_registry_sha256_after_fg": "413804fc686ddc5ec400052e517b42a5141aaf6c95cdd3ea5166c788361189b8",
+      "test_path": "tests/test_external_provider_capability_registry_v1.py",
+      "test_sha256": "2e87ebae9a337011319d1ea76e143b1e385be82931062bca605a47419b696c2f",
+      "canonical_provider_fact_model": "ExternalProviderCapabilityFact",
+      "consumer_policy_model": "ExternalCapabilityRequirement",
+      "canonical_query_model": "ExternalCapabilityQuery",
+      "canonical_registry": "ProviderRegistry",
+      "canonical_resolver": "ProviderRegistry.resolve_external_capability",
+      "new_service_count": 0,
+      "new_executor_count": 0,
+      "new_provider_control_plane_count": 0,
+      "new_capability_resolver_count": 1,
+      "parallel_capability_registry_count": 0,
+      "production_path_delta": 0
+    },
+    "central_provider_fact_key": [
+      "provider_id",
+      "account_or_workspace_id",
+      "access_path",
+      "worker_identity",
+      "capability",
+      "authorized_scope"
+    ],
+    "provider_fact_fields": [
+      "verification_state",
+      "validity_state",
+      "evidence_source",
+      "evidence_sha256",
+      "quota_state",
+      "human_owner_or_authority_reference"
+    ],
+    "consumer_policy_fields": [
+      "consumer_id",
+      "task_id",
+      "aigol_role",
+      "operation_class",
+      "required_capability",
+      "authorized_scope",
+      "requires_available_quota"
+    ],
+    "fail_closed_states": {
+      "proven_available": "ELIGIBLE_ONLY_WHEN_PROVIDER_AND_EVIDENCE_VALID_AND_REQUIRED_QUOTA_AVAILABLE",
+      "proven_unavailable": "INELIGIBLE",
+      "unknown_or_not_established": "UNKNOWN__WORKER_INELIGIBLE__HUMAN_ACTION_REQUIRED",
+      "missing_exact_fact": "UNKNOWN__WORKER_INELIGIBLE__HUMAN_ACTION_REQUIRED",
+      "cross_identity_or_scope_lookup": "NO_MATCH__NO_TRANSFER__FAIL_CLOSED"
+    },
+    "authority_boundaries": {
+      "provider_capability_available_implies_human_authority": false,
+      "provider_capability_available_implies_p11_authority": false,
+      "worker_eligible_implies_worker_selected": false,
+      "worker_eligible_implies_execution_authority": false,
+      "resolver_dispatches": false,
+      "resolver_invokes_provider": false,
+      "resolver_requests_execution": false,
+      "resolver_continues_ff": false
+    },
+    "trusted_access_binding": {
+      "representation": "GENERIC_CAPABILITY_INSTANCE_NAMED_TRUSTED_ACCESS",
+      "global_boolean": false,
+      "transferable_between_accounts": false,
+      "transferable_between_workspaces": false,
+      "transferable_between_access_paths": false,
+      "current_worker_state": "NOT_ESTABLISHED",
+      "ff_requirement_trigger": "HUMAN_SUPPLIED_PROVIDER_UI_INDICATION",
+      "ff_repository_policy_requirement": "NOT_ESTABLISHED",
+      "automatic_activation": false
+    },
+    "secret_boundary": {
+      "raw_secret_storage_added": false,
+      "credential_vault_replaced": false,
+      "evidence_accepts_secret_like_material": false,
+      "evidence_binding": "REFERENCE_PLUS_SHA256_ONLY"
+    },
+    "multi_consumer_contract": {
+      "canonical_provider_fact_count_per_exact_key": 1,
+      "consumer_requirements_are_query_policy": true,
+      "one_fact_can_resolve_multiple_roles": true,
+      "one_fact_can_resolve_multiple_operation_classes": true,
+      "consumer_policy_can_differ_without_fact_duplication": true
+    },
+    "ff_preservation": {
+      "candidate_changed": false,
+      "materialization_changed": false,
+      "vm_or_overlay_changed": false,
+      "boot_performed": false,
+      "qemu_executed": false,
+      "wrong_attempt_executed": false,
+      "ff_budget_consumed": false,
+      "pre_boot_placeholder_changed": false
+    },
+    "checkpoint_is_authority": false,
+    "auto_continuable": false,
+    "exact_next_legal_action": "VALIDATE_REPOSITORY_ONLY_AND_PRODUCE_FF_RETURN_CONTRACT__DO_NOT_BOOT_OR_EXECUTE_FF"
+  },
+  "checkpoint_sha256": "598e679cdb55a30fcc7a426aed9834f3fe23b8b3065fb6b7bf8109eb853dc824"
+}

@@ -1,0 +1,170 @@
+{
+  "schema_id": "G77_256FG_SPCE_PHASE_A_CORRECTED_CONTINUATION_CHECKPOINT_ENVELOPE_V1",
+  "checkpoint": {
+    "schema_id": "G77_256FG_SPCE_PHASE_A_CORRECTED_CONTINUATION_CHECKPOINT_V1",
+    "generation_identity": "G77_256FG_REPOSITORY_ONLY_EXTERNAL_PROVIDER_TRUST_CAPABILITY_REGISTRY_AND_SUSPENDED_FF_PRESERVATION_V1",
+    "generation_continuation": "SAME_G77_256FG_AFTER_HUMAN_CORRECTION_OF_STALE_FF_COUNTER_ASSUMPTION",
+    "required_head": "92ccdedb2d846c91878bf7a5b2ac958c547d60a1",
+    "required_tree": "7cf4ab8dc22849db2445a80bf9e1dcae639747b0",
+    "required_subject": "G77-256FE admit WRONG_ATTEMPT through DU EB EE preflight",
+    "entry_gate": {
+      "result": "PASS",
+      "index": "EMPTY",
+      "authorized_dirty_namespaces": [
+        ".github/governance/evidence/g77_256ff_wrong_attempt_operational_v1/",
+        ".github/governance/evidence/g77_256fg_external_provider_capability_registry_v1/"
+      ],
+      "fg_provider_implementation_count_before_continuation": 0,
+      "fg_provider_mutation_count_before_continuation": 0
+    },
+    "previous_fg_result": {
+      "isolation_decision": "UNDERDETERMINED__HUMAN_DECISION_REQUIRED",
+      "cause": "STALE_HUMAN_SUPPLIED_ZERO_MATERIALIZATION_ASSUMPTION_CONTRADICTED_AUTHENTICATED_FF_MATERIALIZATION",
+      "disposition": "CORRECT_FAIL_CLOSED_STOP__NOT_A_RETRY_OR_CANDIDATE_FAILURE",
+      "human_reauthorization": "PRESENT__CORRECTED_1_1_1_0_0_0_BOUNDARY_ACCEPTED"
+    },
+    "ff_authentication": {
+      "state": "SUSPENDED__MATERIALIZED__NOT_BOOTED",
+      "phase_a_path": ".github/governance/evidence/g77_256ff_wrong_attempt_operational_v1/G77_256FF_SPCE_PHASE_A_CHECKPOINT_V1.json",
+      "phase_a_file_sha256": "38d201062c3f1d4e02fbf1f1d7aa1ff4676d4a94f81c4096b4d1c20b5ae97b78",
+      "phase_a_inner_sha256": "0f38de9e137a5108c335dfb2a20f8f803146f7f15beeb98991fbf731fd15e8df",
+      "cross_account_checkpoint_file_sha256": "06bf44d6245a725750149c568333371bbb426226af6310c53e2d7614939d80b7",
+      "phase_b_file_sha256": "d41e7fd2f15a625dd9801cffa1197abab10024ce1b25dd34e6201ce499906b34",
+      "candidate_path": ".github/governance/evidence/g77_256ff_wrong_attempt_operational_v1/raw/G77_256FF_CANONICAL_CONTINUATION_MANIFEST_PRE_MATERIALIZATION_V1.json",
+      "candidate_sha256": "371663c5afec8baa9513da0a6e14566ffe1a8f9f62d2e274a47a90dcd43f4447",
+      "candidate_immutability": "PASS",
+      "du_result": "PASS",
+      "eb_receipt_file_sha256": "4133c388a89d8fb5e2c46193993b08107cc7df2d38056ce94e3e0995fc28eb4d",
+      "eb_result": "PASS",
+      "ee_receipt_file_sha256": "1b1fb840b33b49502e1ce5ed30c90a03ccc8cf80fb3d3a0dbd1541c3f155493a",
+      "ee_result": "PASS",
+      "materialization_checkpoint_file_sha256": "331877b9b824a0d33c3866174523a30aec7b0b3a40bf4681a740eec3daea1d7e",
+      "materialization_checkpoint_inner_sha256": "7dac2e4c98e20885e7f25dafb9935f704149cc848e955082fd59b28529a0bb2b",
+      "b2_receipt_file_sha256": "2255c5d436b6d28ee10d14f1d23bb4aa45ef7fb1dc537b68e64e7772ee5f263f",
+      "b2_receipt_inner_sha256": "5d462fc5eae10a63739de70e1533e9c31ca93dc360d0c0957708b2588c8de68d",
+      "continuation_manifest_sha256": "371663c5afec8baa9513da0a6e14566ffe1a8f9f62d2e274a47a90dcd43f4447",
+      "qemu_argv_file_sha256": "d194bcd1a527afa2695125865571644d069437609354ce8724c5cae03d9b6bc4",
+      "qemu_argv_canonical_sha256": "5ff1ed751e339c43cda17dc09a6b3ef4d8c8136330df1605a428faad1e13d013",
+      "builder_sha256": "70bc4542b4774d6c1c79fdd0f23c4caea00d733a266e7893d5b624fc58771e12",
+      "adapter_sha256": "b63a2e622f2c069a97863176e87e6255fac37ad61edcb44e6a201f033127a323",
+      "launcher_sha256": "c0bc42f06602dfe3d3540a57e3b3b82e1bbc4e0c2886426bc594f15289fcce8f",
+      "base_image_sha256": "6e40c07ae715f744f84af0bec76415cc1987dd115b4b8de437818561f01a3733",
+      "overlay_sha256": "6ea4eed169518c646774cfbe2c7b8c00646a9cdead8798f7c94c786c6b6ce8b2",
+      "seed_sha256": "0c2b27f78dc165834a8772881a4c91fde27e26702b4cbe6af5c5d26b08579df7",
+      "qemu_process_count": 0,
+      "serial_execution_output_present": false,
+      "b1_execution_receipt_present": false,
+      "operational_evidence_present": false
+    },
+    "ff_generation_wide_counters": {
+      "candidate_count": 1,
+      "materialization_count": 1,
+      "vm_creation_count": 1,
+      "vm_boot_count": 0,
+      "qemu_execution_count": 0,
+      "wrong_attempt_execution_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0,
+      "execution_replay_count": 0
+    },
+    "pre_boot_boundary": {
+      "path": ".github/governance/evidence/g77_256ff_wrong_attempt_operational_v1/G77_256FF_SPCE_PRE_BOOT_AUTHORIZATION_V1.json",
+      "original_interrupted_file_sha256": "2deb5f5b3f8a8455737c4e2a9b6095e62fd2407692ac060f8dd1725385c4446c",
+      "recorded_inner_sha256": "TO_BE_SEALED",
+      "computed_checkpoint_sha256": "d52a1521e16cc10ff182f33aa1617180db803f24bedb66db02c58898a7843ef5",
+      "authentication": "FAIL__UNSEALED_PLACEHOLDER",
+      "committed_checkpoint_writer_sha256": "74047ee7b3bf219fa70491536d9a5e75eb98d92d06763a17d2783d8882a3ee1e",
+      "existing_output_replacement_permitted_by_writer": false,
+      "forbidden_sentinel_present": true,
+      "pre_boot_sealing_decision": "NEW_AUTHORITY_OR_NEW_OPERATIONAL_ACTION_REQUIRED",
+      "post_human_reauth_repository_completion": "NOT_PERFORMED__EXISTING_AUTHORITY_DID_NOT_PROVE_REPLACEMENT_PERMITTED"
+    },
+    "ex_authentication": {
+      "result": "PASS__12_OF_12_REGRESSIONS",
+      "certificate_file_sha256": "91c477171147c56516c0f473ab887c12173c4bab225f2733c274b32467824b2f",
+      "final_seal_file_sha256": "46115a7627264793af5e289abe85565fcaaf8a381b009e185c35ebc3d4b8a543",
+      "certified_common_components_available": 17,
+      "certified_common_components_applicable": 17,
+      "certified_common_components_reused": 17,
+      "certified_common_components_reconstructed": 0,
+      "common_substrate_reconstruction_count": 0
+    },
+    "provider_architecture_discovery": {
+      "canonical_provider_metadata_registry": {
+        "path": "aigol/provider/provider_registry.py",
+        "sha256_before_fg": "f02c3f46fabf1e131bdff08edde477f6451afd9e84a511c9ec26c38017712465",
+        "role": "CENTRAL_RUNTIME_PROVIDER_METADATA_REGISTRY__NON_AUTHORITATIVE__NON_EXECUTING"
+      },
+      "provider_identity_and_secret_reference_boundary": {
+        "path": "aigol/runtime/provider_identity_boundaries.py",
+        "sha256": "e813cda2039f4b3f03c3981f136f7dd88577e57d09712d5eb560350380021a19",
+        "role": "PROVIDER_IDENTITY_CAPABILITY_DECLARATIONS_AND_SECRET_FREE_CREDENTIAL_REFERENCES"
+      },
+      "credential_vault": {
+        "path": "aigol/runtime/provider_credential_vault.py",
+        "sha256": "cacb75a12381359dd9f9f97e6426a2c96278d37e9801d9798f7d5c96900bb036",
+        "role": "OUT_OF_REPOSITORY_SECRET_STORAGE_AND_REPLAY_SAFE_DIAGNOSTICS"
+      },
+      "provider_necessity_policy": {
+        "path": "aigol/runtime/provider_necessity_policy_runtime.py",
+        "sha256": "5f62ddddd062f9671fe2e577651c84cb19290520f08a219db2fc051e55cd3284",
+        "role": "TASK_LEVEL_PROVIDER_REQUIREMENT_CLASSIFICATION"
+      },
+      "unified_resource_selection": {
+        "path": "aigol/runtime/unified_resource_selection_runtime.py",
+        "sha256": "fc36fda533e053d6bceffad5d84af0df9ce0eed7caa54e3d805038b172f23473",
+        "role": "ROLE_CAPABILITY_TRUST_AND_RESOURCE_SELECTION__NO_INVOCATION"
+      },
+      "bridge_provider_registry": {
+        "path": "sapianta_bridge/providers/provider_registry.py",
+        "sha256": "0d703b023bfb9830ab9837f28a9380bb55b7b3b4e131dd93d03e961019640726",
+        "role": "PASSIVE_EXECUTION_PROVIDER_ADAPTER_REGISTRY__NOT_SELECTED_AS_CENTRAL_TRUST_FACT_OWNER"
+      },
+      "bridge_capability_registry": {
+        "path": "sapianta_bridge/capabilities/capability_registry.py",
+        "sha256": "7e4d46ee383a9f0da46d0757f3e4406ea3b4f8ff35b5ee60df3d3f1f91a31c59",
+        "role": "PASSIVE_PROVIDER_MODALITY_DECLARATIONS__INSUFFICIENT_ACCOUNT_WORKSPACE_ACCESS_PATH_SCOPE"
+      },
+      "provider_capability_catalog": {
+        "path": "docs/governance/PROVIDER_CAPABILITY_CATALOG_V1.json",
+        "sha256": "229af3ece0cef65bd640d04e40d98b40fb6230fbe7556b714c58e9e672baa5e9",
+        "role": "GOVERNANCE_REVIEW_CATALOG__NOT_DYNAMIC_TRUST_FACT_AUTHORITY"
+      },
+      "provider_identity_model_sha256": "04af29dd29ebda11e6758524f50638f045114cd2c2a6a3054828dfa05d43dfa9",
+      "provider_authority_separation_sha256": "461524a016b5bc33326ccebb9560f96d1b4da0155e9a384dfddfed26fd7b1964"
+    },
+    "decisions": {
+      "isolation_decision": "PASS__SAME_FE_HEAD_WITH_STRICT_FF_AND_FG_NAMESPACE_ISOLATION__NO_COMMIT_OR_HEAD_CHANGE__FUTURE_FG_COMMIT_REQUIRES_SEPARATE_BRANCH_WORKTREE_UNTIL_FF_COMPLETES",
+      "provider_control_plane_reuse_decision": "EXTEND_EXISTING_AIGOL_PROVIDER_REGISTRY__DO_NOT_CREATE_SECOND_PROVIDER_CONTROL_PLANE",
+      "central_capability_model_decision": "ADD_SCOPE_KEYED_EVIDENCE_BACKED_PROVIDER_FACTS_AND_ONE_RESOLVER_TO_EXISTING_PROVIDER_REGISTRY",
+      "consumer_policy_separation": "KEEP_ROLE_TASK_OPERATION_REQUIREMENTS_IN_QUERY_POLICY__DO_NOT_COPY_PROVIDER_FACTS",
+      "trusted_access_model": "GENERIC_CAPABILITY_INSTANCE__NOT_GLOBAL_BOOLEAN__NOT_TRANSFERABLE",
+      "current_worker_trusted_access_state": "NOT_ESTABLISHED",
+      "trusted_access_requirement_for_ff": "HUMAN_SUPPLIED_TRIGGER__REPOSITORY_POLICY_BINDING_NOT_YET_ESTABLISHED",
+      "ff_required_external_capabilities": "NOT_ESTABLISHED"
+    },
+    "isolation_analysis": {
+      "option_a_same_dirty_worktree": "PASS_ONLY_FOR_UNCOMMITTED_NAMESPACE_ISOLATED_FG_DELTA_WITH_HEAD_TREE_UNCHANGED",
+      "option_b_separate_worktree": "PASS_FOR_FUTURE_COMMIT_REVIEW__NOT_REQUIRED_FOR_CURRENT_UNCOMMITTED_DELTA",
+      "option_c_separate_branch_worktree": "REQUIRED_IF_FG_IS_COMMITTED_BEFORE_FF_COMPLETES",
+      "option_d_design_only": "SAFE_BUT_UNNECESSARY_AFTER_NAMESPACE_ISOLATION_PROVEN",
+      "option_e_materialized_checkout_isolation": "PASS__FF_GUEST_USES_FE_PINNED_CLEAN_CHECKOUT_AND_ONLY_FF_SPECIFIC_9P_MOUNTS",
+      "ff_candidate_reconstruction_required": false,
+      "ff_materialization_replay_required": false,
+      "ff_du_eb_ee_replay_required": false,
+      "ff_operational_replay_required": false,
+      "ff_budget_consumed_by_fg": false,
+      "parallel_constitutional_path_created": false
+    },
+    "telemetry": {
+      "context_used_start": "NOT_MEASURED",
+      "five_hour_limit_start": "NOT_MEASURED",
+      "seven_day_limit_start": "NOT_MEASURED",
+      "continuation_timestamp": "2026-08-29T07:34:48+02:00"
+    },
+    "checkpoint_is_authority": false,
+    "auto_continuable": false,
+    "exact_next_legal_action": "IMPLEMENT_MINIMUM_PROVIDER_CAPABILITY_EXTENSION_AND_VALIDATE_REPOSITORY_ONLY__DO_NOT_MUTATE_OR_EXECUTE_FF"
+  },
+  "checkpoint_sha256": "7087da4782a9c22589a3f9b25be7e38f2c4c743683b1e1d7a4d82d353e97d884"
+}

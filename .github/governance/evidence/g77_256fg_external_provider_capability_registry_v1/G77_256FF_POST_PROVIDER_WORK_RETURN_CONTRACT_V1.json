@@ -1,0 +1,141 @@
+{
+  "schema_id": "G77_256FF_POST_PROVIDER_WORK_RETURN_CONTRACT_ENVELOPE_V1",
+  "contract": {
+    "schema_id": "G77_256FF_POST_PROVIDER_WORK_RETURN_CONTRACT_V1",
+    "generation_identity": "G77_256FF_ONE_FRESH_HUMAN_AUTHORIZED_WRONG_ATTEMPT_OPERATIONAL_COMMISSIONING_V1",
+    "producer_generation": "G77_256FG_REPOSITORY_ONLY_EXTERNAL_PROVIDER_TRUST_CAPABILITY_REGISTRY_AND_SUSPENDED_FF_PRESERVATION_V1",
+    "original_fe_baseline": {
+      "head": "92ccdedb2d846c91878bf7a5b2ac958c547d60a1",
+      "tree": "7cf4ab8dc22849db2445a80bf9e1dcae639747b0",
+      "subject": "G77-256FE admit WRONG_ATTEMPT through DU EB EE preflight"
+    },
+    "ff_phase_a": {
+      "path": ".github/governance/evidence/g77_256ff_wrong_attempt_operational_v1/G77_256FF_SPCE_PHASE_A_CHECKPOINT_V1.json",
+      "file_sha256": "38d201062c3f1d4e02fbf1f1d7aa1ff4676d4a94f81c4096b4d1c20b5ae97b78",
+      "inner_sha256": "0f38de9e137a5108c335dfb2a20f8f803146f7f15beeb98991fbf731fd15e8df",
+      "unchanged": true
+    },
+    "cross_account_continuation": {
+      "path": ".github/governance/evidence/g77_256ff_wrong_attempt_operational_v1/G77_256FF_SPCE_CROSS_ACCOUNT_CONTINUATION_AUTHENTICATION_V1.json",
+      "file_sha256": "06bf44d6245a725750149c568333371bbb426226af6310c53e2d7614939d80b7",
+      "inner_sha256": "8ed07b8b3c27bef5050358855f21edf57bb6296e381a8070067a8bbf13469511"
+    },
+    "candidate": {
+      "path": ".github/governance/evidence/g77_256ff_wrong_attempt_operational_v1/raw/G77_256FF_CANONICAL_CONTINUATION_MANIFEST_PRE_MATERIALIZATION_V1.json",
+      "full_sha256": "371663c5afec8baa9513da0a6e14566ffe1a8f9f62d2e274a47a90dcd43f4447",
+      "runtime_projection_sha256": "371663c5afec8baa9513da0a6e14566ffe1a8f9f62d2e274a47a90dcd43f4447",
+      "unchanged": true,
+      "count": 1
+    },
+    "admission": {
+      "phase_b_file_sha256": "d41e7fd2f15a625dd9801cffa1197abab10024ce1b25dd34e6201ce499906b34",
+      "phase_b_inner_sha256": "ac7f682ff0ba1cbcaceb1898ef82897032cb3ff6766914e24dc7af4cb0d4c0c1",
+      "du": "PASS",
+      "eb": "PASS",
+      "eb_receipt_file_sha256": "4133c388a89d8fb5e2c46193993b08107cc7df2d38056ce94e3e0995fc28eb4d",
+      "eb_receipt_inner_sha256": "b53e2585df9e38deeb9a7349d54cb1a09315b26cf112c945d243df48f1e82629",
+      "ee": "PASS",
+      "ee_receipt_file_sha256": "1b1fb840b33b49502e1ce5ed30c90a03ccc8cf80fb3d3a0dbd1541c3f155493a",
+      "ee_receipt_inner_sha256": "1abf390bda2fc85731ac5a5baefa67212a97414e79e15f9565d908a7e539cfb7"
+    },
+    "materialization": {
+      "checkpoint_path": ".github/governance/evidence/g77_256ff_wrong_attempt_operational_v1/G77_256FF_SPCE_MATERIALIZATION_CHECKPOINT_V1.json",
+      "checkpoint_file_sha256": "331877b9b824a0d33c3866174523a30aec7b0b3a40bf4681a740eec3daea1d7e",
+      "checkpoint_inner_sha256": "7dac2e4c98e20885e7f25dafb9935f704149cc848e955082fd59b28529a0bb2b",
+      "b2_receipt_file_sha256": "2255c5d436b6d28ee10d14f1d23bb4aa45ef7fb1dc537b68e64e7772ee5f263f",
+      "b2_receipt_inner_sha256": "5d462fc5eae10a63739de70e1533e9c31ca93dc360d0c0957708b2588c8de68d",
+      "base_image_path": "/tmp/g77_256cw.IkqZJN/noble-server-cloudimg-amd64.img",
+      "base_image_sha256": "6e40c07ae715f744f84af0bec76415cc1987dd115b4b8de437818561f01a3733",
+      "overlay_path": "/tmp/g77_256ff/guest-overlay.qcow2",
+      "overlay_sha256_pre_boot": "6ea4eed169518c646774cfbe2c7b8c00646a9cdead8798f7c94c786c6b6ce8b2",
+      "overlay_bytes_pre_boot": 196664,
+      "seed_path": "/tmp/g77_256ff/nocloud-seed.img",
+      "seed_sha256": "0c2b27f78dc165834a8772881a4c91fde27e26702b4cbe6af5c5d26b08579df7",
+      "seed_bytes": 376832,
+      "unchanged": true,
+      "count": 1,
+      "vm_creation_count": 1
+    },
+    "runtime_binding": {
+      "builder_sha256": "70bc4542b4774d6c1c79fdd0f23c4caea00d733a266e7893d5b624fc58771e12",
+      "adapter_sha256": "b63a2e622f2c069a97863176e87e6255fac37ad61edcb44e6a201f033127a323",
+      "launcher_sha256": "c0bc42f06602dfe3d3540a57e3b3b82e1bbc4e0c2886426bc594f15289fcce8f",
+      "qemu_argv_file_sha256": "d194bcd1a527afa2695125865571644d069437609354ce8724c5cae03d9b6bc4",
+      "qemu_argv_canonical_sha256": "5ff1ed751e339c43cda17dc09a6b3ef4d8c8136330df1605a428faad1e13d013",
+      "continuation_manifest_file_sha256": "371663c5afec8baa9513da0a6e14566ffe1a8f9f62d2e274a47a90dcd43f4447",
+      "network_interface_count": 0,
+      "b1_execution_receipt_present": false,
+      "serial_execution_output_present": false,
+      "operational_evidence_present": false
+    },
+    "pre_boot_authorization": {
+      "path": ".github/governance/evidence/g77_256ff_wrong_attempt_operational_v1/G77_256FF_SPCE_PRE_BOOT_AUTHORIZATION_V1.json",
+      "file_sha256": "2deb5f5b3f8a8455737c4e2a9b6095e62fd2407692ac060f8dd1725385c4446c",
+      "original_interrupted_state": "UNSEALED_PLACEHOLDER",
+      "recorded_checkpoint_sha256": "TO_BE_SEALED",
+      "computed_but_not_persisted_inner_sha256": "d52a1521e16cc10ff182f33aa1617180db803f24bedb66db02c58898a7843ef5",
+      "pre_boot_sealing_decision": "NEW_AUTHORITY_OR_NEW_OPERATIONAL_ACTION_REQUIRED",
+      "post_human_reauth_repository_completion": "NOT_PERFORMED",
+      "unchanged": true,
+      "first_boot_currently_authorized": false
+    },
+    "generation_wide_counters": {
+      "candidate_count": 1,
+      "materialization_count": 1,
+      "vm_creation_count": 1,
+      "vm_boot_count": 0,
+      "qemu_execution_count": 0,
+      "wrong_attempt_execution_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0,
+      "execution_replay_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0
+    },
+    "remaining_budgets": {
+      "new_candidate": 0,
+      "new_materialization": 0,
+      "new_vm_creation": 0,
+      "boot_or_qemu_execution": "NOT_AVAILABLE_UNTIL_PRE_BOOT_AUTHORITY_IS_VALIDLY_REESTABLISHED",
+      "automatic_retry": 0,
+      "repair_and_continue": 0,
+      "execution_replay": 0
+    },
+    "provider_capability_boundary": {
+      "trusted_access_requirement_for_ff": "HUMAN_SUPPLIED_TRIGGER__REPOSITORY_POLICY_BINDING_NOT_ESTABLISHED",
+      "ff_required_external_capabilities": "NOT_ESTABLISHED",
+      "current_worker_trusted_access_state": "NOT_ESTABLISHED",
+      "provider_capability_fact_present_for_current_worker": false,
+      "worker_eligibility": "NOT_ESTABLISHED__FAIL_CLOSED",
+      "human_authority_granted_by_provider_capability": false,
+      "p11_authority_granted_by_provider_capability": false,
+      "execution_authority_granted_by_provider_capability": false,
+      "actual_external_verification_or_activation_required_if_ff_policy_requires_capability": true
+    },
+    "constitutional_frontier": {
+      "e05_state": "6_OF_18",
+      "wrong_attempt": "UNSATISFIED",
+      "p11_operational_entry": false,
+      "p12_entry": false,
+      "production_impact": "NONE"
+    },
+    "fg_isolation_and_head_tree_continuation": {
+      "classification": "YES__ORIGINAL_FE_AND_FF_BINDINGS_REMAIN_VALID_UNDER_PROVEN_ISOLATION",
+      "condition": "FG_COMMIT_MUST_OCCUR_IN_SEPARATE_BRANCH_WORKTREE_AND_MUST_NOT_MOVE_OR_REPLACE_THE_ORIGINAL_FE_PINNED_FF_WORKTREE_BEFORE_FF_COMPLETES",
+      "candidate_rebinding_required": false,
+      "materialization_rebinding_required": false,
+      "vm_rebinding_required": false,
+      "du_eb_ee_replay_required": false,
+      "boot_budget_consumed_by_fg": false,
+      "operational_replay_required": false,
+      "fg_commit_in_current_ff_worktree_before_resume_permitted": false
+    },
+    "exact_next_admissible_ff_action": "HUMAN_REVIEW__THEN_EXPLICITLY_AUTHORIZE_A_NEW_REPOSITORY_ACTION_FOR_THE_EXISTING_PRE_BOOT_PLACEHOLDER_OR_SUPPLY_OTHER_CONSTITUTIONALLY_VALID_PRE_BOOT_AUTHORITY__KEEP_THE_ORIGINAL_FE_PINNED_FF_WORKTREE__ESTABLISH_FF_REQUIRED_EXTERNAL_CAPABILITIES_AND_EVIDENCE_BACKED_CURRENT_WORKER_STATE__REAUTHENTICATE_BEFORE_ANY_SEPARATELY_AUTHORIZED_BOOT",
+    "auto_resume_ff": false,
+    "auto_continuable": false,
+    "human_review_required": true,
+    "human_authorization_required_for_next_step": true,
+    "contract_is_authority": false
+  },
+  "contract_sha256": "d701315d6b0a35cd2d5562dc1b42cf87813c68736a31e2d9beb529f8eee25ed1"
+}
