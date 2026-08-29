@@ -1,0 +1,94 @@
+{
+  "schema_id": "G77_256FM_SPCE_PHASE_A_AUTHORITY_AND_DESIGN_ENVELOPE_V1",
+  "checkpoint": {
+    "schema_id": "G77_256FM_SPCE_PHASE_A_AUTHORITY_AND_DESIGN_V1",
+    "generation_identity": "G77_256FM_FRESH_FL_FK_BOUND_WRONG_ATTEMPT_CANDIDATE_AND_PREBOOT_PREPARATION_V1",
+    "checkpoint_timestamp": "2026-08-29T08:15:42Z",
+    "human_authorization": {
+      "authorization_present": true,
+      "authorization_source_sha256": "fe90d8faaece20708cb7f328a70f59a4b623dca3672541f90a09e19e43ec1cd1",
+      "authorized_scope": "ONE_FRESH_CANDIDATE__ONE_FRESH_MATERIALIZATION__ONE_FRESH_VM_PREPARATION__NO_BOOT",
+      "vm_boot_limit": 0,
+      "qemu_execution_limit": 0,
+      "operational_attempt_limit": 0,
+      "network_authorized": false,
+      "external_provider_authorized": false,
+      "commit_authorized": false,
+      "push_authorized": false
+    },
+    "source_authority": {
+      "worktree": "/home/pisarna/work/sapianta-fl",
+      "branch": "g77-256fl-wrong-attempt-preboot-blocker",
+      "head": "7dce67ec18696ba0bad73130f3f7a84168f25277",
+      "tree": "3cb61ec34e9593efb711dce61014dc8fdf0f6dd9",
+      "subject": "G77-256FL fail closed incompatible WRONG_ATTEMPT asset",
+      "entry_worktree_state": "CLEAN",
+      "entry_index_state": "EMPTY",
+      "authentication": "PASS"
+    },
+    "sealed_reuse_authorities": [
+      {"id": "EX_CERT", "sha256": "91c477171147c56516c0f473ab887c12173c4bab225f2733c274b32467824b2f"},
+      {"id": "EX_FINAL", "sha256": "46115a7627264793af5e289abe85565fcaaf8a381b009e185c35ebc3d4b8a543"},
+      {"id": "FK_A", "sha256": "79cd5b679d4babba4018352e4bc6ac7d7b86c9534d4183ee62322ca1b0d997eb"},
+      {"id": "FK_B", "sha256": "3f4d83a66a2a8c968d6015cd2f9bddbbbe4f814246e0bbcaf3473cc97bdb9163"},
+      {"id": "FK_C", "sha256": "4d943ff27bcecac14aaee4113666d511b86c708a3044f047b1c6dd0b09b3fcd2"},
+      {"id": "FK_D", "sha256": "125c77656463884c1260134b09695e84c1b4f2bd176b144a8bae2c69925b1359"},
+      {"id": "FK_G48", "sha256": "33fbb410484e382a5227e42f4694abfd7d55eaaf82b2e8ea3fa1b2cab38ab0de"},
+      {"id": "FL_RAW_BLOCKER", "sha256": "3492ec00c1b6cc11b4d8d30b9bda3f9c901a0ae7dd9ca55fdfe4a9ee29bd53b3"},
+      {"id": "FL_A", "sha256": "80e320a33d142a4771a98242bb4c88a3f8a1c2b7db2201d4742fff70f5b36a56"},
+      {"id": "FL_B", "sha256": "582dc5fa364f7cbe803afd4a49cf1dfc50ab0e6479bea3e6ef6ff205490e9f21"},
+      {"id": "FL_C", "sha256": "53891681022cd7d4d509312a21cab2e17dc7933238e9182d461a98b3c654b091"},
+      {"id": "FL_D", "sha256": "2adb9cbc6f62d3f6494b1708648eb161c3ebc870d366c3819ae6ef74b31527f9"},
+      {"id": "FL_G48", "sha256": "cbb273899de211bbbbe67242a1177fc094e99670ee2afd27d035585d78f1644f"},
+      {"id": "FE_FINAL", "sha256": "3438775d1d067786e905aa38068ed6f53266520c1227e101b73b20093675cde8"},
+      {"id": "FE_D", "sha256": "a8603cfcffc1c84717fa96b3b751581b236c9c4923864008202ec534ae8472ff"},
+      {"id": "DU_SCHEMA", "sha256": "a21ba1567c65101a5f178afdfefb5d500c97fc2cc6a9eb9da6c9fb4cc914478e"},
+      {"id": "EB_FINAL", "sha256": "01f47ab5747da1cfa928326137764ab5547665a6f8cc718787052c48188a3796"},
+      {"id": "EE_FINAL", "sha256": "cf052885883ac05bd3144b8cf8659196ff7174ec7dcbdd3e09982379ffe7bde6"}
+    ],
+    "reuse_accounting": {"certified_reuse_count": 18, "reconstructed_authority_count": 0, "result": "PASS__SEALED_REUSE_ONLY"},
+    "fk_runtime_authority": {
+      "adapter_path": ".github/governance/evidence/g77_256fc_wrong_attempt_operational_v1/harness/G77_256FC_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py",
+      "adapter_sha256": "7ae104802f49613ca60836913d2c68269b59728bc35bb677fdb3637aaf4b84c6",
+      "canonical_che_contract_sha256": "75801995214e81419aab9a02326499c771ec0039658fb49598aa54bd033e13c5",
+      "result": "PASS__COMMITTED_FK_HARDENED_RUNTIME_SELECTED"
+    },
+    "fresh_design": {
+      "evidence_root": ".github/governance/evidence/g77_256fm_wrong_attempt_preboot_v1",
+      "physical_root": "/tmp/g77_256fm",
+      "checkout_path": "/tmp/g77_256fm/checkout",
+      "overlay_path": "/tmp/g77_256fm/guest-overlay.qcow2",
+      "seed_path": "/tmp/g77_256fm/nocloud-seed.img",
+      "serial_path": "/tmp/g77_256fm/serial.log",
+      "source_base_image_path": "/tmp/g77_256cw.IkqZJN/noble-server-cloudimg-amd64.img",
+      "source_base_image_sha256": "6e40c07ae715f744f84af0bec76415cc1987dd115b4b8de437818561f01a3733",
+      "network_mode": "NONE__QEMU_NIC_NONE",
+      "freshness_rule": "NO_REUSE_OF_FF_FI_FJ_FL_OVERLAY_SEED_CHECKOUT_ARGV_LAUNCHER_OR_RECEIPTS"
+    },
+    "wrong_attempt_vector": {
+      "case_id": "G77_256FM_E05_WRONG_ATTEMPT_DENIAL_BEFORE_ENTRY_001",
+      "authorized_attempt_identity": "G77_256FM_E05_AUTHORIZED_ATTEMPT_001",
+      "supplied_attempt_identity": "G77_256FM_E05_SUPPLIED_WRONG_ATTEMPT_002",
+      "required_terminal_reduction": "DENY_WRONG_ATTEMPT_BEFORE_ENTRY__ATTEMPT_BINDING_MISMATCH",
+      "operational_execution_authorized_now": false
+    },
+    "phase_boundaries": {
+      "phase_a": "AUTHORITY_AND_DESIGN_ONLY",
+      "phase_b": "FRESH_CANDIDATE__DU_EB_EE__FRESH_PHYSICAL_PREPARATION__NO_BOOT",
+      "phase_c": "STATIC_AND_REPLAY_SAFE_VALIDATION__NO_BOOT",
+      "phase_d": "FINAL_REDUCTION_AND_REPORT__NO_BOOT",
+      "prohibited_actions": ["VM_BOOT", "QEMU_EXECUTION", "OPERATIONAL_ATTEMPT", "NETWORK_ACCESS", "EXTERNAL_PROVIDER", "P12_ENTRY", "PRODUCTION_EFFECT", "COMMIT", "PUSH"]
+    },
+    "starting_counters": {
+      "fm_candidate_count": 0, "fm_materialization_count": 0, "fm_vm_preparation_count": 0,
+      "fm_vm_boot_count": 0, "fm_qemu_execution_count": 0, "fm_operational_attempt_count": 0,
+      "request_count": 0, "pre_denial_count": 0, "entry_count": 0, "invocation_count": 0,
+      "effect_count": 0, "retry_count": 0, "repair_count": 0, "replay_count": 0
+    },
+    "phase_a_result": "PASS__EXACT_AUTHORITY_PINNED__FRESH_PREBOOT_DESIGN_SEALED__NO_MATERIALIZATION_OR_EXECUTION",
+    "checkpoint_is_execution_authority": false,
+    "auto_continuable": false,
+    "exact_next_legal_action": "CREATE_ONE_FRESH_FM_CANDIDATE_AND_VALIDATE_DU_EB_EE_THEN_PREPARE_ONE_FRESH_NO_NETWORK_VM_WITHOUT_BOOT"
+  },
+  "checkpoint_sha256": "f17bac4da26b0d00a396a4117eb04b22b518f47714ac896c102928f5162065b0"
+}
