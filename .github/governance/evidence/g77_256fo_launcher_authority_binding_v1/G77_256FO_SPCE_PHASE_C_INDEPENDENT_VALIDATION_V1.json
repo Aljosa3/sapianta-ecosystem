@@ -1,0 +1,172 @@
+{
+  "schema_id": "G77_256FO_SPCE_PHASE_C_INDEPENDENT_VALIDATION_ENVELOPE_V1",
+  "checkpoint": {
+    "schema_id": "G77_256FO_SPCE_PHASE_C_INDEPENDENT_VALIDATION_V1",
+    "generation_identity": "G77_256FO_REPOSITORY_ONLY_NON_CIRCULAR_EXECUTION_AUTHORITY_BINDING_V1",
+    "checkpoint_timestamp": "2026-08-29T15:22:19Z",
+    "phase_chain": {
+      "phase_a_file_sha256": "51fbb05e5008edacce9c7acfeb939a3065b6e40a4ac156ed2041557c8cdb7b6b",
+      "phase_a_inner_sha256": "8732c5960dc133e7c59e7bf1642685a2c474c4f480362cea8773b6ee15d98264",
+      "phase_a_seal_recomputation": "PASS",
+      "phase_b_file_sha256": "6d5ae79f327e68c12afd581c6874cffecf4fad89963e0c91ab70322050ba4f0b",
+      "phase_b_inner_sha256": "0f7523a1f4428c42eb4830bf1e13e842d42ce1544ca5f4641abfca8d799dca44",
+      "phase_b_seal_recomputation": "PASS",
+      "fn_phase_seals": "PASS__4_OF_4",
+      "fm_phase_seals": "PASS__4_OF_4"
+    },
+    "implementation_identity": {
+      "launcher_path": ".github/governance/evidence/g77_256fm_wrong_attempt_preboot_v1/launcher/G77_256FM_ONE_SHOT_QEMU_LAUNCHER_V1.py",
+      "launcher_sha256": "b6a882468cd579d4e00f070884d125bf9096b7a72f08539d7742da0d7fe03c0d",
+      "focused_test_path": ".github/governance/evidence/g77_256fo_launcher_authority_binding_v1/tests/test_g77_256fo_execution_admission_v1.py",
+      "focused_test_sha256": "dc8bc480cd965d012c5fb4298a730f2e8274acb95d3bc2c4892d65a6d3e4804b"
+    },
+    "independent_static_validation": {
+      "python_syntax_compile": "PASS",
+      "focused_test_count": 11,
+      "focused_test_result": "PASS__11_OF_11",
+      "adversarial_required_case_result": "PASS__10_OF_10",
+      "post_commit_property_test_result": "PASS",
+      "validator_forbidden_effect_call_count": 0,
+      "admission_call_precedes_qemu_call": "PASS__LINE_328_BEFORE_LINE_350",
+      "pre_fm_fl_head_constant_absent_from_corrected_launcher": true,
+      "pre_fm_fl_tree_constant_absent_from_corrected_launcher": true,
+      "stable_fn_anchor_present": true,
+      "actual_asset_hash_result": "PASS__10_OF_10",
+      "consumed_receipt_path_count": 0,
+      "git_diff_check": "PASS",
+      "qemu_invoked_by_validation": false,
+      "vm_booted_by_validation": false
+    },
+    "adversarial_matrix": [
+      {
+        "case": 1,
+        "condition": "WRONG_COMMITTED_CONSTITUTIONAL_AUTHORITY",
+        "expected": "DENY",
+        "observed": "DENY",
+        "result": "PASS"
+      },
+      {
+        "case": 2,
+        "condition": "WRONG_CANDIDATE_IDENTITY",
+        "expected": "DENY",
+        "observed": "DENY",
+        "result": "PASS"
+      },
+      {
+        "case": 3,
+        "condition": "WRONG_MATERIALIZATION_OR_ASSET_IDENTITY",
+        "expected": "DENY",
+        "observed": "DENY",
+        "result": "PASS"
+      },
+      {
+        "case": 4,
+        "condition": "MODIFIED_CANONICAL_ARGV",
+        "expected": "DENY",
+        "observed": "DENY",
+        "result": "PASS"
+      },
+      {
+        "case": 5,
+        "condition": "NETWORK_ENABLED_ARGV",
+        "expected": "DENY",
+        "observed": "DENY",
+        "result": "PASS"
+      },
+      {
+        "case": 6,
+        "condition": "WRONG_WRAPPER_OR_ADAPTER_BINDING",
+        "expected": "DENY",
+        "observed": "DENY",
+        "result": "PASS"
+      },
+      {
+        "case": 7,
+        "condition": "CONSUMED_ONE_SHOT_PRE_OR_POST_RECEIPT_STATE",
+        "expected": "DENY",
+        "observed": "DENY",
+        "result": "PASS"
+      },
+      {
+        "case": 8,
+        "condition": "MISSING_REQUIRED_HUMAN_OPERATIONAL_AUTHORITY",
+        "expected": "DENY",
+        "observed": "DENY",
+        "result": "PASS__FO_REPOSITORY_ONLY_AND_FN_SPENT_AUTHORIZATION_ALSO_DENIED"
+      },
+      {
+        "case": 9,
+        "condition": "MALFORMED_MISSING_UNKNOWN_OR_UNKNOWN_VALUED_AUTHORITY_FIELD",
+        "expected": "DENY",
+        "observed": "DENY",
+        "result": "PASS"
+      },
+      {
+        "case": 10,
+        "condition": "EXACT_AUTHORITY_ASSET_CANDIDATE_MATERIALIZATION_ARGV_AND_UNCONSUMED_STATE_WITH_STRUCTURALLY_VALID_FRESH_HUMAN_AUTHORIZATION",
+        "expected": "ADMIT_TO_BOOT_BOUNDARY_ONLY",
+        "observed": "ADMIT_TO_BOOT_BOUNDARY_ONLY",
+        "result": "PASS__PURE_STATIC_VALIDATOR__NO_BOOT"
+      }
+    ],
+    "post_commit_authority_binding_stability": {
+      "property": "POST_COMMIT_AUTHORITY_BINDING_STABILITY",
+      "result": "PASS",
+      "proof": "TWO_DISTINCT_SYNTHETIC_POST_COMMIT_HEAD_TREE_PAIRS_ARE_ADMITTED_ONLY_WHEN_A_FRESH_HASH_SEALED_HANDOFF_NAMES_THE_OBSERVED_PAIR_AND_THE_STABLE_FN_ANCHOR_REMAINS_ANCESTRAL",
+      "artifact_predicts_containing_commit": false,
+      "arbitrary_repository_state_admitted": false,
+      "wrong_handoff_for_changed_head_denied": true,
+      "actual_fo_commit_created": false,
+      "actual_execution_handoff_created": false,
+      "epistemic_scope": "VERIFIED_STATIC_CONTRACT_PROPERTY__OPERATIONAL_USE_NOT_VERIFIED"
+    },
+    "constitutional_properties": {
+      "fail_closed_execution_admission": "PASS",
+      "one_shot_execution": "PASS__FIVE_CONSUMPTION_PATHS",
+      "exact_asset_binding": "PASS__10_HASHES",
+      "exact_vector_binding": "PASS__FILE_AND_CANONICAL_DIGEST_AND_NIC_NONE",
+      "no_network": "PASS",
+      "no_provider": "PASS",
+      "no_retry": "PASS",
+      "no_alternate_execution_route": "PASS__EXISTING_LAUNCHER_ONLY",
+      "human_operational_authority_required": "PASS",
+      "certified_not_authorized": "PASS",
+      "preparation_capability_not_effect_capability": "PASS",
+      "no_future_commit_self_reference": "PASS",
+      "no_duplicate_authority_truth": "PASS__HANDOFF_EXPLICITLY_NOT_AUTHORITY",
+      "canonical_che_single_contract": "UNCHANGED",
+      "terminal_reducer_single_contract": "UNCHANGED"
+    },
+    "reuse_and_mutation_validation": {
+      "ex_reuse_count": 17,
+      "ex_reconstruction_count": 0,
+      "fm_candidate_mutation_count": 0,
+      "fm_materialization_mutation_count": 0,
+      "vm_overlay_seed_mutation_count": 0,
+      "du_rerun_count": 0,
+      "eb_rerun_count": 0,
+      "ee_rerun_count": 0,
+      "production_route_count_delta": 0,
+      "provider_capability_delta": 0,
+      "trusted_access_delta": 0
+    },
+    "operational_counters": {
+      "vm_boot_count": 0,
+      "qemu_system_execution_count": 0,
+      "wrong_attempt_operational_attempt_count": 0,
+      "request_count": 0,
+      "entry_count": 0,
+      "invocation_count": 0,
+      "effect_count": 0,
+      "retry_count": 0,
+      "operational_repair_count": 0,
+      "replay_count": 0
+    },
+    "phase_c_result": "PASS__NON_CIRCULAR_FAIL_CLOSED_ADMISSION_INDEPENDENTLY_VALIDATED__POST_COMMIT_AUTHORITY_BINDING_STABILITY_PASS__NO_OPERATIONAL_EXECUTION",
+    "checkpoint_is_authority": false,
+    "auto_continuable": false,
+    "human_review_required": true,
+    "exact_next_legal_action": "PHASE_D_FINAL_REDUCTION_AND_G48_REPORTING_ONLY__NO_VM_BOOT_QEMU_OPERATIONAL_EXECUTION_STAGE_COMMIT_OR_PUSH"
+  },
+  "checkpoint_sha256": "568b392aa134663518c30b6a999e4c875c6b69d519c3d61505c8163f6a68855a"
+}

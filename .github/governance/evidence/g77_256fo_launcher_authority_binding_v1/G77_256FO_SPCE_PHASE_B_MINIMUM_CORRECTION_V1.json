@@ -1,0 +1,99 @@
+{
+  "schema_id": "G77_256FO_SPCE_PHASE_B_MINIMUM_CORRECTION_ENVELOPE_V1",
+  "checkpoint": {
+    "schema_id": "G77_256FO_SPCE_PHASE_B_MINIMUM_CORRECTION_V1",
+    "generation_identity": "G77_256FO_REPOSITORY_ONLY_NON_CIRCULAR_EXECUTION_AUTHORITY_BINDING_V1",
+    "checkpoint_timestamp": "2026-08-29T15:20:46Z",
+    "phase_a_binding": {
+      "path": ".github/governance/evidence/g77_256fo_launcher_authority_binding_v1/G77_256FO_SPCE_PHASE_A_DEFECT_AND_AUTHORITY_V1.json",
+      "file_sha256": "51fbb05e5008edacce9c7acfeb939a3065b6e40a4ac156ed2041557c8cdb7b6b",
+      "inner_sha256": "8732c5960dc133e7c59e7bf1642685a2c474c4f480362cea8773b6ee15d98264",
+      "seal_recomputation": "PASS",
+      "sealed_before_implementation": true
+    },
+    "correction": {
+      "modified_existing_launcher_path": ".github/governance/evidence/g77_256fm_wrong_attempt_preboot_v1/launcher/G77_256FM_ONE_SHOT_QEMU_LAUNCHER_V1.py",
+      "modified_launcher_sha256": "b6a882468cd579d4e00f070884d125bf9096b7a72f08539d7742da0d7fe03c0d",
+      "focused_test_path": ".github/governance/evidence/g77_256fo_launcher_authority_binding_v1/tests/test_g77_256fo_execution_admission_v1.py",
+      "focused_test_sha256": "dc8bc480cd965d012c5fb4298a730f2e8274acb95d3bc2c4892d65a6d3e4804b",
+      "launcher_count_delta": 0,
+      "common_helper_count_delta": 0,
+      "parallel_control_plane_count_delta": 0,
+      "production_route_count_delta": 0
+    },
+    "admission_architecture": {
+      "constitutional_anchor_head": "5c972e9960987ab27420395b54ace693df097e7b",
+      "anchor_requirement": "MUST_BE_ANCESTOR_OF_OBSERVED_EXECUTION_HEAD",
+      "exact_execution_repository_binding": "EXECUTION_TIME_HANDOFF_MUST_NAME_OBSERVED_HEAD_AND_TREE",
+      "repository_clean_required": true,
+      "authority_handoff_canonical_json_required": true,
+      "authority_handoff_file_sha256_required_at_invocation": true,
+      "authority_handoff_inner_seal_required": true,
+      "fresh_human_operational_authorization_source_sha256_required": true,
+      "fo_repository_only_authorization_explicitly_denied": true,
+      "fn_spent_authorization_explicitly_denied": true,
+      "handoff_is_authority": false,
+      "authority_truth": "COMMITTED_CONSTITUTIONAL_ANCESTRY_PLUS_FRESH_HUMAN_OPERATIONAL_AUTHORIZATION",
+      "no_future_commit_self_reference": true,
+      "post_commit_authority_binding_stability_design": "STABLE_ANCHOR_REMAINS_CONSTANT__FRESH_HANDOFF_IS_CREATED_AFTER_AND_BINDS_ACTUAL_CONTAINING_COMMIT",
+      "admission_success_boundary": "ADMIT_TO_BOOT_BOUNDARY_ONLY"
+    },
+    "fail_closed_bindings": {
+      "candidate_sha256": "a28d2c6d903ed0abafd6fecdc1979f763de4c79127018655370975d52fc05fb4",
+      "materialization_inner_sha256": "ad3b2d7924c0618cfd2dae12bd6a203001c83028249d9b8a42e649382e1c62c7",
+      "canonical_argv_sha256": "5f2de525656cf8e107aeb3d094193b3cfacf1d8b8200d86cb0c5762f94bac1d1",
+      "wrapper_sha256": "b7d8f5b3478d7cfff2cadce7e36b3a12c9b4a1ac5054da867668086f84e866d7",
+      "fk_adapter_sha256": "7ae104802f49613ca60836913d2c68269b59728bc35bb677fdb3637aaf4b84c6",
+      "canonical_che_sha256": "75801995214e81419aab9a02326499c771ec0039658fb49598aa54bd033e13c5",
+      "base_image_sha256": "6e40c07ae715f744f84af0bec76415cc1987dd115b4b8de437818561f01a3733",
+      "overlay_sha256": "6ea4eed169518c646774cfbe2c7b8c00646a9cdead8798f7c94c786c6b6ce8b2",
+      "seed_sha256": "b36a1aac42f687fe3d6b71200b5b65ec93a8a6de59b7dce31d3e6bf2c3b93c2f",
+      "actual_asset_hash_comparison": "PASS__10_OF_10",
+      "receipt_namespace_paths_checked": 5,
+      "one_shot_retry_repair_replay_limits": "1_0_0_0",
+      "network_authorized": false,
+      "provider_authorized": false,
+      "trusted_access_authorized": false
+    },
+    "mutation_boundary": {
+      "existing_launcher_files_modified": 1,
+      "focused_test_files_added": 1,
+      "candidate_files_modified": 0,
+      "materialization_files_modified": 0,
+      "vm_overlay_seed_files_modified": 0,
+      "canonical_che_files_modified": 0,
+      "terminal_reducer_files_modified": 0,
+      "du_eb_ee_files_modified": 0,
+      "ex_files_modified": 0,
+      "provider_or_production_files_modified": 0
+    },
+    "reuse_accounting": {
+      "ex_reuse_count": 17,
+      "ex_reconstruction_count": 0,
+      "new_candidate_count": 0,
+      "new_materialization_count": 0,
+      "new_vm_count": 0,
+      "du_rerun_count": 0,
+      "eb_rerun_count": 0,
+      "ee_rerun_count": 0
+    },
+    "operational_counters": {
+      "vm_boot_count": 0,
+      "qemu_system_execution_count": 0,
+      "wrong_attempt_operational_attempt_count": 0,
+      "request_count": 0,
+      "entry_count": 0,
+      "invocation_count": 0,
+      "effect_count": 0,
+      "retry_count": 0,
+      "operational_repair_count": 0,
+      "replay_count": 0
+    },
+    "phase_b_result": "PASS__MINIMUM_EXISTING_FM_LAUNCHER_CORRECTED__NO_FUTURE_COMMIT_SELF_REFERENCE__NO_OPERATIONAL_EXECUTION",
+    "checkpoint_is_authority": false,
+    "auto_continuable": false,
+    "human_review_required": true,
+    "exact_next_legal_action": "PHASE_C_REPOSITORY_ONLY_INDEPENDENT_VALIDATION__NO_VM_BOOT_QEMU_OPERATIONAL_EXECUTION_STAGE_COMMIT_OR_PUSH"
+  },
+  "checkpoint_sha256": "0f7523a1f4428c42eb4830bf1e13e842d42ce1544ca5f4641abfca8d799dca44"
+}
