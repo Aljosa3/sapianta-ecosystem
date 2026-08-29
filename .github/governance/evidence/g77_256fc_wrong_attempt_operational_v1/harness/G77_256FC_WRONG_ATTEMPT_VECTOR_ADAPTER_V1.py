@@ -11,7 +11,7 @@ from pathlib import Path
 import socket
 import struct
 import sys
-from typing import Any
+from typing import Any, Mapping
 
 
 ER_HARNESS = Path(
@@ -26,6 +26,125 @@ ACT_ID = "G77_256FC_EXACT_CURRENT_ONE_USE_HUMAN_OPERATIONAL_ACT_001"
 CASE_ID = "G77_256FC_E05_WRONG_ATTEMPT_DENIAL_BEFORE_ENTRY_001"
 RAW_ROOT = Path("/mnt/g77-evidence")
 CONTINUATION_MANIFEST_PATH = RAW_ROOT / "G77_256FC_CONTINUATION_MANIFEST_V1.json"
+
+
+def rebind_canonical_correlation(
+    correlation: Any,
+    updates: Mapping[str, Any],
+) -> Any:
+    """Apply adapter facts through the existing canonical CHE identity producer."""
+
+    from aigol.runtime.canonical_che_evidence_correlation_contract_v1 import (
+        create_canonical_che_evidence_correlation_v1,
+    )
+
+    if "correlation_identity" in updates:
+        raise ValueError("correlation identity is owned by the canonical CHE producer")
+    value = correlation.to_dict()
+    value.update(dict(updates))
+    value.pop("correlation_identity")
+    return create_canonical_che_evidence_correlation_v1(**value)
+
+
+def corrected_wrong_attempt_counters(
+    counters: Mapping[str, int],
+    *,
+    vector_executed: bool,
+) -> dict[str, int]:
+    """Bind E05 execution to the actual WRONG_ATTEMPT event, never setup."""
+
+    corrected = dict(counters)
+    corrected.update({
+        "human_operational_act_claimed_count": 0,
+        "human_operational_act_invoked_count": 0,
+        "human_operational_act_terminally_bound_count": 0,
+        "human_operational_act_permanently_exhausted_count": 0,
+        "p11_entry_count": 0,
+        "p11_operational_invocation_count": 0,
+        "e01_e12_execution_count": 0,
+        "e05_case_execution_count": 1 if vector_executed else 0,
+    })
+    return corrected
+
+
+def reduce_wrong_attempt_terminal_state(
+    *,
+    phase: str,
+    counters: Mapping[str, int],
+    first_failure_or_current_result: str | None,
+    first_failure: str | None,
+    authority_checkpoint: Mapping[str, Any] | None,
+    execution_seal: Mapping[str, Any] | None,
+) -> dict[str, Any]:
+    """Fail closed unless the existing authority and execution evidence proves success."""
+
+    authority = authority_checkpoint if isinstance(authority_checkpoint, Mapping) else {}
+    seal = execution_seal if isinstance(execution_seal, Mapping) else {}
+    authority_counters = authority.get("execution_counters", {})
+    seal_counters = seal.get("execution_counters", {})
+    completed_gates = seal.get("completed_gates", ())
+    current_result_is_pass = (
+        isinstance(first_failure_or_current_result, str)
+        and first_failure_or_current_result.startswith("PASS__")
+    )
+    positive_evidence = all((
+        first_failure is None,
+        current_result_is_pass,
+        isinstance(authority_checkpoint, Mapping),
+        str(authority.get("schema_id", "")).endswith(
+            "_AUTHORITY_CHECKPOINT_V1"
+        ),
+        counters.get("human_operational_act_creation_count") == 1,
+        authority_counters.get("human_operational_act_creation_count") == 1,
+        isinstance(execution_seal, Mapping),
+        str(seal.get("schema_id", "")).endswith(
+            "_GUEST_EXECUTION_SEAL_V1"
+        ),
+        seal.get("case_id") == CASE_ID,
+        "first_failure" in seal,
+        seal.get("first_failure") is None,
+        seal.get("operational_result")
+        == "PASS__WRONG_ATTEMPT_DENIED_AT_D2_BEFORE_PRECLAIM_AND_ENTRY_WITH_ZERO_EFFECT",
+        "ONE_WRONG_ATTEMPT_D2_PRECLAIM_DENIAL" in completed_gates,
+        "ZERO_ENTRY_INVOCATION_EFFECT" in completed_gates,
+        seal_counters.get("e05_case_execution_count") == 1,
+    ))
+    corrected = corrected_wrong_attempt_counters(
+        counters,
+        vector_executed=positive_evidence,
+    )
+    if positive_evidence:
+        if phase == "PHASE_C_EXECUTION_COMPLETE_PENDING_GUEST_TEARDOWN":
+            authority_state = (
+                "AVAILABLE_REVISION_0__WRONG_ATTEMPT_DENIED__LIVE_GUEST_ONLY"
+            )
+            result = "PASS__E05_WRONG_ATTEMPT_DENIED_BEFORE_ENTRY__ZERO_EFFECT"
+        else:
+            authority_state = (
+                "LIVE_AUTHORITY_TERMINATED_WITH_DISPOSABLE_GUEST__NO_AUTHORITY_SURVIVES"
+            )
+            result = "PASS__E05_WRONG_ATTEMPT_DENIAL__GUEST_TEARDOWN_COMPLETE"
+    else:
+        creation_count = corrected.get("human_operational_act_creation_count", 0)
+        authority_state = (
+            "NOT_CREATED__NO_AUTHORITY_SURVIVES"
+            if creation_count == 0
+            else "UNPROVEN_AUTHORITY_STATE__NO_SUCCESS_CREDIT"
+        )
+        supplied_failure = first_failure or first_failure_or_current_result or "UNKNOWN"
+        result = (
+            supplied_failure
+            if supplied_failure.startswith("FAIL_CLOSED__")
+            else "FAIL_CLOSED__WRONG_ATTEMPT_REQUIRED_SUCCESS_EVIDENCE_MISSING__"
+            + supplied_failure
+        )
+    return {
+        "execution_counters": corrected,
+        "authority_lifecycle_state": authority_state,
+        "first_failure_or_current_result": result,
+        "success_evidence_complete": positive_evidence,
+        "e05_credit": 1 if positive_evidence else 0,
+    }
 
 
 def sha256_path(path: Path) -> str:
@@ -52,9 +171,6 @@ def create_fc_input_and_authority(er: Any, gate: Any, bindings: Any, store: Any)
     del store
     sys.path.insert(0, str(er.CHECKOUT))
     sys.path.insert(0, str(er.CHECKOUT / "tests"))
-    from aigol.runtime.canonical_che_evidence_correlation_contract_v1 import (
-        CanonicalCHEEvidenceCorrelationV1,
-    )
     from aigol.runtime.canonical_human_authority_act_contract_v1 import (
         CanonicalHumanAuthorityActV1,
         canonical_human_authority_payload_digest_v1,
@@ -116,8 +232,7 @@ def create_fc_input_and_authority(er: Any, gate: Any, bindings: Any, store: Any)
     })
     act = CanonicalHumanAuthorityActV1.from_dict(act_value)
 
-    correlation_value = original_correlation.to_dict()
-    correlation_value.update({
+    correlation = rebind_canonical_correlation(original_correlation, {
         "interaction_identity": act.interaction_identity,
         "conversation_identity": act.conversation_identity,
         "session_identity": act.session_identity,
@@ -146,7 +261,6 @@ def create_fc_input_and_authority(er: Any, gate: Any, bindings: Any, store: Any)
         "delivery_record_identity": "G77_256FC_DELIVERY_001",
         "metadata": {"generation_identity": GENERATION_ID},
     })
-    correlation = CanonicalCHEEvidenceCorrelationV1.from_dict(correlation_value)
     return input_bytes, input_record, act, correlation
 
 
@@ -364,24 +478,37 @@ def configure(er: Any) -> None:
     original_write = er.write_canonical
     original_update = er.update_continuation_manifest
 
-    def corrected_counters(counters: dict[str, int]) -> dict[str, int]:
-        counters.update({
-            "human_operational_act_claimed_count": 0,
-            "human_operational_act_invoked_count": 0,
-            "human_operational_act_terminally_bound_count": 0,
-            "human_operational_act_permanently_exhausted_count": 0,
-            "p11_entry_count": 0,
-            "p11_operational_invocation_count": 0,
-            "e01_e12_execution_count": 0,
-            "e05_case_execution_count": 1,
-        })
-        return counters
+    def load_evidence(path: Path) -> dict[str, Any] | None:
+        try:
+            value = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            return None
+        return value if isinstance(value, dict) else None
+
+    def load_raw_first_failure() -> str | None:
+        try:
+            lines = er.RAW_PATH.read_text(encoding="utf-8").splitlines()
+        except OSError:
+            return None
+        for line in lines:
+            try:
+                record = json.loads(line)
+            except json.JSONDecodeError:
+                return "FAIL_CLOSED__MALFORMED_RAW_EVIDENCE"
+            if record.get("record_type") == "first_failure":
+                failure = record.get("facts", {}).get("first_failure")
+                return failure if isinstance(failure, str) and failure else "UNKNOWN"
+        return None
 
     def append_record(record_type: str, evidence_class: str, facts: dict[str, Any]) -> str:
         if record_type == "first_authorized_effect_complete":
             return original_append("wrong_attempt_denial_complete", "FACT", facts)
         if record_type == "p11_attempt_result":
-            counters = corrected_counters(facts["execution_counters"])
+            counters = corrected_wrong_attempt_counters(
+                facts["execution_counters"],
+                vector_executed=True,
+            )
+            facts["execution_counters"].update(counters)
             observed = {
                 "boundary_request_count": 1,
                 "pre_attempt_denial_count": 1,
@@ -444,8 +571,6 @@ def configure(er: Any) -> None:
                 "execution_counters": counters,
                 "result": "PASS__ONE_VALID_ACT__ONE_ISOLATED_WRONG_ATTEMPT_REQUEST_DENIED_AT_D2_BEFORE_PRECLAIM_ENTRY_CLAIM_INVOCATION_OR_EFFECT",
             })
-        if record_type == "guest_teardown":
-            facts["execution_counters"] = corrected_counters(facts["execution_counters"])
         return original_append(record_type, evidence_class, facts)
 
     def write_canonical(path: Path, value: dict[str, Any]) -> str:
@@ -458,21 +583,54 @@ def configure(er: Any) -> None:
                 "case_id": CASE_ID,
                 "operational_result": "PASS__WRONG_ATTEMPT_DENIED_AT_D2_BEFORE_PRECLAIM_AND_ENTRY_WITH_ZERO_EFFECT",
             })
-            value["execution_counters"] = corrected_counters(value["execution_counters"])
+            value["execution_counters"] = corrected_wrong_attempt_counters(
+                value["execution_counters"],
+                vector_executed=True,
+            )
         elif value.get("schema_id") == "G77_256ER_GUEST_TEARDOWN_SEAL_V1":
             value["schema_id"] = "G77_256FC_GUEST_TEARDOWN_SEAL_V1"
-            value["execution_counters"] = corrected_counters(value["execution_counters"])
+            reduction = reduce_wrong_attempt_terminal_state(
+                phase="PHASE_D_GUEST_TEARDOWN_COMPLETE_PENDING_HOST_FINALIZATION",
+                counters=value["execution_counters"],
+                first_failure_or_current_result=(
+                    value.get("first_failure")
+                    or "PASS__GUEST_EXECUTION_SEAL_PRESENT"
+                ),
+                first_failure=value.get("first_failure"),
+                authority_checkpoint=load_evidence(er.AUTHORITY_SEAL_PATH),
+                execution_seal=load_evidence(er.GUEST_SEAL_PATH),
+            )
+            value["execution_counters"] = reduction["execution_counters"]
         return original_write(path, value)
 
     def update_continuation_manifest(**kwargs: Any) -> tuple[str, dict[str, Any]]:
-        kwargs["execution_counters"] = corrected_counters(kwargs["execution_counters"])
         phase = kwargs["current_spce_phase"]
-        if phase == "PHASE_C_EXECUTION_COMPLETE_PENDING_GUEST_TEARDOWN":
-            kwargs["authority_lifecycle_state"] = "AVAILABLE_REVISION_0__WRONG_ATTEMPT_DENIED__LIVE_GUEST_ONLY"
-            kwargs["first_failure_or_current_result"] = "PASS__E05_WRONG_ATTEMPT_DENIED_BEFORE_ENTRY__ZERO_EFFECT"
-        elif phase == "PHASE_D_GUEST_TEARDOWN_COMPLETE_PENDING_HOST_FINALIZATION":
-            kwargs["authority_lifecycle_state"] = "LIVE_AUTHORITY_TERMINATED_WITH_DISPOSABLE_GUEST__NO_AUTHORITY_SURVIVES"
-            kwargs["first_failure_or_current_result"] = "PASS__E05_WRONG_ATTEMPT_DENIAL__GUEST_TEARDOWN_COMPLETE"
+        if phase in {
+            "PHASE_C_EXECUTION_COMPLETE_PENDING_GUEST_TEARDOWN",
+            "PHASE_D_GUEST_TEARDOWN_COMPLETE_PENDING_HOST_FINALIZATION",
+        }:
+            reduction = reduce_wrong_attempt_terminal_state(
+                phase=phase,
+                counters=kwargs["execution_counters"],
+                first_failure_or_current_result=kwargs.get(
+                    "first_failure_or_current_result"
+                ),
+                first_failure=load_raw_first_failure(),
+                authority_checkpoint=load_evidence(er.AUTHORITY_SEAL_PATH),
+                execution_seal=load_evidence(er.GUEST_SEAL_PATH),
+            )
+            kwargs["execution_counters"] = reduction["execution_counters"]
+            kwargs["authority_lifecycle_state"] = reduction[
+                "authority_lifecycle_state"
+            ]
+            kwargs["first_failure_or_current_result"] = reduction[
+                "first_failure_or_current_result"
+            ]
+        else:
+            kwargs["execution_counters"] = corrected_wrong_attempt_counters(
+                kwargs["execution_counters"],
+                vector_executed=False,
+            )
         _, envelope = original_update(**kwargs)
         manifest = envelope["manifest"]
         manifest["frontier_state"]["constitutional_frontier"] = "ONE_HUMAN_AUTHORIZED_FC_WRONG_ATTEMPT_E05_VECTOR"

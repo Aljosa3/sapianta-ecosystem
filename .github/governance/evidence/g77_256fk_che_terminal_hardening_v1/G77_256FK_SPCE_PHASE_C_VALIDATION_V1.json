@@ -1,0 +1,105 @@
+{
+  "schema_id": "G77_256FK_SPCE_PHASE_C_VALIDATION_ENVELOPE_V1",
+  "checkpoint": {
+    "schema_id": "G77_256FK_SPCE_PHASE_C_VALIDATION_V1",
+    "generation_identity": "G77_256FK_REPOSITORY_ONLY_CHE_AND_TERMINAL_REDUCTION_HARDENING_V1",
+    "validation_timestamp": "2026-08-29T09:23:13+02:00",
+    "mode": "INDEPENDENT_REPOSITORY_ONLY_VALIDATION__NO_OPERATIONAL_EXECUTION",
+    "phase_b_binding": {
+      "path": ".github/governance/evidence/g77_256fk_che_terminal_hardening_v1/G77_256FK_SPCE_PHASE_B_HARDENING_V1.json",
+      "file_sha256": "3f4d83a66a2a8c968d6015cd2f9bddbbbe4f814246e0bbcaf3473cc97bdb9163",
+      "checkpoint_sha256": "449054859e41564271110cbe48cfce3cf94bc2158e49aa165fa8082d349b20d1"
+    },
+    "authority_reauthentication": {
+      "branch": "g77-256fj-wrong-attempt-fail-closed",
+      "head": "f74200ea2b0e7a15970bde67a8b96a7cfb1534e4",
+      "tree": "bd30c99c9f63042f9abf3de4faa70220dfa529d9",
+      "subject": "G77-256FJ fail closed WRONG_ATTEMPT before act creation",
+      "worktree": "CLEAN",
+      "result": "PASS"
+    },
+    "che_identity_validation": {
+      "canonical_producer_consumer_agreement": "PASS",
+      "deterministic_identity": "PASS",
+      "malformed_identity_rejection": "PASS__FAIL_CLOSED",
+      "valid_identity_acceptance": "PASS",
+      "validator_sha256_unchanged": "75801995214e81419aab9a02326499c771ec0039658fb49598aa54bd033e13c5",
+      "validation_weakening": "NONE",
+      "vector_specific_bypass": "NONE",
+      "parallel_che_system": "NONE"
+    },
+    "terminal_reduction_validation": {
+      "exact_fj_failure_reduces_fail_closed": "PASS",
+      "zero_act_creation_cannot_increment_vector_count": "PASS",
+      "pre_act_failure_e05_credit": 0,
+      "missing_execution_seal_cannot_pass": "PASS",
+      "missing_authority_checkpoint_cannot_pass": "PASS",
+      "missing_vector_gate_cannot_pass": "PASS",
+      "missing_explicit_failure_field_cannot_pass": "PASS",
+      "raw_first_failure_dominates_optimistic_pass": "PASS",
+      "unknown_cannot_pass": "PASS",
+      "complete_positive_evidence_acceptance": "PASS"
+    },
+    "test_matrix": {
+      "focused_fk_suite": "PASS__11_PASSED__0_FAILED__0_11_SECONDS",
+      "focused_and_relevant_suite": "PASS__132_PASSED__0_FAILED__2_24_SECONDS",
+      "relevant_suite_scope": [
+        "tests/test_g77_256fk_che_terminal_hardening_v1.py",
+        "tests/test_g69_11_canonical_che_evidence_correlation.py",
+        "tests/test_g77_p11_da_disposable_substrate_v1.py",
+        "tests/test_g77_bounded_evidence_reduction_gate.py"
+      ],
+      "initial_sandbox_run": "ENVIRONMENT_BLOCKED__117_PASSED__15_SOCKET_BIND_FAILURES__PERMISSION_ERROR",
+      "sandbox_resolution": "SAME_REPOSITORY_ONLY_SUITE_RERUN_WITH_LOCAL_UNIX_TEST_SOCKET_PERMISSION",
+      "governance_conformance_tests": "PASS__5_PASSED__0_FAILED__0_04_SECONDS",
+      "governance_conformance_engine": "PASS__CONFORMANT__20_CHECKS__0_FAILURES__0_WARNINGS",
+      "governance_report_hash": "5b87813dac8851b2a30280c40c9c35f27fb922f234ab886a562b3a948bd604cd",
+      "ex_validator": "PASS__12_OF_12__17_CERTIFIED_COMPONENTS",
+      "bytecode_compile": "PASS",
+      "git_diff_check": "PASS",
+      "full_repository_regression": "NOT_RUN"
+    },
+    "architecture_validation": {
+      "wrong_attempt_reducer_definition_count": 1,
+      "duplicate_reducer": "NONE",
+      "duplicate_che_system": "NONE",
+      "new_provider_truth": "NONE",
+      "parallel_production_path": "NONE",
+      "new_execution_authority": "NONE",
+      "production_route_delta": 0,
+      "provider_truth_duplication_delta": 0,
+      "p12_delta": 0,
+      "index_state": "EMPTY",
+      "fj_historical_checkpoint_hashes_unchanged": "PASS",
+      "qemu_process_count_at_validation": 0
+    },
+    "ex_reuse": {
+      "certified_component_reuse_count": 17,
+      "reconstruction_count": 0,
+      "validator_result": "PASS__12_OF_12",
+      "operational_effect": 0,
+      "credit_effect": 0
+    },
+    "operational_validation": {
+      "new_vm_creation_count": 0,
+      "vm_boot_count": 0,
+      "qemu_execution_count": 0,
+      "wrong_attempt_execution_count": 0,
+      "p11_operational_entry_count": 0,
+      "protected_effect_count": 0,
+      "retry_count": 0,
+      "repair_count": 0,
+      "replay_count": 0,
+      "new_e05_credit": 0,
+      "e05_start": "6/18",
+      "e05_end": "6/18",
+      "wrong_attempt": "UNSATISFIED"
+    },
+    "phase_c_result": "PASS__REPOSITORY_HARDENING_INDEPENDENTLY_VALIDATED__NO_OPERATIONAL_CREDIT",
+    "checkpoint_is_authority": false,
+    "auto_continuable": false,
+    "human_review_required": true,
+    "exact_next_legal_action": "ONE_PHASE_D_FINAL_REDUCTION_AND_G48_REPORT__NO_OPERATIONAL_EXECUTION"
+  },
+  "checkpoint_sha256": "87cd0a0eed31878fb5a9a82c62b0bfb82f7538aaf71a7e8985cdf677027eb86c"
+}

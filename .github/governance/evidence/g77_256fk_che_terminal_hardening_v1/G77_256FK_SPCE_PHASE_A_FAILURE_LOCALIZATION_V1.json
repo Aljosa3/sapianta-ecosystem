@@ -1,0 +1,107 @@
+{
+  "schema_id": "G77_256FK_SPCE_PHASE_A_FAILURE_LOCALIZATION_ENVELOPE_V1",
+  "checkpoint": {
+    "schema_id": "G77_256FK_SPCE_PHASE_A_FAILURE_LOCALIZATION_V1",
+    "generation_identity": "G77_256FK_REPOSITORY_ONLY_CHE_AND_TERMINAL_REDUCTION_HARDENING_V1",
+    "analysis_timestamp": "2026-08-29T09:14:17+02:00",
+    "mode": "REPOSITORY_ONLY__FAIL_CLOSED__NO_OPERATIONAL_EXECUTION",
+    "fj_authority": {
+      "worktree": "/home/pisarna/work/sapianta-fj",
+      "branch": "g77-256fj-wrong-attempt-fail-closed",
+      "head": "f74200ea2b0e7a15970bde67a8b96a7cfb1534e4",
+      "tree": "bd30c99c9f63042f9abf3de4faa70220dfa529d9",
+      "subject": "G77-256FJ fail closed WRONG_ATTEMPT before act creation",
+      "worktree_state": "CLEAN",
+      "authentication": "PASS"
+    },
+    "fj_evidence": {
+      "phase_a_sha256": "314779ad6f7170c8dcfc67a09859470d0f905197d10f111d3322cc503597a5fb",
+      "phase_b_sha256": "b8413d61a36387ca142507755f2f08aeee55b1d18d1c2d45acea493dc987f883",
+      "phase_c_sha256": "8ba4d63a86bd0271600364514b6fa26758040f253a19b029139fc11db561de4e",
+      "phase_d_sha256": "d7a7929ea067fd62ee179d7dbae8c497b83b7074c89e90c052b4515194c3d6e7",
+      "g48_sha256": "c0d6e66418063003341c474472e191854dc78701d409cc5e2c7cf69a36600d39",
+      "raw_execution_sha256": "3532fd5949303eaee3412dcc872ec48cf70edab0529b97670d802da9706febe4",
+      "terminal_manifest_sha256": "cb34cad5ac4abad90f62d06309a20fc4979a0de164f457a6797a063038fb5e87",
+      "all_fj_checkpoint_seals": "PASS"
+    },
+    "ex_reuse": {
+      "certificate_sha256": "91c477171147c56516c0f473ab887c12173c4bab225f2733c274b32467824b2f",
+      "final_seal_sha256": "46115a7627264793af5e289abe85565fcaaf8a381b009e185c35ebc3d4b8a543",
+      "validator": "PASS__12_OF_12",
+      "certified_component_reuse_count": 17,
+      "reconstruction_count": 0
+    },
+    "che_localization": {
+      "canonical_contract_path": "aigol/runtime/canonical_che_evidence_correlation_contract_v1.py",
+      "canonical_contract_sha256": "75801995214e81419aab9a02326499c771ec0039658fb49598aa54bd033e13c5",
+      "canonical_producer": "create_canonical_che_evidence_correlation_v1",
+      "canonical_identity_function": "canonical_che_evidence_correlation_identity_v1",
+      "canonicalization": "replay_hash_over_all_correlation_fields_except_correlation_identity_and_metadata",
+      "validator": "CanonicalCHEEvidenceCorrelationV1.__post_init__ via from_dict",
+      "failing_predicate": "supplied correlation_identity != canonical_che_evidence_correlation_identity_v1(updated correlation facts)",
+      "adapter_path": ".github/governance/evidence/g77_256fc_wrong_attempt_operational_v1/harness/G77_256FC_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py",
+      "adapter_pre_sha256": "ef564f54fc764ed3968d94365a56a09f06025ea1f534c4a08f818183ddef2e8d",
+      "producer_lines": "119-149",
+      "caller": "create_fc_input_and_authority",
+      "consumer": "CanonicalCHEEvidenceCorrelationV1.from_dict then P11 custody submit",
+      "exact_cause": "ADAPTER_COPIED_VALID_CORRELATION__MUTATED_IDENTITY_INPUTS__RETAINED_STALE_CORRELATION_IDENTITY__BYPASSED_CANONICAL_FACTORY",
+      "input_classification": "STALE_AND_DIFFERENTLY_CANONICALIZED_IDENTITY",
+      "defect_class": "ORCHESTRATION__VECTOR_ADAPTER_PRODUCER_ALIGNMENT",
+      "common_validator_correct": "YES__FAIL_CLOSED_AS_DESIGNED",
+      "other_vector_impact": "CONDITIONAL__ANY_ADAPTER_MUTATING_IDENTITY_FACTS_WITHOUT_REBINDING_WOULD_FAIL__REPOSITORY_SEARCH_FOUND_ONLY_THIS_INSTANCE"
+    },
+    "terminal_localization": {
+      "component": "same FC WRONG_ATTEMPT adapter configure override",
+      "counter_lines": "367-378",
+      "terminal_lines": "467-488",
+      "counter_cause": "corrected_counters unconditionally set e05_case_execution_count to 1 during pre-act and failure paths",
+      "false_pass_cause": "Phase D override unconditionally replaced first_failure_or_current_result with PASS",
+      "consumed_facts": "phase name and mutable counters without positive lifecycle proof",
+      "ignored_facts": [
+        "raw first_failure",
+        "human act creation count zero",
+        "missing authority checkpoint",
+        "missing guest execution seal",
+        "missing vector request evidence"
+      ],
+      "causal_chain": [
+        "setup reached pre-act checkpoint",
+        "adapter prematurely set E05 case count to 1",
+        "CHE producer failed before act creation",
+        "base harness recorded first_failure and teardown",
+        "adapter Phase D override discarded failure classification and emitted PASS"
+      ],
+      "defect_class": "ORCHESTRATION__EXISTING_VECTOR_TERMINAL_OVERRIDE",
+      "success_initialized_optimistically": true,
+      "count_incremented_before_constitutional_event": true
+    },
+    "provider_security_reuse": {
+      "equivalent_invariant_present": true,
+      "bindings": [
+        "aigol/provider/provider_registry.py execution_authority false",
+        "G77_256FG Phase C worker eligibility does not imply execution authority"
+      ],
+      "new_security_artifact_required": false
+    },
+    "operational_history": {
+      "vm_boot_count": 1,
+      "qemu_execution_count": 1,
+      "wrong_attempt_execution_count": 0,
+      "retry_count": 0,
+      "repair_count": 0,
+      "replay_count": 0,
+      "p11_entry_count": 0,
+      "invocation_count": 0,
+      "protected_effect_count": 0,
+      "wrong_attempt": "UNSATISFIED",
+      "e05": "6/18"
+    },
+    "phase_a_result": "PASS__BOTH_DEFECTS_DETERMINISTICALLY_LOCALIZED__MINIMUM_SINGLE_ADAPTER_HARDENING_ADMITTED",
+    "implementation_boundary": "MODIFY_EXISTING_FC_WRONG_ATTEMPT_ADAPTER_AND_ADD_REPOSITORY_ONLY_REGRESSION_TEST__DO_NOT_MODIFY_CANONICAL_CHE_VALIDATOR",
+    "checkpoint_is_authority": false,
+    "auto_continuable": false,
+    "human_review_required": true,
+    "exact_next_legal_action": "ONE_MINIMUM_IMPLEMENTATION_PASS__NO_VM_QEMU_OR_OPERATIONAL_EXECUTION"
+  },
+  "checkpoint_sha256": "a5fea2f9571531687834e8735a5d4e380c454b2e410e7652cc81678ef0d4de7b"
+}

@@ -1,0 +1,119 @@
+{
+  "schema_id": "G77_256FK_SPCE_PHASE_B_HARDENING_ENVELOPE_V1",
+  "checkpoint": {
+    "schema_id": "G77_256FK_SPCE_PHASE_B_HARDENING_V1",
+    "generation_identity": "G77_256FK_REPOSITORY_ONLY_CHE_AND_TERMINAL_REDUCTION_HARDENING_V1",
+    "implementation_timestamp": "2026-08-29T09:21:15+02:00",
+    "mode": "REPOSITORY_ONLY__FAIL_CLOSED__NO_OPERATIONAL_EXECUTION",
+    "phase_a_binding": {
+      "path": ".github/governance/evidence/g77_256fk_che_terminal_hardening_v1/G77_256FK_SPCE_PHASE_A_FAILURE_LOCALIZATION_V1.json",
+      "file_sha256": "79cd5b679d4babba4018352e4bc6ac7d7b86c9534d4183ee62322ca1b0d997eb",
+      "checkpoint_sha256": "a5fea2f9571531687834e8735a5d4e380c454b2e410e7652cc81678ef0d4de7b"
+    },
+    "implementation": {
+      "semantic_path": ".github/governance/evidence/g77_256fc_wrong_attempt_operational_v1/harness/G77_256FC_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py",
+      "pre_sha256": "ef564f54fc764ed3968d94365a56a09f06025ea1f534c4a08f818183ddef2e8d",
+      "post_sha256": "7ae104802f49613ca60836913d2c68269b59728bc35bb677fdb3637aaf4b84c6",
+      "test_path": "tests/test_g77_256fk_che_terminal_hardening_v1.py",
+      "test_sha256": "921cf987c065151cd597d89b1fd482e834c0d25614b3626d36c072db3df19e70",
+      "semantic_file_count": 1,
+      "test_file_count": 1,
+      "focused_correction_pass_count": 1,
+      "correction_scope": "normalize absent optional evidence before predicate evaluation; no semantic expansion"
+    },
+    "che_hardening": {
+      "result": "PASS__PRODUCER_REALIGNED_WITH_EXISTING_CANONICAL_CONTRACT",
+      "canonical_contract": "aigol/runtime/canonical_che_evidence_correlation_contract_v1.py",
+      "canonical_contract_sha256": "75801995214e81419aab9a02326499c771ec0039658fb49598aa54bd033e13c5",
+      "producer": "create_canonical_che_evidence_correlation_v1",
+      "adapter_binding": "rebind_canonical_correlation removes the predecessor identity after fact updates and invokes the canonical producer",
+      "validator": "CanonicalCHEEvidenceCorrelationV1.__post_init__",
+      "validator_modified": false,
+      "validation_weakened": false,
+      "wrong_attempt_special_case": false,
+      "parallel_identity_mechanism_created": false,
+      "unknown_accepted": false,
+      "historical_hash_acceptance_logic_created": false
+    },
+    "terminal_hardening": {
+      "result": "PASS__EXISTING_ADAPTER_TERMINAL_OVERRIDE_NOW_REQUIRES_COMPLETE_POSITIVE_EVIDENCE",
+      "reducer": "reduce_wrong_attempt_terminal_state in the existing FC WRONG_ATTEMPT adapter path",
+      "positive_success_predicates": [
+        "raw first failure absent",
+        "current result explicitly PASS",
+        "authority checkpoint present with canonical schema",
+        "live and authority act creation counts both equal one",
+        "guest execution seal present with canonical schema and exact case",
+        "execution seal contains explicit null first_failure",
+        "execution seal contains exact operational result",
+        "WRONG_ATTEMPT denial and zero-effect gates complete",
+        "execution seal E05 case count equals one"
+      ],
+      "failure_precedence": "raw first failure dominates optimistic derived success",
+      "missing_evidence_behavior": "FAIL_CLOSED__ZERO_E05_CREDIT",
+      "setup_counter_behavior": "E05 remains zero before complete vector proof",
+      "parallel_reducer_created": false,
+      "second_counter_authority_created": false
+    },
+    "invariants": {
+      "request_entry_invocation_effect_separation": "PRESERVED",
+      "setup_complete_not_vector_executed": "ENFORCED",
+      "act_creation_failure_not_vector_execution": "ENFORCED",
+      "pre_act_failure_not_e05_execution": "ENFORCED",
+      "terminal_manifest_not_raw_truth": "ENFORCED_BY_RAW_FAILURE_PRECEDENCE",
+      "derived_pass_requires_complete_positive_evidence": "ENFORCED",
+      "missing_success_evidence_fails_closed": "ENFORCED",
+      "e05_credit_requires_complete_vector_proof": "ENFORCED"
+    },
+    "architecture_delta": {
+      "ex_certified_component_reuse_count": 17,
+      "ex_reconstruction_count": 0,
+      "common_components_modified_count": 0,
+      "new_common_component_count": 0,
+      "duplicated_common_component_count": 0,
+      "che_fix_file_count": 1,
+      "terminal_reducer_fix_file_count": 1,
+      "duplicate_control_plane_delta": 0,
+      "production_path_delta": 0,
+      "provider_truth_duplication_delta": 0,
+      "new_execution_authority_count": 0,
+      "new_candidate_count": 0,
+      "new_materialization_count": 0
+    },
+    "provider_security": {
+      "existing_invariant_reused": true,
+      "provider_capability_is_execution_authority": false,
+      "new_provider_registry_created": false,
+      "new_production_route_created": false
+    },
+    "focused_validation": {
+      "initial_run": "FAIL__5_PASSED__4_FAILED",
+      "direct_fk_defect": "predicate tuple eagerly dereferenced absent authority or execution evidence",
+      "permitted_focused_correction": "APPLIED_ONCE",
+      "final_run": "PASS__11_PASSED",
+      "duration_seconds": 0.11,
+      "bytecode_compile": "PASS"
+    },
+    "operational_delta": {
+      "new_vm_creation_count": 0,
+      "vm_boot_count": 0,
+      "qemu_execution_count": 0,
+      "wrong_attempt_execution_count": 0,
+      "p11_operational_entry_count": 0,
+      "protected_effect_count": 0,
+      "retry_count": 0,
+      "repair_count": 0,
+      "replay_count": 0,
+      "new_e05_credit": 0,
+      "e05_start": "6/18",
+      "e05_end": "6/18",
+      "wrong_attempt": "UNSATISFIED"
+    },
+    "phase_b_result": "PASS__MINIMUM_EXISTING_PATH_HARDENING_IMPLEMENTED__READY_FOR_INDEPENDENT_VALIDATION",
+    "checkpoint_is_authority": false,
+    "auto_continuable": false,
+    "human_review_required": true,
+    "exact_next_legal_action": "ONE_REPOSITORY_ONLY_PHASE_C_VALIDATION__NO_VM_QEMU_OR_OPERATIONAL_EXECUTION"
+  },
+  "checkpoint_sha256": "449054859e41564271110cbe48cfce3cf94bc2158e49aa165fa8082d349b20d1"
+}
