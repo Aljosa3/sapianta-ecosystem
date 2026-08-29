@@ -1,0 +1,83 @@
+{
+  "schema_id": "G77_256FN_SPCE_PHASE_B_OPERATIONAL_EVIDENCE_ENVELOPE_V1",
+  "checkpoint": {
+    "schema_id": "G77_256FN_SPCE_PHASE_B_OPERATIONAL_EVIDENCE_V1",
+    "generation_identity": "G77_256FN_ONE_BOUNDED_OPERATIONAL_WRONG_ATTEMPT_COMMISSIONING_V1",
+    "checkpoint_timestamp": "2026-08-29T14:15:39Z",
+    "phase_a_binding": {
+      "path": ".github/governance/evidence/g77_256fn_wrong_attempt_operational_v1/G77_256FN_SPCE_PHASE_A_OPERATIONAL_AUTHENTICATION_V1.json",
+      "file_sha256": "cc42e1232218d70435c060966d6ea179c099d5a7f1ec1f97345fcccc50b20136",
+      "inner_sha256": "f3549218bbf544fa9662a224ec615024fff10ae6c5096132febbcd6babe0e4ed",
+      "result": "FAIL_CLOSED__FM_LAUNCHER_AUTHORITY_BINDING_MISMATCH",
+      "seal_recomputation": "PASS"
+    },
+    "operational_admission": {
+      "phase_a_pass_required": true,
+      "phase_a_pass_observed": false,
+      "launcher_invocation_permitted": false,
+      "operational_budget_begun": false,
+      "decision": "NOT_RUN__PHASE_A_FAILED_BEFORE_BOOT"
+    },
+    "lifecycle": {
+      "setup": "STATIC_AUTHENTICATION_COMPLETE__OPERATIONAL_SETUP_NOT_STARTED",
+      "act_creation": "NOT_RUN",
+      "request": "NOT_RUN",
+      "entry": "NOT_RUN",
+      "invocation": "NOT_RUN",
+      "effect": "NOT_RUN__ZERO",
+      "teardown": "NOT_APPLICABLE__VM_NEVER_BOOTED__PREBOOT_ASSET_LEFT_UNCHANGED"
+    },
+    "raw_operational_evidence": {
+      "launcher_pre_receipt": "ABSENT__LAUNCHER_NOT_INVOKED",
+      "launcher_post_receipt": "ABSENT__LAUNCHER_NOT_INVOKED",
+      "raw_execution_evidence": "ABSENT__EXECUTION_NOT_STARTED",
+      "authority_checkpoint": "ABSENT__ACT_NOT_CREATED",
+      "execution_seal": "ABSENT__EXECUTION_NOT_STARTED",
+      "teardown_seal": "ABSENT__VM_NEVER_BOOTED",
+      "serial_log": "ABSENT__VM_NEVER_BOOTED",
+      "absence_is_not_success_evidence": true
+    },
+    "first_constitutional_failure": {
+      "identity": "FM_LAUNCHER_AUTHORITY_BINDING_MISMATCH",
+      "stage": "PHASE_A_PREBOOT_OPERATIONAL_AUTHENTICATION",
+      "launcher_required_head": "7dce67ec18696ba0bad73130f3f7a84168f25277",
+      "launcher_required_tree": "3cb61ec34e9593efb711dce61014dc8fdf0f6dd9",
+      "authorized_committed_head": "4f1a336a93189bc0c087fe7a1500c9258b0be9f8",
+      "authorized_committed_tree": "e93b25d42a8a78b019bc4349f263027f49cc9aa9"
+    },
+    "generation_counters": {
+      "new_candidate_count_in_fn": 0,
+      "new_materialization_count_in_fn": 0,
+      "new_vm_preparation_count_in_fn": 0,
+      "du_rerun_count_in_fn": 0,
+      "eb_rerun_count_in_fn": 0,
+      "ee_rerun_count_in_fn": 0,
+      "vm_boot_count": 0,
+      "qemu_system_execution_count": 0,
+      "wrong_attempt_operational_attempt_count": 0,
+      "request_count": 0,
+      "entry_count": 0,
+      "invocation_count": 0,
+      "protected_effect_count": 0,
+      "retry_count": 0,
+      "repair_count": 0,
+      "replay_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count_delta": 0,
+      "provider_invocation_count": 0,
+      "trusted_access_invocation_count": 0
+    },
+    "frontier": {
+      "wrong_attempt": "UNSATISFIED",
+      "e05_start": "6/18",
+      "e05_end": "6/18",
+      "e05_credit": 0
+    },
+    "phase_b_result": "NOT_RUN__PHASE_A_FAIL_CLOSED_BEFORE_OPERATIONAL_BUDGET__NO_BOOT_QEMU_OR_ATTEMPT",
+    "checkpoint_is_authority": false,
+    "auto_continuable": false,
+    "human_review_required": true,
+    "exact_next_legal_action": "PHASE_C_VALIDATE_FAIL_CLOSED_NON_EXECUTION_EVIDENCE_ONLY__NO_OPERATIONAL_ACTION"
+  },
+  "checkpoint_sha256": "4da7823dca8f69f9f5f5ac98acab37ceaf5d94745560ed4ebedd9afaedbda7b3"
+}

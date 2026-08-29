@@ -1,0 +1,89 @@
+{
+  "schema_id": "G77_256FN_SPCE_PHASE_C_INDEPENDENT_VALIDATION_ENVELOPE_V1",
+  "checkpoint": {
+    "schema_id": "G77_256FN_SPCE_PHASE_C_INDEPENDENT_VALIDATION_V1",
+    "generation_identity": "G77_256FN_ONE_BOUNDED_OPERATIONAL_WRONG_ATTEMPT_COMMISSIONING_V1",
+    "validation_timestamp": "2026-08-29T14:17:25Z",
+    "validation_mode": "INDEPENDENT_FAIL_CLOSED_NON_EXECUTION_VALIDATION",
+    "phase_bindings": {
+      "phase_a_file_sha256": "cc42e1232218d70435c060966d6ea179c099d5a7f1ec1f97345fcccc50b20136",
+      "phase_a_inner_sha256": "f3549218bbf544fa9662a224ec615024fff10ae6c5096132febbcd6babe0e4ed",
+      "phase_a_seal_recomputation": "PASS",
+      "phase_b_file_sha256": "5ad8968d5943990dfac206cc554e9d99511f0ec77689b813a20b3a5c07be6274",
+      "phase_b_inner_sha256": "4da7823dca8f69f9f5f5ac98acab37ceaf5d94745560ed4ebedd9afaedbda7b3",
+      "phase_b_seal_recomputation": "PASS"
+    },
+    "validation_matrix": [
+      {"requirement": "EXACT_COMMITTED_FM_AUTHORITY", "result": "PASS__4F1A336A93189BC0C087FE7A1500C9258B0BE9F8_E93B25D42A8A78B019BC4349F263027F49CC9AA9"},
+      {"requirement": "PHASE_A_SEAL", "result": "PASS"},
+      {"requirement": "PHASE_B_SEAL", "result": "PASS"},
+      {"requirement": "FM_ASSET_IDENTITY", "result": "PASS__PREBOOT_BYTES_UNCHANGED"},
+      {"requirement": "LAUNCHER_AUTHORITY_BINDING", "result": "FAIL_CONFIRMED__PINNED_PRE_FM_HEAD_TREE_CANNOT_ADMIT_COMMITTED_FM_AUTHORITY"},
+      {"requirement": "EXECUTION_COUNT", "result": "PASS__0"},
+      {"requirement": "QEMU_COUNT", "result": "PASS__0"},
+      {"requirement": "VM_BOOT_COUNT", "result": "PASS__0"},
+      {"requirement": "RETRY_REPAIR_REPLAY", "result": "PASS__0_0_0"},
+      {"requirement": "CANONICAL_CHE_OPERATIONAL_VALIDATION", "result": "NOT_APPLICABLE__NO_ACT_OR_REQUEST_CREATED"},
+      {"requirement": "AUTHORIZED_AND_SUPPLIED_ATTEMPT_IDENTITIES", "result": "NOT_RUN__OPERATIONAL_VECTOR_NOT_STARTED"},
+      {"requirement": "A_NOT_EQUAL_B", "result": "NOT_RUN__OPERATIONAL_VECTOR_NOT_STARTED"},
+      {"requirement": "UNRELATED_DIMENSION_COHERENCE", "result": "NOT_RUN__OPERATIONAL_VECTOR_NOT_STARTED"},
+      {"requirement": "P11_RESULT_AND_DENIAL_REASON", "result": "NOT_RUN__NO_P11_REQUEST_OR_ENTRY"},
+      {"requirement": "REQUEST_ENTRY_INVOCATION_EFFECT_COUNTERS", "result": "PASS__0_0_0_0"},
+      {"requirement": "PROTECTED_EFFECT_ZERO", "result": "PASS__0"},
+      {"requirement": "EXECUTION_SEAL", "result": "NOT_APPLICABLE__EXECUTION_NEVER_STARTED"},
+      {"requirement": "TEARDOWN", "result": "NOT_APPLICABLE__VM_NEVER_BOOTED__ASSET_REMAINS_PREBOOT"},
+      {"requirement": "RAW_TERMINAL_AGREEMENT", "result": "PASS__BOTH_OPERATIONAL_RAW_AND_TERMINAL_SUCCESS_EVIDENCE_ABSENT__NO_SUCCESS_INFERRED"},
+      {"requirement": "E05_CREDIT_ELIGIBILITY", "result": "FAIL_CLOSED__INELIGIBLE__PHASE_A_FAILED_AND_COMPLETE_POSITIVE_PROOF_ABSENT"}
+    ],
+    "independent_observations": {
+      "launcher_pre_receipt_present": false,
+      "launcher_post_receipt_present": false,
+      "raw_execution_evidence_present": false,
+      "authority_checkpoint_present": false,
+      "execution_seal_present": false,
+      "teardown_seal_present": false,
+      "serial_log_present": false,
+      "qemu_process_count": 0,
+      "overlay_sha256": "6ea4eed169518c646774cfbe2c7b8c00646a9cdead8798f7c94c786c6b6ce8b2",
+      "committed_fm_tracked_delta_count": 0,
+      "staged_delta_count": 0
+    },
+    "first_failure_validation": {
+      "reported_failure": "FM_LAUNCHER_AUTHORITY_BINDING_MISMATCH",
+      "independently_reproduced_from_committed_bytes": true,
+      "launcher_invocation_required_to_reproduce": false,
+      "failure_precedes_pre_receipt": true,
+      "failure_precedes_qemu": true,
+      "repair_or_retry_permitted": false
+    },
+    "final_counter_validation": {
+      "vm_boot_count": 0,
+      "qemu_system_execution_count": 0,
+      "wrong_attempt_operational_attempt_count": 0,
+      "request_count": 0,
+      "entry_count": 0,
+      "invocation_count": 0,
+      "protected_effect_count": 0,
+      "retry_count": 0,
+      "repair_count": 0,
+      "replay_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count_delta": 0,
+      "provider_invocation_count": 0,
+      "trusted_access_invocation_count": 0
+    },
+    "credit_reduction": {
+      "wrong_attempt": "UNSATISFIED",
+      "e05_start": "6/18",
+      "e05_end": "6/18",
+      "e05_credit": 0,
+      "no_partial_credit": "PASS"
+    },
+    "phase_c_result": "PASS__FAIL_CLOSED_FIRST_FAILURE_INDEPENDENTLY_VALIDATED__NO_OPERATIONAL_EXECUTION_OR_CREDIT",
+    "checkpoint_is_authority": false,
+    "auto_continuable": false,
+    "human_review_required": true,
+    "exact_next_legal_action": "PHASE_D_FAIL_CLOSED_REDUCTION_AND_G48_REPORT_ONLY__NO_OPERATIONAL_ACTION"
+  },
+  "checkpoint_sha256": "7b1eb45374f5f4366bce42921e72ebdd22a30dc1c7dcfc251eda5ce84f4116ab"
+}
