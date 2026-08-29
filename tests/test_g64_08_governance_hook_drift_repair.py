@@ -20,8 +20,24 @@ def _executable(path: Path) -> None:
     path.chmod(path.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
 
 
+def _git(*args: str, cwd: Path | None = None) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["git", *args],
+        cwd=cwd,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+
+
+def _initialize_fixture_repositories(root: Path) -> None:
+    _git("init", "--quiet", str(root))
+    _git("init", "--quiet", str(root / "sapianta_system"))
+
+
 def test_installer_copies_exact_canonical_root_and_nested_hooks(tmp_path: Path) -> None:
     create_minimal_conformant_repo(tmp_path)
+    _initialize_fixture_repositories(tmp_path)
     root_expected = REPOSITORY_ROOT / "scripts/hooks/pre-commit"
     nested_expected = REPOSITORY_ROOT / "sapianta_system/scripts/hooks/pre-commit"
     shutil.copyfile(root_expected, tmp_path / "scripts/hooks/pre-commit")
@@ -54,6 +70,7 @@ def test_installer_copies_exact_canonical_root_and_nested_hooks(tmp_path: Path) 
 
 def test_installer_fails_closed_when_hook_target_is_unavailable(tmp_path: Path) -> None:
     create_minimal_conformant_repo(tmp_path)
+    _initialize_fixture_repositories(tmp_path)
     shutil.rmtree(tmp_path / ".git/hooks")
 
     result = subprocess.run(
@@ -65,6 +82,70 @@ def test_installer_fails_closed_when_hook_target_is_unavailable(tmp_path: Path) 
 
     assert result.returncode != 0
     assert "failed closed" in result.stderr
+
+
+def test_installer_resolves_linked_worktree_hook_path(tmp_path: Path) -> None:
+    primary = tmp_path / "primary"
+    linked = tmp_path / "linked"
+    primary.mkdir()
+    _git("init", "--quiet", cwd=primary)
+    (primary / "tracked").write_text("stable\n", encoding="utf-8")
+    _git("add", "tracked", cwd=primary)
+    _git(
+        "-c",
+        "user.name=Governance Test",
+        "-c",
+        "user.email=governance-test@example.invalid",
+        "commit",
+        "--quiet",
+        "-m",
+        "fixture",
+        cwd=primary,
+    )
+    _git("worktree", "add", "--quiet", "--detach", str(linked), cwd=primary)
+
+    root_canonical = linked / "scripts/hooks/pre-commit"
+    root_canonical.parent.mkdir(parents=True)
+    root_canonical.write_bytes(REPOSITORY_ROOT.joinpath("scripts/hooks/pre-commit").read_bytes())
+    nested = linked / "sapianta_system"
+    nested.mkdir()
+    _git("init", "--quiet", cwd=nested)
+    nested_canonical = nested / "scripts/hooks/pre-commit"
+    nested_canonical.parent.mkdir(parents=True)
+    nested_canonical.write_bytes(
+        REPOSITORY_ROOT.joinpath("sapianta_system/scripts/hooks/pre-commit").read_bytes()
+    )
+
+    result = subprocess.run(
+        [str(REPOSITORY_ROOT / "scripts/install_governance_hooks.sh"), str(linked)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    root_installed = Path(
+        _git(
+            "rev-parse",
+            "--path-format=absolute",
+            "--git-path",
+            "hooks/pre-commit",
+            cwd=linked,
+        ).stdout.strip()
+    )
+    nested_installed = Path(
+        _git(
+            "rev-parse",
+            "--path-format=absolute",
+            "--git-path",
+            "hooks/pre-commit",
+            cwd=nested,
+        ).stdout.strip()
+    )
+    assert result.returncode == 0, result.stderr
+    assert root_installed.read_bytes() == root_canonical.read_bytes()
+    assert nested_installed.read_bytes() == nested_canonical.read_bytes()
+    assert os.access(root_installed, os.X_OK)
+    assert os.access(nested_installed, os.X_OK)
 
 
 def test_root_hook_fails_closed_before_nested_hook_on_nonconformant_result(

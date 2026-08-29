@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import subprocess
 from pathlib import Path
 
 from .conformance_models import (
@@ -26,7 +27,6 @@ from .conformance_rules import (
     LINEAGE_EVIDENCE,
     evaluate_content_rule,
     evaluate_existence_rule,
-    read_text,
 )
 
 
@@ -103,60 +103,105 @@ class GovernanceConformanceEngine:
                 "HOOK-ROOT-PRECOMMIT",
                 "root pre-commit governance enforcement",
                 "scripts/hooks/pre-commit",
-                ".git/hooks/pre-commit",
+                ".",
                 Severity.WARNING,
             ),
             self._check_hook_pair(
                 "HOOK-SYSTEM-PRECOMMIT",
                 "sapianta_system pre-commit governance enforcement",
                 "sapianta_system/scripts/hooks/pre-commit",
-                "sapianta_system/.git/hooks/pre-commit",
+                "sapianta_system",
                 Severity.HIGH,
             ),
         ]
         return checks
+
+    def _resolve_hook_path(self, repository_path: str) -> Path | None:
+        repository = self.repository_root / repository_path
+        try:
+            result = subprocess.run(
+                [
+                    "git",
+                    "-C",
+                    str(repository),
+                    "rev-parse",
+                    "--path-format=absolute",
+                    "--git-path",
+                    "hooks/pre-commit",
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+        except OSError:
+            return None
+        lines = result.stdout.splitlines()
+        if result.returncode != 0 or len(lines) != 1 or not lines[0]:
+            return None
+        hook_path = Path(lines[0])
+        return hook_path if hook_path.is_absolute() else None
+
+    @staticmethod
+    def _read_hook(path: Path) -> tuple[bytes, str] | None:
+        if not path.exists() or not path.is_file():
+            return None
+        try:
+            content = path.read_bytes()
+            return content, content.decode("utf-8")
+        except (OSError, UnicodeDecodeError):
+            return None
+
+    @staticmethod
+    def _hook_surface(repository_path: str) -> str:
+        prefix = "root" if repository_path == "." else repository_path
+        return f"git-resolved:{prefix}:hooks/pre-commit"
 
     def _check_hook_pair(
         self,
         check_id: str,
         surface: str,
         expected_path: str,
-        installed_path: str,
+        repository_path: str,
         severity: Severity,
     ) -> InvariantCheckResult:
-        expected = read_text(self.repository_root, expected_path)
-        installed = read_text(self.repository_root, installed_path)
-        if expected is None and installed is None:
+        installed_path = self._resolve_hook_path(repository_path)
+        installed_surface = self._hook_surface(repository_path)
+        if installed_path is None:
             return InvariantCheckResult(
                 check_id=check_id,
                 status=EnforcementStatus.FAIL,
-                surface=installed_path,
-                expected=f"{expected_path} and installed hook with governance tokens",
-                actual="expected and installed hooks missing",
+                surface=installed_surface,
+                expected="active hook path resolved through Git metadata",
+                actual="Git hook-path resolution failed",
                 severity=severity,
                 violation_type="HOOK_MISMATCH",
             )
-        if expected is None:
+
+        expected_hook = self._read_hook(self.repository_root / expected_path)
+        installed_hook = self._read_hook(installed_path)
+        if expected_hook is None:
             return InvariantCheckResult(
                 check_id=check_id,
                 status=EnforcementStatus.FAIL,
                 surface=expected_path,
                 expected="expected governance hook script",
-                actual="missing",
+                actual="missing or unreadable",
                 severity=severity,
                 violation_type="HOOK_MISMATCH",
             )
-        if installed is None:
+        if installed_hook is None:
             return InvariantCheckResult(
                 check_id=check_id,
                 status=EnforcementStatus.FAIL,
-                surface=installed_path,
-                expected="installed hook with governance tokens",
-                actual="missing",
+                surface=installed_surface,
+                expected="active installed hook with canonical bytes and governance tokens",
+                actual="missing or unreadable",
                 severity=severity,
                 violation_type="HOOK_MISMATCH",
             )
 
+        expected_bytes, expected = expected_hook
+        installed_bytes, installed = installed_hook
         missing_expected = tuple(token for token in HOOK_REQUIRED_TOKENS if token not in expected)
         missing_installed = tuple(token for token in HOOK_REQUIRED_TOKENS if token not in installed)
         if missing_expected:
@@ -173,18 +218,28 @@ class GovernanceConformanceEngine:
             return InvariantCheckResult(
                 check_id=check_id,
                 status=EnforcementStatus.FAIL,
-                surface=installed_path,
+                surface=installed_surface,
                 expected=", ".join(HOOK_REQUIRED_TOKENS),
                 actual="missing tokens: " + ", ".join(missing_installed),
+                severity=severity,
+                violation_type="HOOK_MISMATCH",
+            )
+        if installed_bytes != expected_bytes:
+            return InvariantCheckResult(
+                check_id=check_id,
+                status=EnforcementStatus.FAIL,
+                surface=installed_surface,
+                expected="active installed hook matches canonical bytes",
+                actual="bytes differ from canonical hook",
                 severity=severity,
                 violation_type="HOOK_MISMATCH",
             )
         return InvariantCheckResult(
             check_id=check_id,
             status=EnforcementStatus.PASS,
-            surface=installed_path,
-            expected="installed hook contains governance enforcement tokens",
-            actual="present",
+            surface=installed_surface,
+            expected="active installed hook matches canonical bytes and governance tokens",
+            actual="present and byte-identical",
             severity=severity,
             violation_type="HOOK_MISMATCH",
         )
@@ -210,4 +265,3 @@ def run_conformance_check(repository_root: str | Path = ".") -> dict[str, object
 
 if __name__ == "__main__":
     print(json.dumps(run_conformance_check(), sort_keys=True, indent=2))
-

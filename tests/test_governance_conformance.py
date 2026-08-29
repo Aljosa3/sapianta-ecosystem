@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -16,7 +18,39 @@ def write(path: Path, text: str) -> None:
     path.write_text(text, encoding="utf-8")
 
 
-def create_minimal_conformant_repo(root: Path) -> None:
+def run_git(repository: Path, *args: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["git", "-C", str(repository), *args],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+
+
+def initialize_repository(root: Path) -> None:
+    root.mkdir(parents=True, exist_ok=True)
+    subprocess.run(
+        ["git", "init", "--quiet", str(root)],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+
+
+def active_hook_path(repository: Path) -> Path:
+    result = run_git(
+        repository,
+        "rev-parse",
+        "--path-format=absolute",
+        "--git-path",
+        "hooks/pre-commit",
+    )
+    return Path(result.stdout.strip())
+
+
+def create_minimal_conformant_repo(root: Path, *, initialize_root: bool = True) -> None:
+    if initialize_root:
+        initialize_repository(root)
     for doc in (
         "docs/governance/CONSTITUTIONAL_ARCHITECTURE_SPEC_V1.md",
         "docs/governance/CANONICAL_LAYER_MODEL.md",
@@ -71,9 +105,10 @@ def create_minimal_conformant_repo(root: Path) -> None:
     )
     hook = "promotion_gate_v02\ncheck_layer_freeze\n"
     write(root / "scripts/hooks/pre-commit", hook)
-    write(root / ".git/hooks/pre-commit", hook)
     write(root / "sapianta_system/scripts/hooks/pre-commit", hook)
-    write(root / "sapianta_system/.git/hooks/pre-commit", hook)
+    initialize_repository(root / "sapianta_system")
+    write(active_hook_path(root), hook)
+    write(active_hook_path(root / "sapianta_system"), hook)
 
 
 def test_conformant_repo_scores_conformant(tmp_path: Path) -> None:
@@ -89,17 +124,90 @@ def test_conformant_repo_scores_conformant(tmp_path: Path) -> None:
 
 def test_hook_mismatch_detection(tmp_path: Path) -> None:
     create_minimal_conformant_repo(tmp_path)
-    write(root := tmp_path / "sapianta_system/.git/hooks/pre-commit", "# missing governance checks\n")
+    root = active_hook_path(tmp_path / "sapianta_system")
+    write(root, "# missing governance checks\n")
 
     report = GovernanceConformanceEngine(tmp_path).run()
 
     assert report.status is ConformanceStatus.PARTIALLY_CONFORMANT
     assert any(
         violation.violation_type == "HOOK_MISMATCH"
-        and violation.surface == "sapianta_system/.git/hooks/pre-commit"
+        and violation.surface == "git-resolved:sapianta_system:hooks/pre-commit"
         for violation in report.violations
     )
     assert root.read_text(encoding="utf-8") == "# missing governance checks\n"
+
+
+def test_linked_worktree_active_root_hook_scores_conformant(tmp_path: Path) -> None:
+    primary = tmp_path / "primary"
+    linked = tmp_path / "linked"
+    initialize_repository(primary)
+    write(primary / "tracked", "stable\n")
+    run_git(primary, "add", "tracked")
+    run_git(
+        primary,
+        "-c",
+        "user.name=Governance Test",
+        "-c",
+        "user.email=governance-test@example.invalid",
+        "commit",
+        "--quiet",
+        "-m",
+        "fixture",
+    )
+    run_git(primary, "worktree", "add", "--quiet", "--detach", str(linked))
+    create_minimal_conformant_repo(linked, initialize_root=False)
+
+    report = GovernanceConformanceEngine(linked).run()
+
+    assert (linked / ".git").is_file()
+    assert report.status is ConformanceStatus.CONFORMANT
+    assert report.checks_passed == 20
+    assert report.checks_failed == 0
+
+
+def test_missing_active_hook_fails_closed(tmp_path: Path) -> None:
+    create_minimal_conformant_repo(tmp_path)
+    root_hook = active_hook_path(tmp_path)
+    root_hook.unlink()
+
+    report = GovernanceConformanceEngine(tmp_path).run()
+
+    assert report.status is ConformanceStatus.PARTIALLY_CONFORMANT
+    assert any(
+        violation.evidence == "HOOK-ROOT-PRECOMMIT"
+        and violation.actual == "missing or unreadable"
+        for violation in report.violations
+    )
+
+
+def test_noncanonical_active_hook_bytes_fail_closed(tmp_path: Path) -> None:
+    create_minimal_conformant_repo(tmp_path)
+    root_hook = active_hook_path(tmp_path)
+    write(root_hook, "# drift\npromotion_gate_v02\ncheck_layer_freeze\n")
+
+    report = GovernanceConformanceEngine(tmp_path).run()
+
+    assert report.status is ConformanceStatus.PARTIALLY_CONFORMANT
+    assert any(
+        violation.evidence == "HOOK-ROOT-PRECOMMIT"
+        and violation.actual == "bytes differ from canonical hook"
+        for violation in report.violations
+    )
+
+
+def test_hook_path_resolution_failure_fails_closed(tmp_path: Path) -> None:
+    create_minimal_conformant_repo(tmp_path)
+    shutil.rmtree(tmp_path / ".git")
+
+    report = GovernanceConformanceEngine(tmp_path).run()
+
+    assert report.status is ConformanceStatus.PARTIALLY_CONFORMANT
+    assert any(
+        violation.evidence == "HOOK-ROOT-PRECOMMIT"
+        and violation.actual == "Git hook-path resolution failed"
+        for violation in report.violations
+    )
 
 
 def test_mutation_coverage_validation_detects_missing_layer2(tmp_path: Path) -> None:

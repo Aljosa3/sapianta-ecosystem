@@ -5,6 +5,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 BINDING_PATH = ROOT / ".github/governance/lineage/CROSS_REPOSITORY_LINEAGE_BINDING_V1.json"
+CURRENT_BINDING_PATH = ROOT / ".github/governance/lineage/CROSS_REPOSITORY_LINEAGE_BINDING_V2.json"
 LINEAGE_PATHS = (
     BINDING_PATH,
     ROOT / "runtime/lineage_evidence/CROSS_REPOSITORY_LINEAGE_BINDING_V1.json",
@@ -72,3 +73,57 @@ def test_binding_excludes_prohibited_capabilities():
         '"orchestration": true',
     )
     assert not any(value in text for value in prohibited)
+
+
+def test_current_binding_pins_ratified_nested_authority() -> None:
+    binding = _load(CURRENT_BINDING_PATH)
+    payload = binding["canonical_payload"]
+    root = payload["root_repository"]
+    nested = payload["nested_repository"]
+    assert root["commit"] == "2fb0b645fd883faf53a08ab07c0311906fc4d4f2"
+    assert root["tree"] == "bd32263838a11bc7143b1b5cb77da5c4afc94629"
+    assert nested == {
+        "checkout_policy": "DETACHED_EXACT_COMMIT_AND_TREE",
+        "commit": "3183bab71f8f30397c0309dd2e6d846d14a11f66",
+        "immutable_acquisition_ref": "refs/tags/sapianta-system-nested-authority-3183bab-v1",
+        "repo_path": "sapianta_system",
+        "source": "git@github.com:Aljosa3/sapianta-core.git",
+        "tree": "7c32ec05efc2be43297849bc38ec8766514a523d",
+    }
+    assert payload["pinning_policy"] == (
+        "PIN_EXACT_COMMIT_AND_TREE_DO_NOT_AUTOMATICALLY_ADVANCE_WITH_ANY_BRANCH"
+    )
+    assert all(
+        value == "FAIL_CLOSED"
+        for key, value in payload["mismatch_semantics"].items()
+        if key.endswith("_mismatch")
+    )
+    assert payload["mismatch_semantics"]["automatic_branch_advancement"] is False
+
+
+def test_current_binding_hash_recomputes_deterministically() -> None:
+    binding = _load(CURRENT_BINDING_PATH)
+    payload = binding["canonical_payload"]
+    pairing = binding["deterministic_pairing"]
+    assert _hash(payload) == pairing["canonical_json_sha256"]
+    expected_id = f"CROSS-REPOSITORY-LINEAGE-BINDING-{pairing['canonical_json_sha256'][:24]}"
+    assert pairing["binding_id"] == expected_id
+    material = {
+        "binding_id": pairing["binding_id"],
+        "root_commit": pairing["root_commit"],
+        "root_tree": pairing["root_tree"],
+        "nested_commit": pairing["nested_commit"],
+        "nested_tree": pairing["nested_tree"],
+        "canonical_json_sha256": pairing["canonical_json_sha256"],
+    }
+    assert _hash(material) == pairing["binding_hash"]
+
+
+def test_current_binding_is_non_authorizing_and_preserves_v1() -> None:
+    payload = _load(CURRENT_BINDING_PATH)["canonical_payload"]
+    assert payload["historical_binding"] == {
+        "path": ".github/governance/lineage/CROSS_REPOSITORY_LINEAGE_BINDING_V1.json",
+        "preserved_as_historical_evidence": True,
+    }
+    assert all(value is False for value in payload["mutation_boundaries"].values() if value is not True)
+    assert payload["mutation_boundaries"]["read_only_after_creation"] is True

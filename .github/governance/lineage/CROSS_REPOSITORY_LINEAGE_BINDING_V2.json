@@ -1,0 +1,58 @@
+{
+  "canonical_payload": {
+    "authority_provenance": {
+      "human_ratification_generation": "G77-256FT",
+      "human_ratification_source_sha256": "3c3189b9eff93c7732dd88b8cd9b2a4a8723df4f0a0b5ca0abf5de86e6c0819c",
+      "publication_generation": "G77-256FS",
+      "scope": "ROOT_NESTED_BINDING_AND_STABLE_WORKTREE_PROVISIONING_ONLY"
+    },
+    "historical_binding": {
+      "path": ".github/governance/lineage/CROSS_REPOSITORY_LINEAGE_BINDING_V1.json",
+      "preserved_as_historical_evidence": true
+    },
+    "milestone": "CROSS_REPOSITORY_LINEAGE_BINDING_V2",
+    "mismatch_semantics": {
+      "automatic_branch_advancement": false,
+      "commit_mismatch": "FAIL_CLOSED",
+      "source_mismatch": "FAIL_CLOSED",
+      "tag_mismatch": "FAIL_CLOSED",
+      "tree_mismatch": "FAIL_CLOSED"
+    },
+    "mutation_boundaries": {
+      "authorizes_e05": false,
+      "authorizes_execution": false,
+      "authorizes_p11": false,
+      "authorizes_production": false,
+      "authorizes_provider_changes": false,
+      "changes_execution_behavior": false,
+      "creates_runtime_authority": false,
+      "read_only_after_creation": true
+    },
+    "nested_repository": {
+      "checkout_policy": "DETACHED_EXACT_COMMIT_AND_TREE",
+      "commit": "3183bab71f8f30397c0309dd2e6d846d14a11f66",
+      "immutable_acquisition_ref": "refs/tags/sapianta-system-nested-authority-3183bab-v1",
+      "repo_path": "sapianta_system",
+      "source": "git@github.com:Aljosa3/sapianta-core.git",
+      "tree": "7c32ec05efc2be43297849bc38ec8766514a523d"
+    },
+    "pinning_policy": "PIN_EXACT_COMMIT_AND_TREE_DO_NOT_AUTOMATICALLY_ADVANCE_WITH_ANY_BRANCH",
+    "root_repository": {
+      "branch": "g77-256fl-wrong-attempt-preboot-blocker",
+      "commit": "2fb0b645fd883faf53a08ab07c0311906fc4d4f2",
+      "identity": "git@github.com:Aljosa3/sapianta-ecosystem.git",
+      "tree": "bd32263838a11bc7143b1b5cb77da5c4afc94629",
+      "worktree": "/home/pisarna/work/sapianta-fl"
+    }
+  },
+  "deterministic_pairing": {
+    "binding_hash": "cba57d82855302f1834da36913f68498bc482921aea55d1a064dd8e59d6abeb9",
+    "binding_id": "CROSS-REPOSITORY-LINEAGE-BINDING-5aa7cafa62e7b57c5bf1487e",
+    "canonical_json_sha256": "5aa7cafa62e7b57c5bf1487e75bd35c9271c67273c800a060d159f26fa638ad1",
+    "nested_commit": "3183bab71f8f30397c0309dd2e6d846d14a11f66",
+    "nested_tree": "7c32ec05efc2be43297849bc38ec8766514a523d",
+    "root_commit": "2fb0b645fd883faf53a08ab07c0311906fc4d4f2",
+    "root_tree": "bd32263838a11bc7143b1b5cb77da5c4afc94629"
+  },
+  "replay_safe": true
+}
