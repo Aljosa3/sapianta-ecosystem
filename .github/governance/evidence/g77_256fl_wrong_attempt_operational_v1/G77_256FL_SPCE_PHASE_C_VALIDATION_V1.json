@@ -1,0 +1,99 @@
+{
+  "schema_id": "G77_256FL_SPCE_PHASE_C_VALIDATION_ENVELOPE_V1",
+  "checkpoint": {
+    "schema_id": "G77_256FL_SPCE_PHASE_C_VALIDATION_V1",
+    "generation_identity": "G77_256FL_ONE_BOUNDED_OPERATIONAL_WRONG_ATTEMPT_COMMISSIONING_V1",
+    "validation_timestamp": "2026-08-29T09:54:46+02:00",
+    "phase_chain": {
+      "phase_a_file_sha256": "80e320a33d142a4771a98242bb4c88a3f8a1c2b7db2201d4742fff70f5b36a56",
+      "phase_a_inner_sha256": "a356f55fb73f163dfd79321249ef6da13478fb94cdc3d71eedf133de0e38ced4",
+      "phase_b_file_sha256": "582dc5fa364f7cbe803afd4a49cf1dfc50ab0e6479bea3e6ef6ff205490e9f21",
+      "phase_b_inner_sha256": "3865aff26a9eb1164006a60d9c4b79b185238d8037dff1d7000a389b3b11a52b",
+      "unique_keys": "PASS",
+      "canonical_seals": "PASS"
+    },
+    "authority_validation": {
+      "fk_branch_head_tree_subject": "PASS",
+      "fk_worktree_clean": true,
+      "fk_index_empty": true,
+      "fk_phase_chain": "PASS__A_B_C_D_AND_G48_HASHES",
+      "human_authorization_binding": "PASS",
+      "one_shot_budget": "PASS__ZERO_FL_OPERATIONAL_CONSUMPTION"
+    },
+    "asset_validation": {
+      "candidate_identity": "PASS__HISTORICAL_BINDING",
+      "materialization_checkpoint": "PASS__HISTORICAL_BINDING_AND_SEAL",
+      "fi_preboot_checkpoint": "PASS__HISTORICAL_BINDING_AND_SEAL",
+      "current_overlay_integrity": "PASS__QEMU_IMG_ZERO_ERRORS",
+      "current_overlay_matches_fi_preboot": "FAIL__HASH_AND_SIZE_DIFFER_AFTER_FJ_BOOT",
+      "base_image_integrity": "PASS__HASH_AND_QEMU_IMG_ZERO_ERRORS",
+      "seed_identity": "PASS__HISTORICAL_HASH",
+      "existing_launcher_freshness": "FAIL__FJ_PRE_AND_POST_RECEIPTS_ALREADY_EXIST",
+      "cloud_init_freshness": "FAIL__FJ_RUNCMD_ALREADY_COMPLETED",
+      "reuse_result": "FAIL_CLOSED__CURRENT_PHYSICAL_ASSET_CANNOT_EXECUTE_COMMITTED_FK_PATH_WITHOUT_PROHIBITED_CHANGE"
+    },
+    "runtime_binding_validation": {
+      "qemu_argv_file_sha256": "d194bcd1a527afa2695125865571644d069437609354ce8724c5cae03d9b6bc4",
+      "qemu_argv_canonical_recomputation": "PASS__5ff1ed751e339c43cda17dc09a6b3ef4d8c8136330df1605a428faad1e13d013",
+      "no_network": "PASS__ONE_NIC_NONE",
+      "mounted_checkout_head": "92ccdedb2d846c91878bf7a5b2ac958c547d60a1",
+      "mounted_checkout_fc_adapter_sha256": "ef564f54fc764ed3968d94365a56a09f06025ea1f534c4a08f818183ddef2e8d",
+      "ff_wrapper_required_fc_adapter_sha256": "ef564f54fc764ed3968d94365a56a09f06025ea1f534c4a08f818183ddef2e8d",
+      "committed_fk_fc_adapter_sha256": "7ae104802f49613ca60836913d2c68269b59728bc35bb677fdb3637aaf4b84c6",
+      "canonical_che_contract_sha256": "75801995214e81419aab9a02326499c771ec0039658fb49598aa54bd033e13c5",
+      "canonical_fk_runtime_reachable": false,
+      "che_runtime_result": "NOT_RUN__PREBOOT_REUSE_GATE_FAILED"
+    },
+    "fk_regression_validation": {
+      "scope": "tests/test_g77_256fk_che_terminal_hardening_v1.py",
+      "result": "PASS__11_PASSED__0_FAILED__0_17_SECONDS",
+      "canonical_che_valid_and_malformed_semantics": "PASS",
+      "terminal_fail_closed_semantics": "PASS",
+      "live_act_creation_counter_requirement": "PASS",
+      "source_modification_by_fl": "NONE"
+    },
+    "operational_validation": {
+      "qemu_process_count": 0,
+      "fl_vm_boot_count": 0,
+      "fl_qemu_execution_count": 0,
+      "fl_wrong_attempt_operational_attempt_count": 0,
+      "request_count": 0,
+      "pre_denial_count": 0,
+      "entry_count": 0,
+      "invocation_count": 0,
+      "effect_count": 0,
+      "act_creation_count": 0,
+      "vector_execution_count": 0,
+      "authority_checkpoint": "ABSENT__EXPECTED_BECAUSE_NO_ACT",
+      "execution_seal": "ABSENT__EXPECTED_BECAUSE_NO_EXECUTION",
+      "teardown": "NOT_APPLICABLE__NO_BOOT",
+      "raw_terminal_consistency": "PASS__NO_RAW_OPERATIONAL_SUCCESS_AND_NO_DERIVED_SUCCESS",
+      "retry_count": 0,
+      "repair_count": 0,
+      "replay_count": 0,
+      "provider_invocation_count": 0,
+      "p12_entry_count": 0,
+      "production_effect_count": 0
+    },
+    "ex_reuse": {
+      "certified_component_reuse_count": 17,
+      "reconstruction_count": 0,
+      "result": "PASS__SEALED_REUSE"
+    },
+    "constitutional_reduction": {
+      "success_proven": false,
+      "wrong_attempt_result": "UNSATISFIED",
+      "e05_start": "6/18",
+      "e05_end": "6/18",
+      "credit_delta": 0,
+      "protected_effect": 0,
+      "classification": "FAIL_CLOSED__PREBOOT_ASSET_REUSE_BLOCKED__NO_OPERATIONAL_ATTEMPT"
+    },
+    "phase_c_result": "PASS__INDEPENDENT_VALIDATION_OF_FAIL_CLOSED_PREBOOT_STOP__ZERO_OPERATIONAL_EFFECT",
+    "checkpoint_is_authority": false,
+    "auto_continuable": false,
+    "human_review_required": true,
+    "exact_next_legal_action": "PHASE_D_FINAL_FAIL_CLOSED_REDUCTION_AND_G48_REPORT_ONLY__NO_OPERATIONAL_ACTION"
+  },
+  "checkpoint_sha256": "3d43cd6e73ea6c8458eeaa211f4c8b8bfd6b4df7eecf9fc6fbc10a0eb67f39cc"
+}

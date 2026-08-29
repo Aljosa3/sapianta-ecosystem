@@ -1,0 +1,113 @@
+{
+  "schema_id": "G77_256FL_PREBOOT_REUSE_BLOCKER_ENVELOPE_V1",
+  "observation": {
+    "schema_id": "G77_256FL_PREBOOT_REUSE_BLOCKER_V1",
+    "generation_identity": "G77_256FL_ONE_BOUNDED_OPERATIONAL_WRONG_ATTEMPT_COMMISSIONING_V1",
+    "observation_timestamp": "2026-08-29T09:54:46+02:00",
+    "fk_authority": {
+      "worktree": "/home/pisarna/work/sapianta-fk",
+      "branch": "g77-256fk-che-terminal-hardening",
+      "head": "b93d7f13e20bca0f4018a76732d50d2686051fd9",
+      "tree": "d6c4f485fd9b065c8506e2ac7b0cbcb762604fd3",
+      "subject": "G77-256FK harden CHE correlation and terminal reduction",
+      "worktree_state": "CLEAN",
+      "index_state": "EMPTY"
+    },
+    "historical_asset_bindings": {
+      "candidate_sha256": "371663c5afec8baa9513da0a6e14566ffe1a8f9f62d2e274a47a90dcd43f4447",
+      "materialization_checkpoint_file_sha256": "331877b9b824a0d33c3866174523a30aec7b0b3a40bf4681a740eec3daea1d7e",
+      "materialization_checkpoint_inner_sha256": "7dac2e4c98e20885e7f25dafb9935f704149cc848e955082fd59b28529a0bb2b",
+      "fi_preboot_file_sha256": "a9a4e507048c518e4929a518df1c8c168d31af571c06e77c0bca0e7090d0c01a",
+      "fi_preboot_inner_sha256": "a3c36c2dc32a730d8e8f5b2f6bb7f2252ef9d992d107395cf9f5c21238f716ea",
+      "fi_preboot_overlay_sha256": "6ea4eed169518c646774cfbe2c7b8c00646a9cdead8798f7c94c786c6b6ce8b2",
+      "fi_preboot_overlay_bytes": 196664,
+      "qemu_argv_file_sha256": "d194bcd1a527afa2695125865571644d069437609354ce8724c5cae03d9b6bc4",
+      "qemu_argv_canonical_sha256": "5ff1ed751e339c43cda17dc09a6b3ef4d8c8136330df1605a428faad1e13d013",
+      "launcher_sha256": "c0bc42f06602dfe3d3540a57e3b3b82e1bbc4e0c2886426bc594f15289fcce8f",
+      "ff_wrapper_sha256": "b63a2e622f2c069a97863176e87e6255fac37ad61edcb44e6a201f033127a323"
+    },
+    "current_physical_state": {
+      "overlay_path": "/tmp/g77_256ff/guest-overlay.qcow2",
+      "overlay_sha256": "8bf4ec958ea41f536e09cd5737bb25163dfb38ad982a928a605cb2e812c13ece",
+      "overlay_bytes": 21430272,
+      "overlay_qemu_img_check": "PASS__ZERO_ERRORS",
+      "seed_path": "/tmp/g77_256ff/nocloud-seed.img",
+      "seed_sha256": "0c2b27f78dc165834a8772881a4c91fde27e26702b4cbe6af5c5d26b08579df7",
+      "seed_bytes": 376832,
+      "base_image_path": "/tmp/g77_256cw.IkqZJN/noble-server-cloudimg-amd64.img",
+      "base_image_sha256": "6e40c07ae715f744f84af0bec76415cc1987dd115b4b8de437818561f01a3733",
+      "base_qemu_img_check": "PASS__ZERO_ERRORS",
+      "checkout_path": "/tmp/g77_256ff/checkout",
+      "checkout_head": "92ccdedb2d846c91878bf7a5b2ac958c547d60a1",
+      "checkout_tree": "7cf4ab8dc22849db2445a80bf9e1dcae639747b0",
+      "checkout_state": "CLEAN",
+      "checkout_fc_adapter_sha256": "ef564f54fc764ed3968d94365a56a09f06025ea1f534c4a08f818183ddef2e8d",
+      "qemu_process_count": 0,
+      "mount_count": 0
+    },
+    "fk_runtime_binding_conflict": {
+      "committed_fk_fc_adapter_sha256": "7ae104802f49613ca60836913d2c68269b59728bc35bb677fdb3637aaf4b84c6",
+      "canonical_che_contract_sha256": "75801995214e81419aab9a02326499c771ec0039658fb49598aa54bd033e13c5",
+      "qemu_argv_checkout_mount": "/tmp/g77_256ff/checkout",
+      "qemu_argv_network_binding": "-nic none",
+      "ff_wrapper_required_fc_source_sha256": "ef564f54fc764ed3968d94365a56a09f06025ea1f534c4a08f818183ddef2e8d",
+      "fk_adapter_reachable_by_exact_argv_and_wrapper": false,
+      "result": "FAIL__EXACT_EXISTING_RUNTIME_PATH_SELECTS_PRE_FK_ADAPTER_BYTES"
+    },
+    "prior_execution_state": {
+      "fj_vm_boot_count": 1,
+      "fj_qemu_execution_count": 1,
+      "fj_wrong_attempt_execution_count": 0,
+      "pre_receipt_present": true,
+      "pre_receipt_sha256": "3691ec927f21cb9583398fc95c5e3b3c68a35b326e18e7af60ea9072dad6921f",
+      "post_receipt_present": true,
+      "post_receipt_sha256": "036ef7b7b00c0bda719e7de7f79d768832c22e3407bfbadbc6ce6ef7fdf7064f",
+      "launcher_retry_guard": "REFUSES_EXECUTION_WHEN_EITHER_RECEIPT_EXISTS",
+      "serial_present": true,
+      "serial_sha256": "17ec03baa328dcf0347407e4d25e94639ff5114442daf79ac133802587c4edb5",
+      "cloud_init_runcmd_completed": true,
+      "guest_teardown_complete": true,
+      "guest_teardown_seal_sha256": "ecbdc134f33d95b3877cc5fbc569adbc4af4bacc9adb660140b677be924dc155"
+    },
+    "reuse_reduction": {
+      "candidate_identity_authentication": "PASS__HISTORICAL_BINDING",
+      "materialization_identity_authentication": "PASS__HISTORICAL_BINDING",
+      "fi_preboot_artifact_authentication": "PASS__HISTORICAL_SEAL",
+      "current_vm_matches_fi_preboot_physical_state": false,
+      "committed_fk_adapter_reachable_without_mutation": false,
+      "exact_launcher_available_for_fresh_execution": false,
+      "fresh_wrong_attempt_attempt_possible_without_rebuild_repair_replay_or_vector_substitution": false,
+      "result": "FAIL_CLOSED__EXISTING_OPERATIONAL_ASSET_NOT_REUSABLE_UNDER_COMMITTED_FK_AUTHORITY"
+    },
+    "prohibited_remediation_required_for_execution": [
+      "CHECKOUT_OR_MOUNT_REBINDING",
+      "FF_WRAPPER_HASH_MUTATION",
+      "SEED_OR_CLOUD_INIT_RECONSTRUCTION",
+      "ARGV_SUBSTITUTION",
+      "LAUNCHER_RECEIPT_DELETION_OR_NEW_LAUNCHER",
+      "OVERLAY_RESET_OR_NEW_VM"
+    ],
+    "fl_operational_counters": {
+      "vm_boot_count": 0,
+      "qemu_execution_count": 0,
+      "wrong_attempt_operational_attempt_count": 0,
+      "request_count": 0,
+      "pre_denial_count": 0,
+      "entry_count": 0,
+      "invocation_count": 0,
+      "effect_count": 0,
+      "act_creation_count": 0,
+      "vector_execution_count": 0,
+      "retry_count": 0,
+      "repair_count": 0,
+      "replay_count": 0,
+      "provider_invocation_count": 0,
+      "p12_entry_count": 0,
+      "production_effect_count": 0
+    },
+    "observation_is_authority": false,
+    "auto_continuable": false,
+    "human_review_required": true
+  },
+  "observation_sha256": "403d6abe10bc40a952c6f714e7fbb353d48e5849cd3666e0b609490eebd4b81b"
+}
