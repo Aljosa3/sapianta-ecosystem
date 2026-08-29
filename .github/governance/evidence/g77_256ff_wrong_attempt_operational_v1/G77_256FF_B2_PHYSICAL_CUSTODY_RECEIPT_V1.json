@@ -1,0 +1,53 @@
+{
+  "schema_id": "G77_256FF_B2_PHYSICAL_CUSTODY_RECEIPT_ENVELOPE_V1",
+  "receipt": {
+    "schema_id": "G77_256FF_B2_PHYSICAL_CUSTODY_RECEIPT_V1",
+    "generation_identity": "G77_256FF_ONE_FRESH_HUMAN_AUTHORIZED_WRONG_ATTEMPT_OPERATIONAL_COMMISSIONING_V1",
+    "required_head": "92ccdedb2d846c91878bf7a5b2ac958c547d60a1",
+    "required_tree": "7cf4ab8dc22849db2445a80bf9e1dcae639747b0",
+    "custody_phase": "FRESH_PRE_EXECUTION",
+    "base_image": {
+      "path": "/tmp/g77_256cw.IkqZJN/noble-server-cloudimg-amd64.img",
+      "sha256": "6e40c07ae715f744f84af0bec76415cc1987dd115b4b8de437818561f01a3733",
+      "bytes": 624447488,
+      "device": 66309,
+      "inode": 24258880,
+      "uid": 1000,
+      "gid": 1000,
+      "mode": "0664",
+      "mtime_epoch_seconds": 1787644047,
+      "format": "qcow2",
+      "virtual_size": 3758096384,
+      "qemu_img_check": "PASS__ZERO_ERRORS",
+      "dirty_flag": false
+    },
+    "overlay": {
+      "path": "/tmp/g77_256ff/guest-overlay.qcow2",
+      "sha256_pre_boot": "6ea4eed169518c646774cfbe2c7b8c00646a9cdead8798f7c94c786c6b6ce8b2",
+      "bytes_pre_boot": 196664,
+      "format": "qcow2",
+      "virtual_size": 3758096384,
+      "backing_file": "/tmp/g77_256cw.IkqZJN/noble-server-cloudimg-amd64.img",
+      "backing_format": "qcow2",
+      "qemu_img_check": "PASS__ZERO_ERRORS",
+      "dirty_flag": false
+    },
+    "seed": {
+      "path": "/tmp/g77_256ff/nocloud-seed.img",
+      "sha256": "0c2b27f78dc165834a8772881a4c91fde27e26702b4cbe6af5c5d26b08579df7",
+      "bytes": 376832
+    },
+    "separation": {
+      "base_and_overlay_distinct_paths": true,
+      "base_is_overlay_backing_file": true,
+      "base_opened_through_qcow2_backing_chain": true,
+      "base_mutation_authorized": false,
+      "overlay_is_transient": true
+    },
+    "b2_result": "PASS__FRESH_PHYSICAL_BASE_IMAGE_CUSTODY_AND_PRE_EXECUTION_INTEGRITY",
+    "post_execution_integrity_required": true,
+    "receipt_is_authority": false,
+    "auto_continuable": false
+  },
+  "receipt_sha256": "5d462fc5eae10a63739de70e1533e9c31ca93dc360d0c0957708b2588c8de68d"
+}

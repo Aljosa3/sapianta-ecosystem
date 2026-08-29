@@ -1,0 +1,80 @@
+{
+  "schema_id": "G77_256FF_SPCE_MATERIALIZATION_CHECKPOINT_ENVELOPE_V1",
+  "checkpoint": {
+    "schema_id": "G77_256FF_SPCE_MATERIALIZATION_CHECKPOINT_V1",
+    "generation_identity": "G77_256FF_ONE_FRESH_HUMAN_AUTHORIZED_WRONG_ATTEMPT_OPERATIONAL_COMMISSIONING_V1",
+    "required_head": "92ccdedb2d846c91878bf7a5b2ac958c547d60a1",
+    "required_tree": "7cf4ab8dc22849db2445a80bf9e1dcae639747b0",
+    "phase_a": {
+      "path": ".github/governance/evidence/g77_256ff_wrong_attempt_operational_v1/G77_256FF_SPCE_PHASE_A_CHECKPOINT_V1.json",
+      "file_sha256": "38d201062c3f1d4e02fbf1f1d7aa1ff4676d4a94f81c4096b4d1c20b5ae97b78",
+      "inner_sha256": "0f38de9e137a5108c335dfb2a20f8f803146f7f15beeb98991fbf731fd15e8df",
+      "authentication": "PASS__NO_RECONSTRUCTION"
+    },
+    "phase_b": {
+      "path": ".github/governance/evidence/g77_256ff_wrong_attempt_operational_v1/G77_256FF_SPCE_PHASE_B_CANDIDATE_AND_ADMISSION_CHECKPOINT_V1.json",
+      "file_sha256": "d41e7fd2f15a625dd9801cffa1197abab10024ce1b25dd34e6201ce499906b34",
+      "inner_sha256": "ac7f682ff0ba1cbcaceb1898ef82897032cb3ff6766914e24dc7af4cb0d4c0c1",
+      "authentication": "PASS"
+    },
+    "admission": {
+      "candidate_sha256": "371663c5afec8baa9513da0a6e14566ffe1a8f9f62d2e274a47a90dcd43f4447",
+      "runtime_projection_sha256": "371663c5afec8baa9513da0a6e14566ffe1a8f9f62d2e274a47a90dcd43f4447",
+      "du": "PASS",
+      "eb": "PASS",
+      "eb_receipt_sha256": "4133c388a89d8fb5e2c46193993b08107cc7df2d38056ce94e3e0995fc28eb4d",
+      "ee": "PASS",
+      "ee_receipt_sha256": "1b1fb840b33b49502e1ce5ed30c90a03ccc8cf80fb3d3a0dbd1541c3f155493a",
+      "b6_repository_precondition": "PASS"
+    },
+    "b1_pre_execution_binding": {
+      "launcher_path": ".github/governance/evidence/g77_256ff_wrong_attempt_operational_v1/launcher/G77_256FF_ONE_SHOT_QEMU_LAUNCHER_V1.py",
+      "launcher_sha256": "c0bc42f06602dfe3d3540a57e3b3b82e1bbc4e0c2886426bc594f15289fcce8f",
+      "qemu_argv_path": ".github/governance/evidence/g77_256ff_wrong_attempt_operational_v1/raw/G77_256FF_QEMU_ARGV_V1.json",
+      "qemu_argv_file_sha256": "d194bcd1a527afa2695125865571644d069437609354ce8724c5cae03d9b6bc4",
+      "qemu_argv_canonical_sha256": "5ff1ed751e339c43cda17dc09a6b3ef4d8c8136330df1605a428faad1e13d013",
+      "qemu_executable_sha256": "8a35ccba41582fc6c38b9df85fc9e35fa1d42f414d2d7d8090ee9b2f5e7c0854",
+      "network_interface_count": 0,
+      "b1_state": "PASS__EXACT_LAUNCHER_AND_CANONICAL_ARGV_BOUND__EXECUTION_RECEIPT_PENDING"
+    },
+    "substrate": {
+      "transient_root": "/tmp/g77_256ff",
+      "checkout_path": "/tmp/g77_256ff/checkout",
+      "checkout_head": "92ccdedb2d846c91878bf7a5b2ac958c547d60a1",
+      "checkout_tree": "7cf4ab8dc22849db2445a80bf9e1dcae639747b0",
+      "checkout_status": "CLEAN",
+      "base_image_path": "/tmp/g77_256cw.IkqZJN/noble-server-cloudimg-amd64.img",
+      "base_image_sha256": "6e40c07ae715f744f84af0bec76415cc1987dd115b4b8de437818561f01a3733",
+      "base_image_qemu_img_check": "PASS__ZERO_ERRORS",
+      "overlay_path": "/tmp/g77_256ff/guest-overlay.qcow2",
+      "overlay_sha256_pre_boot": "6ea4eed169518c646774cfbe2c7b8c00646a9cdead8798f7c94c786c6b6ce8b2",
+      "overlay_bytes_pre_boot": 196664,
+      "overlay_qemu_img_check": "PASS__ZERO_ERRORS",
+      "seed_path": "/tmp/g77_256ff/nocloud-seed.img",
+      "seed_sha256": "0c2b27f78dc165834a8772881a4c91fde27e26702b4cbe6af5c5d26b08579df7",
+      "seed_bytes": 376832,
+      "runtime_manifest_sha256": "371663c5afec8baa9513da0a6e14566ffe1a8f9f62d2e274a47a90dcd43f4447",
+      "serial_present_pre_boot": false,
+      "prior_boot_evidence": false,
+      "qemu_process_count": 0,
+      "ff_mount_count": 0
+    },
+    "operational_counters": {
+      "candidate_count": 1,
+      "materialization_count": 1,
+      "vm_creation_count": 1,
+      "vm_boot_count": 0,
+      "qemu_execution_count": 0,
+      "wrong_attempt_case_execution_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0,
+      "execution_replay_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0
+    },
+    "checkpoint_is_authority": false,
+    "auto_continuable": false,
+    "exact_next_legal_action": "INDEPENDENTLY_REAUTHENTICATE_MATERIALIZATION_AND_EXECUTED_ARGV__SEAL_PREBOOT_AUTHORIZATION__THEN_BOOT_ONCE"
+  },
+  "checkpoint_sha256": "7dac2e4c98e20885e7f25dafb9935f704149cc848e955082fd59b28529a0bb2b"
+}

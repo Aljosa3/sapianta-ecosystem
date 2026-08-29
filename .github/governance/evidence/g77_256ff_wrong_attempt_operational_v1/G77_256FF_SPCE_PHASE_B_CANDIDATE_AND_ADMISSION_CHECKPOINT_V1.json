@@ -1,0 +1,91 @@
+{
+  "schema_id": "G77_256FF_SPCE_PHASE_B_CANDIDATE_AND_ADMISSION_CHECKPOINT_ENVELOPE_V1",
+  "checkpoint": {
+    "schema_id": "G77_256FF_SPCE_PHASE_B_CANDIDATE_AND_ADMISSION_CHECKPOINT_V1",
+    "generation_identity": "G77_256FF_ONE_FRESH_HUMAN_AUTHORIZED_WRONG_ATTEMPT_OPERATIONAL_COMMISSIONING_V1",
+    "phase_a_binding": {
+      "path": ".github/governance/evidence/g77_256ff_wrong_attempt_operational_v1/G77_256FF_SPCE_PHASE_A_CHECKPOINT_V1.json",
+      "file_sha256": "38d201062c3f1d4e02fbf1f1d7aa1ff4676d4a94f81c4096b4d1c20b5ae97b78",
+      "inner_sha256": "0f38de9e137a5108c335dfb2a20f8f803146f7f15beeb98991fbf731fd15e8df",
+      "authentication": "PASS__REUSED_UNCHANGED"
+    },
+    "cross_account_authentication_binding": {
+      "path": ".github/governance/evidence/g77_256ff_wrong_attempt_operational_v1/G77_256FF_SPCE_CROSS_ACCOUNT_CONTINUATION_AUTHENTICATION_V1.json",
+      "inner_sha256": "8ed07b8b3c27bef5050358855f21edf57bb6296e381a8070067a8bbf13469511",
+      "resumption_state": "STATE_B__VALID_PHASE_A_ONLY__NO_CANDIDATE"
+    },
+    "artifact_bindings": {
+      "builder_sha256": "70bc4542b4774d6c1c79fdd0f23c4caea00d733a266e7893d5b624fc58771e12",
+      "adapter_sha256": "b63a2e622f2c069a97863176e87e6255fac37ad61edcb44e6a201f033127a323",
+      "committed_fc_adapter_sha256": "ef564f54fc764ed3968d94365a56a09f06025ea1f534c4a08f818183ddef2e8d",
+      "meta_data_sha256": "25ef75cf38c5c3b261564cde0d395623c86872a15e926b99f1e571313fa82410",
+      "network_config_sha256": "639b6f419a9ac49312b218e12395dc7e7d623d96202c3315a92dcd19d6fa02ba",
+      "user_data_sha256": "6c3759b3a5e807d761aa465c871fea809a8e00ef04a823e93018d4733dcce5aa",
+      "candidate_sha256": "371663c5afec8baa9513da0a6e14566ffe1a8f9f62d2e274a47a90dcd43f4447",
+      "candidate_inner_sha256": "a316b06c1d93e15b09cc7b037e3ef1339e058d3b2da52006515285c4841f36a4",
+      "runtime_projection_sha256": "371663c5afec8baa9513da0a6e14566ffe1a8f9f62d2e274a47a90dcd43f4447",
+      "eb_receipt_sha256": "4133c388a89d8fb5e2c46193993b08107cc7df2d38056ce94e3e0995fc28eb4d",
+      "eb_receipt_inner_sha256": "b53e2585df9e38deeb9a7349d54cb1a09315b26cf112c945d243df48f1e82629",
+      "ee_receipt_sha256": "1b1fb840b33b49502e1ce5ed30c90a03ccc8cf80fb3d3a0dbd1541c3f155493a",
+      "ee_receipt_inner_sha256": "1abf390bda2fc85731ac5a5baefa67212a97414e79e15f9565d908a7e539cfb7"
+    },
+    "wrong_attempt_semantics": {
+      "source": "HASH_AUTHENTICATED_SYSTEMATIC_SPECIALIZATION_OF_COMMITTED_FC_ADAPTER",
+      "authorized_attempt_identity": "G77_256FF_E05_AUTHORIZED_ATTEMPT_001",
+      "supplied_attempt_identity": "G77_256FF_E05_SUPPLIED_WRONG_ATTEMPT_002",
+      "attempt_identities_differ": true,
+      "isolated_semantic_mutation_field": "attempt_identity",
+      "dependent_recomputed_field": "record_identity",
+      "other_vector_mutation_count": 0
+    },
+    "repository_preflight": {
+      "du_structural_schema_validity": "PASS",
+      "du_semantic_contract_compatibility": "PASS",
+      "du_cryptographic_authenticity": "PASS",
+      "du_constitutional_admissibility": "PASS",
+      "eb_profile": "CANONICAL_V1_PRE_MATERIALIZATION_FOUR_GATE_CANDIDATE_BOUND_V1",
+      "eb_result": "PASS",
+      "ee_result": "PASS",
+      "candidate_runtime_byte_identity": "PASS",
+      "candidate_runtime_semantic_identity": "PASS",
+      "harness_expected_path_identity": "PASS",
+      "b6_repository_precondition": "PASS"
+    },
+    "candidate_bounds": {
+      "candidate_count": 1,
+      "second_candidate_count": 0,
+      "replacement_candidate_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0
+    },
+    "reuse": {
+      "certified_common_components_available": 17,
+      "certified_common_components_applicable": 17,
+      "certified_common_components_reused": 17,
+      "certified_common_components_reconstructed": 0,
+      "common_substrate_reconstruction_count": 0,
+      "new_common_component_count": 0,
+      "new_common_infrastructure_count": 0,
+      "common_validators_created": 0,
+      "vector_specific_component_count": 2,
+      "parallel_flow_created": false,
+      "duplicate_proof_path_created": false
+    },
+    "operational_counters": {
+      "materialization_count": 0,
+      "vm_creation_count": 0,
+      "vm_boot_count": 0,
+      "qemu_execution_count": 0,
+      "wrong_attempt_case_execution_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0,
+      "execution_replay_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0
+    },
+    "checkpoint_is_authority": false,
+    "auto_continuable": false,
+    "exact_next_legal_action": "ESTABLISH_FRESH_B1_B2_B6_AND_MATERIALIZE_EXACTLY_ONE_NO_NETWORK_VM"
+  },
+  "checkpoint_sha256": "ac7f682ff0ba1cbcaceb1898ef82897032cb3ff6766914e24dc7af4cb0d4c0c1"
+}

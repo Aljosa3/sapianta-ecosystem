@@ -1,0 +1,88 @@
+{
+  "schema_id": "G77_256FI_SPCE_PHASE_B_PREBOOT_REPLACEMENT_ENVELOPE_V1",
+  "checkpoint": {
+    "schema_id": "G77_256FI_SPCE_PHASE_B_PREBOOT_REPLACEMENT_V1",
+    "generation_identity": "G77_256FI_ONE_BOUNDED_REPOSITORY_ONLY_FF_PREBOOT_AUTHORITY_REPLACEMENT_V1",
+    "phase_a_binding": {
+      "path": ".github/governance/evidence/g77_256fi_preboot_authority_replacement_v1/G77_256FI_SPCE_PHASE_A_PREBOOT_REPLACEMENT_AUTHENTICATION_V1.json",
+      "file_sha256": "a4ed549d8f15ddc80d9397edee8e353d4dbaef7100b518424657851daf49d039",
+      "inner_sha256": "20d100e524c0541c58cc602f007d1c5f018168edb7727cba26ab81afc085605b",
+      "result": "PASS__SEALED_BEFORE_REPLACEMENT"
+    },
+    "replacement": {
+      "target_path": ".github/governance/evidence/g77_256ff_wrong_attempt_operational_v1/G77_256FF_SPCE_PRE_BOOT_AUTHORIZATION_V1.json",
+      "pre_replacement_file_sha256": "2deb5f5b3f8a8455737c4e2a9b6095e62fd2407692ac060f8dd1725385c4446c",
+      "pre_replacement_bytes": 4098,
+      "pre_replacement_recorded_seal": "TO_BE_SEALED",
+      "pre_replacement_computed_inner_sha256": "d52a1521e16cc10ff182f33aa1617180db803f24bedb66db02c58898a7843ef5",
+      "post_replacement_file_sha256": "a9a4e507048c518e4929a518df1c8c168d31af571c06e77c0bca0e7090d0c01a",
+      "post_replacement_bytes": 8687,
+      "post_replacement_inner_sha256": "a3c36c2dc32a730d8e8f5b2f6bb7f2252ef9d992d107395cf9f5c21238f716ea",
+      "post_replacement_seal_recomputed": "PASS",
+      "post_replacement_unique_keys": "PASS",
+      "preboot_replacement_count": 1,
+      "other_ff_mutation_count": 0,
+      "valid_authority_overwritten": false
+    },
+    "sealed_preboot_bindings": {
+      "generation_identity": "G77_256FF_ONE_FRESH_HUMAN_AUTHORIZED_WRONG_ATTEMPT_OPERATIONAL_COMMISSIONING_V1",
+      "operation_identity": "G77_256FF_E05_WRONG_ATTEMPT_DENIAL_BEFORE_ENTRY_001",
+      "candidate_sha256": "371663c5afec8baa9513da0a6e14566ffe1a8f9f62d2e274a47a90dcd43f4447",
+      "materialization_checkpoint_file_sha256": "331877b9b824a0d33c3866174523a30aec7b0b3a40bf4681a740eec3daea1d7e",
+      "overlay_sha256": "6ea4eed169518c646774cfbe2c7b8c00646a9cdead8798f7c94c786c6b6ce8b2",
+      "seed_sha256": "0c2b27f78dc165834a8772881a4c91fde27e26702b4cbe6af5c5d26b08579df7",
+      "launcher_sha256": "c0bc42f06602dfe3d3540a57e3b3b82e1bbc4e0c2886426bc594f15289fcce8f",
+      "qemu_argv_file_sha256": "d194bcd1a527afa2695125865571644d069437609354ce8724c5cae03d9b6bc4",
+      "qemu_argv_canonical_sha256": "5ff1ed751e339c43cda17dc09a6b3ef4d8c8136330df1605a428faad1e13d013",
+      "fe_head": "92ccdedb2d846c91878bf7a5b2ac958c547d60a1",
+      "fe_tree": "7cf4ab8dc22849db2445a80bf9e1dcae639747b0",
+      "fh_head": "8441c859ef297c6209f3a9c9ad190b5dbcd631d8",
+      "fh_tree": "b6f05a1bcc7b88be6f5879b03b0dc9ceb2f55dea",
+      "fh_phase_d_inner_sha256": "0835f542f5390182a1b8c50c80243ed2ef1f0da2d69e34fd8de3cc41c965bea8",
+      "ex_certificate_file_sha256": "91c477171147c56516c0f473ab887c12173c4bab225f2733c274b32467824b2f",
+      "ex_reuse_count": 17,
+      "ex_reconstruction_count": 0,
+      "human_authorization_text_sha256": "84e7f9f286b15e208b09613cbe6bd4f2cababdc12a4c4cd9f78b65283b30a73b",
+      "external_provider_capability_requirement": "NONE",
+      "local_no_network_condition": "PASS"
+    },
+    "scope_validation": {
+      "preboot_authority_state": "VALID__SEALED__REPOSITORY_AUTHENTICATED__BOOT_SEPARATELY_UNAUTHORIZED",
+      "human_preboot_replacement_authorization_is_boot_authorization": false,
+      "valid_preboot_authority_is_boot": false,
+      "valid_preboot_authority_is_p11_entry": false,
+      "valid_preboot_authority_is_machine_effect": false,
+      "valid_preboot_authority_is_e05_credit": false,
+      "candidate_replacement_permitted": false,
+      "materialization_replacement_permitted": false,
+      "vm_replacement_permitted": false,
+      "provider_invocation_permitted": false,
+      "scope_expansion_permitted": false,
+      "first_boot_allowed": false,
+      "separate_human_boot_authorization_required": true
+    },
+    "ff_counters_after_replacement": {
+      "candidate_count": 1,
+      "materialization_count": 1,
+      "vm_creation_count": 1,
+      "vm_boot_count": 0,
+      "qemu_execution_count": 0,
+      "wrong_attempt_execution_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0,
+      "execution_replay_count": 0
+    },
+    "frontier": {
+      "e05_before": "6/18",
+      "e05_after": "6/18",
+      "wrong_attempt": "UNSATISFIED",
+      "e05_credit_granted": false
+    },
+    "phase_b_result": "PASS__EXACTLY_ONE_AUTHORIZED_PREBOOT_REPLACEMENT_COMPLETED_AND_SEALED",
+    "checkpoint_is_authority": false,
+    "auto_continuable": false,
+    "human_review_required": true,
+    "exact_next_legal_action": "PHASE_C_INDEPENDENT_VALIDATION__NO_BOOT__NO_QEMU__NO_PROVIDER_INVOCATION"
+  },
+  "checkpoint_sha256": "e5cc2301787c13b31c4017c67bb64612f6c08f0c93704329ed83562dec55c245"
+}

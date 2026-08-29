@@ -1,0 +1,149 @@
+{
+  "schema_id": "G77_256FI_SPCE_PHASE_A_PREBOOT_REPLACEMENT_AUTHENTICATION_ENVELOPE_V1",
+  "checkpoint": {
+    "schema_id": "G77_256FI_SPCE_PHASE_A_PREBOOT_REPLACEMENT_AUTHENTICATION_V1",
+    "generation_identity": "G77_256FI_ONE_BOUNDED_REPOSITORY_ONLY_FF_PREBOOT_AUTHORITY_REPLACEMENT_V1",
+    "authentication_timestamp": "2026-08-29T08:27:32+02:00",
+    "generation_mode": "REPOSITORY_ONLY__FAIL_CLOSED__ONE_PREBOOT_REPLACEMENT__NO_BOOT",
+    "human_authorization": {
+      "authorization_present": true,
+      "authorization_scope": "EXACTLY_ONE_REPLACEMENT_AND_SEALING_OF_THE_EXISTING_INVALID_G77_256FF_PREBOOT_ARTIFACT",
+      "authorization_source": "G77_256FI_HUMAN_AUTHORIZATION_SECTION_0",
+      "authorization_text_sha256": "84e7f9f286b15e208b09613cbe6bd4f2cababdc12a4c4cd9f78b65283b30a73b",
+      "boot_authorized": false,
+      "qemu_execution_authorized": false,
+      "p11_entry_authorized": false,
+      "machine_effect_authorized": false,
+      "automatic_continuation_authorized": false
+    },
+    "ff_authority": {
+      "worktree": "/home/pisarna/work/sapianta",
+      "branch": "master",
+      "head": "92ccdedb2d846c91878bf7a5b2ac958c547d60a1",
+      "tree": "7cf4ab8dc22849db2445a80bf9e1dcae639747b0",
+      "subject": "G77-256FE admit WRONG_ATTEMPT through DU EB EE preflight",
+      "index_state": "EMPTY",
+      "pre_fi_status_sha256": "faf41391a4217fb33904f9a457adcd2c8bf05a45cb0997d6ab63d45f142d5f3f",
+      "dirty_topology_preserved": true,
+      "result": "PASS__EXACT_FE_PINNED_SUSPENDED_FF"
+    },
+    "fg_authority": {
+      "worktree": "/home/pisarna/work/sapianta-fg",
+      "branch": "g77-256fg-provider-capability-registry",
+      "head": "86c1d60df3b17b8472234105a6dc2b50d2f5ba55",
+      "tree": "53b71ac9927c65ad1a0a2a5dad9b5d56986d7302",
+      "subject": "G77-256FG add central external provider capability registry",
+      "worktree_state": "CLEAN",
+      "provider_registry_sha256": "413804fc686ddc5ec400052e517b42a5141aaf6c95cdd3ea5166c788361189b8",
+      "focused_tests": "PASS__16_PASSED",
+      "consumption_mode": "READ_ONLY_AUTHORITY",
+      "external_provider_capability_requirement_for_ff": "NONE"
+    },
+    "fh_authority": {
+      "worktree": "/home/pisarna/work/sapianta-fh",
+      "branch": "g77-256fh-ff-return-admission",
+      "head": "8441c859ef297c6209f3a9c9ad190b5dbcd631d8",
+      "tree": "b6f05a1bcc7b88be6f5879b03b0dc9ceb2f55dea",
+      "subject": "G77-256FH resolve suspended FF return admission",
+      "worktree_state": "CLEAN",
+      "phase_a_inner_sha256": "64fc4ef3e82ab45c3aac27c2491893b5b08f221f174116b31d924504900ba75a",
+      "phase_b_inner_sha256": "c265890bd7b986355bb44f3386fa88402f303d112ef3bd6412d5fc5fdc5e7ac5",
+      "phase_c_inner_sha256": "0313fbe10e48a8fe05f9831b4edac9620dc630b736c20fd484d7765765f50980",
+      "phase_d_inner_sha256": "0835f542f5390182a1b8c50c80243ed2ef1f0da2d69e34fd8de3cc41c965bea8",
+      "phase_d_file_sha256": "d865f6ce37dc034c0dff5957d3a925471c8dc7833cdd56f5fdc7564bb8da3f38",
+      "g48_report_sha256": "7196eee951cc6f69c385249939d4db8ab5d3844c8c35350f4ea44013518626d9",
+      "all_four_seals": "PASS",
+      "report_binding": "PASS",
+      "required_reductions": {
+        "ff_required_external_capability": "NONE",
+        "fg_authority_consumption_model": "READ_FROM_SEPARATE_COMMITTED_AUTHORITY",
+        "preboot_authority_state": "EXPLICIT_HUMAN_REPLACEMENT_AUTHORITY_REQUIRED",
+        "same_materialized_ff_resume": "YES__ORIGINAL_BINDINGS_REMAIN_VALID",
+        "ff_operational_resume_readiness": "BLOCKED__PREBOOT_AUTHORITY"
+      }
+    },
+    "ex_authority": {
+      "certificate_file_sha256": "91c477171147c56516c0f473ab887c12173c4bab225f2733c274b32467824b2f",
+      "final_seal_file_sha256": "46115a7627264793af5e289abe85565fcaaf8a381b009e185c35ebc3d4b8a543",
+      "validator_result": "PASS__12_OF_12",
+      "certified_component_reuse_count": 17,
+      "reconstruction_count": 0
+    },
+    "ff_state": {
+      "state": "MATERIALIZED__NOT_BOOTED",
+      "candidate_sha256": "371663c5afec8baa9513da0a6e14566ffe1a8f9f62d2e274a47a90dcd43f4447",
+      "runtime_projection_sha256": "371663c5afec8baa9513da0a6e14566ffe1a8f9f62d2e274a47a90dcd43f4447",
+      "materialization_checkpoint_file_sha256": "331877b9b824a0d33c3866174523a30aec7b0b3a40bf4681a740eec3daea1d7e",
+      "b2_receipt_file_sha256": "2255c5d436b6d28ee10d14f1d23bb4aa45ef7fb1dc537b68e64e7772ee5f263f",
+      "eb_receipt_file_sha256": "4133c388a89d8fb5e2c46193993b08107cc7df2d38056ce94e3e0995fc28eb4d",
+      "ee_receipt_file_sha256": "1b1fb840b33b49502e1ce5ed30c90a03ccc8cf80fb3d3a0dbd1541c3f155493a",
+      "launcher_sha256": "c0bc42f06602dfe3d3540a57e3b3b82e1bbc4e0c2886426bc594f15289fcce8f",
+      "qemu_argv_file_sha256": "d194bcd1a527afa2695125865571644d069437609354ce8724c5cae03d9b6bc4",
+      "qemu_argv_canonical_sha256": "5ff1ed751e339c43cda17dc09a6b3ef4d8c8136330df1605a428faad1e13d013",
+      "base_image_sha256": "6e40c07ae715f744f84af0bec76415cc1987dd115b4b8de437818561f01a3733",
+      "overlay_sha256": "6ea4eed169518c646774cfbe2c7b8c00646a9cdead8798f7c94c786c6b6ce8b2",
+      "overlay_bytes": 196664,
+      "seed_sha256": "0c2b27f78dc165834a8772881a4c91fde27e26702b4cbe6af5c5d26b08579df7",
+      "seed_bytes": 376832,
+      "overlay_integrity": "PASS__ZERO_ERRORS",
+      "base_image_integrity": "PASS__ZERO_ERRORS",
+      "materialized_checkout": "PASS__CLEAN_AT_FE_HEAD_TREE",
+      "serial_output_present": false,
+      "qemu_process_count": 0,
+      "b1_pre_execution_receipt_present": false,
+      "b1_post_execution_receipt_present": false
+    },
+    "generation_wide_counters": {
+      "candidate_count": 1,
+      "materialization_count": 1,
+      "vm_creation_count": 1,
+      "vm_boot_count": 0,
+      "qemu_execution_count": 0,
+      "wrong_attempt_execution_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0,
+      "execution_replay_count": 0
+    },
+    "target_authentication": {
+      "path": ".github/governance/evidence/g77_256ff_wrong_attempt_operational_v1/G77_256FF_SPCE_PRE_BOOT_AUTHORIZATION_V1.json",
+      "pre_replacement_file_sha256": "2deb5f5b3f8a8455737c4e2a9b6095e62fd2407692ac060f8dd1725385c4446c",
+      "pre_replacement_bytes": 4098,
+      "recorded_checkpoint_sha256": "TO_BE_SEALED",
+      "computed_checkpoint_sha256": "d52a1521e16cc10ff182f33aa1617180db803f24bedb66db02c58898a7843ef5",
+      "matches_fh_authenticated_target": true,
+      "valid_preboot_authority_overwritten": false,
+      "invalidity_cause": "NON_CRYPTOGRAPHIC_UNSEALED_SENTINEL_IN_RECORDED_CHECKPOINT_HASH",
+      "replacement_authority_now_present": true
+    },
+    "design_freeze": {
+      "replacement_count_limit": 1,
+      "other_ff_mutation_count_limit": 0,
+      "target_only": ".github/governance/evidence/g77_256ff_wrong_attempt_operational_v1/G77_256FF_SPCE_PRE_BOOT_AUTHORIZATION_V1.json",
+      "preserve_existing_canonical_checkpoint_structure": true,
+      "add_only_required_authority_and_scope_bindings": true,
+      "set_boot_authorization_state": "NOT_GRANTED__SEPARATE_HUMAN_AUTHORIZATION_REQUIRED",
+      "set_first_boot_allowed": false,
+      "new_operational_semantics": false,
+      "scope_expansion": false,
+      "provider_query_or_invocation": false,
+      "code_mutation_count_target": 0,
+      "fi_evidence_namespace": ".github/governance/evidence/g77_256fi_preboot_authority_replacement_v1/"
+    },
+    "capacity_assessment": {
+      "status_telemetry": "NOT_EXPOSED",
+      "bounded_sequence_capacity": "SUFFICIENT__PHASE_A_SEALED_BEFORE_REPLACEMENT",
+      "replacement_not_started_before_phase_a_seal": true
+    },
+    "frontier": {
+      "e05_before": "6/18",
+      "e05_after": "6/18",
+      "wrong_attempt": "UNSATISFIED"
+    },
+    "phase_a_result": "PASS__ALL_AUTHORITIES_TARGET_AND_STATE_AUTHENTICATED__ONE_REPLACEMENT_DESIGN_FROZEN",
+    "checkpoint_is_authority": false,
+    "auto_continuable": false,
+    "human_review_required": true,
+    "exact_next_legal_action": "REPLACE_EXACT_INVALID_PREBOOT_ARTIFACT_ONCE__SEAL_IMMEDIATELY__NO_OTHER_FF_MUTATION"
+  },
+  "checkpoint_sha256": "20d100e524c0541c58cc602f007d1c5f018168edb7727cba26ab81afc085605b"
+}
