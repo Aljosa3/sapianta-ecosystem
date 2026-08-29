@@ -1,0 +1,119 @@
+{
+  "schema_id": "G77_256FH_SPCE_PHASE_C_VALIDATION_CHECKPOINT_ENVELOPE_V1",
+  "checkpoint": {
+    "schema_id": "G77_256FH_SPCE_PHASE_C_VALIDATION_CHECKPOINT_V1",
+    "generation_identity": "G77_256FH_REPOSITORY_ONLY_SUSPENDED_FF_CONSTITUTIONAL_RETURN_ADMISSION_V1",
+    "phase_a_binding": {
+      "file_sha256": "76609d7170519e323274841eaaaad19270e5f9553542e3a06f5c594c912f5788",
+      "inner_sha256": "64fc4ef3e82ab45c3aac27c2491893b5b08f221f174116b31d924504900ba75a",
+      "result": "PASS"
+    },
+    "phase_b_binding": {
+      "file_sha256": "6050e35c359b657da3acc5567aa74aedf58d5282603f61ab03090f0025f3b2c0",
+      "inner_sha256": "c265890bd7b986355bb44f3386fa88402f303d112ef3bd6412d5fc5fdc5e7ac5",
+      "result": "PASS"
+    },
+    "executed_validation": {
+      "governance_conformance_tests": {
+        "command": "PYTHONDONTWRITEBYTECODE=1 python -m pytest -q -p no:cacheprovider tests/test_governance_conformance.py",
+        "result": "PASS__5_PASSED"
+      },
+      "governance_conformance_engine": {
+        "command": "PYTHONDONTWRITEBYTECODE=1 python -m runtime.governance.governance_conformance_engine",
+        "result": "PASS__20_CHECKS__0_FAILURES__0_CRITICAL_VIOLATIONS",
+        "report_hash": "5b87813dac8851b2a30280c40c9c35f27fb922f234ab886a562b3a948bd604cd",
+        "scope_limitation": "FOCUSED_CURRENT_ENGINE_RESULT__HISTORICAL_PARTIAL_CONFORMANCE_NOT_RECLASSIFIED"
+      },
+      "ex_validator": {
+        "command": "PYTHONDONTWRITEBYTECODE=1 python -B .github/governance/evidence/g77_256ex_common_substrate_certification_v1/validator/G77_256EX_COMMON_SUBSTRATE_CERTIFICATION_VALIDATOR_V1.py",
+        "result": "PASS__12_OF_12__17_COMPONENTS__0_OPERATIONAL_EFFECT__0_CREDIT_EFFECT"
+      },
+      "fg_focused_capability_suite": {
+        "worktree": "/home/pisarna/work/sapianta-fg",
+        "command": "PYTHONDONTWRITEBYTECODE=1 python -m pytest -q -p no:cacheprovider tests/test_external_provider_capability_registry_v1.py",
+        "result": "PASS__16_PASSED"
+      },
+      "json_unique_key_audit": "PASS__PHASE_A_AND_PHASE_B",
+      "phase_seal_audit": "PASS__PHASE_A_AND_PHASE_B",
+      "secret_pattern_audit": "PASS__NO_SECRET_LIKE_MATERIAL_IN_FH_EVIDENCE",
+      "git_diff_check": "PASS",
+      "index_state": "EMPTY",
+      "full_repository_regression": "NOT_RUN__OUTSIDE_MINIMUM_FH_SCOPE"
+    },
+    "ff_independent_validation": {
+      "fe_head": "PASS__92ccdedb2d846c91878bf7a5b2ac958c547d60a1",
+      "fe_tree": "PASS__7cf4ab8dc22849db2445a80bf9e1dcae639747b0",
+      "candidate_sha256": "PASS__371663c5afec8baa9513da0a6e14566ffe1a8f9f62d2e274a47a90dcd43f4447",
+      "runtime_projection_identity": "PASS__BYTE_IDENTICAL_SHA256",
+      "materialization_checkpoint_sha256": "PASS__331877b9b824a0d33c3866174523a30aec7b0b3a40bf4681a740eec3daea1d7e",
+      "preboot_placeholder_sha256": "PASS__UNCHANGED__2deb5f5b3f8a8455737c4e2a9b6095e62fd2407692ac060f8dd1725385c4446c",
+      "overlay_sha256": "PASS__6ea4eed169518c646774cfbe2c7b8c00646a9cdead8798f7c94c786c6b6ce8b2",
+      "overlay_qemu_img_check": "PASS__0_ERRORS",
+      "seed_sha256": "PASS__0c2b27f78dc165834a8772881a4c91fde27e26702b4cbe6af5c5d26b08579df7",
+      "base_image_qemu_img_check": "PASS__0_ERRORS",
+      "serial_output_absent": "PASS",
+      "qemu_process_absent": "PASS",
+      "b1_pre_execution_receipt_absent": "PASS",
+      "b1_post_execution_receipt_absent": "PASS",
+      "checkout_clean_at_fe_head_tree": "PASS",
+      "local_no_network_qemu_argv": "PASS",
+      "external_capability_binding_absent_from_candidate_launcher_and_argv": "PASS"
+    },
+    "ff_final_counters": {
+      "candidate_count": 1,
+      "materialization_count": 1,
+      "vm_creation_count": 1,
+      "vm_boot_count": 0,
+      "qemu_execution_count": 0,
+      "wrong_attempt_execution_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0,
+      "execution_replay_count": 0
+    },
+    "fg_independent_validation": {
+      "head": "PASS__86c1d60df3b17b8472234105a6dc2b50d2f5ba55",
+      "tree": "PASS__53b71ac9927c65ad1a0a2a5dad9b5d56986d7302",
+      "worktree_clean": "PASS",
+      "ff_namespace_committed_into_fg": "PASS__FALSE",
+      "central_provider_registry": "PASS",
+      "provider_fact_consumer_policy_separation": "PASS",
+      "provider_authority_escalation": "PASS__NONE",
+      "duplicate_provider_truth": "PASS__NONE",
+      "parallel_provider_registry": "PASS__NONE"
+    },
+    "resolution_validation_matrix": {
+      "ff_required_external_capability_none": "PASS__LOCAL_NO_NETWORK_BOUND_OPERATION_AND_NO_CAPABILITY_POLICY_BINDING",
+      "current_worker_external_state_not_fabricated": "PASS__UNKNOWN_OR_NOT_ESTABLISHED",
+      "fg_read_from_separate_committed_authority": "PASS",
+      "preboot_explicit_human_replacement_authority_required": "PASS__PLACEHOLDER_UNSEALED_AND_REPLACEMENT_NOT_AUTHORIZED",
+      "same_materialization_original_bindings_valid": "PASS__ALL_HASHES_AND_COUNTS_UNCHANGED",
+      "operational_resume_blocked_only_by_preboot_authority": "PASS",
+      "human_authority_not_inferred": "PASS",
+      "p11_authority_not_inferred": "PASS",
+      "production_route_added": "PASS__FALSE",
+      "e05_credit_added": "PASS__FALSE"
+    },
+    "authority_and_topology_counts": {
+      "critical_violation_count": 0,
+      "trust_capability_state_duplication_count": 0,
+      "parallel_capability_registry_count": 0,
+      "duplicate_provider_fact_count": 0,
+      "new_service_count": 0,
+      "new_executor_count": 0,
+      "new_control_plane_count": 0,
+      "new_production_path_count": 0,
+      "duplicate_proof_path_count": 0,
+      "code_mutation_count": 0
+    },
+    "transparent_validation_corrections": [
+      "INITIAL_AUXILIARY_UNIQUE_KEY_COMMAND_HAD_SHELL_QUOTING_SYNTAX_ERROR__CORRECTED_COMMAND_PASSED",
+      "INITIAL_AUXILIARY_ARGV_STRING_PROBE_USED_OVERBROAD_API_SUBSTRING__REPLACED_BY_EXACT_LOCAL_QEMU_AND_POLICY_FIELD_CHECKS_WHICH_PASSED"
+    ],
+    "phase_c_result": "PASS__INDEPENDENT_VALIDATION_SUPPORTS_PHASE_B_REDUCTION",
+    "checkpoint_is_authority": false,
+    "auto_continuable": false,
+    "human_review_required": true,
+    "exact_next_legal_action": "PHASE_D_FINAL_REDUCTION_AND_G48_REPORT__THEN_STOP"
+  },
+  "checkpoint_sha256": "0313fbe10e48a8fe05f9831b4edac9620dc630b736c20fd484d7765765f50980"
+}

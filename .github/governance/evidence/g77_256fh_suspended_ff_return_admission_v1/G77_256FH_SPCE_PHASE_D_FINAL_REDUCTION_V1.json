@@ -1,0 +1,195 @@
+{
+  "schema_id": "G77_256FH_SPCE_PHASE_D_FINAL_REDUCTION_ENVELOPE_V1",
+  "checkpoint": {
+    "schema_id": "G77_256FH_SPCE_PHASE_D_FINAL_REDUCTION_V1",
+    "generation_identity": "G77_256FH_REPOSITORY_ONLY_SUSPENDED_FF_CONSTITUTIONAL_RETURN_ADMISSION_V1",
+    "phase_chain": {
+      "phase_a_file_sha256": "76609d7170519e323274841eaaaad19270e5f9553542e3a06f5c594c912f5788",
+      "phase_a_inner_sha256": "64fc4ef3e82ab45c3aac27c2491893b5b08f221f174116b31d924504900ba75a",
+      "phase_b_file_sha256": "6050e35c359b657da3acc5567aa74aedf58d5282603f61ab03090f0025f3b2c0",
+      "phase_b_inner_sha256": "c265890bd7b986355bb44f3386fa88402f303d112ef3bd6412d5fc5fdc5e7ac5",
+      "phase_c_file_sha256": "0b102360305bdb9a8384d26823439945e15fa05b2926960d6a92e98c44dcb051",
+      "phase_c_inner_sha256": "0313fbe10e48a8fe05f9831b4edac9620dc630b736c20fd484d7765765f50980",
+      "result": "PASS__ALL_PRIOR_PHASES_SEALED_AND_AUTHENTICATED"
+    },
+    "final_reductions": {
+      "ff_suspension_state": "MATERIALIZED__NOT_BOOTED",
+      "ff_return_readiness": "SAME_MATERIALIZATION_PRESERVED__PREBOOT_AUTHORITY_BLOCKED",
+      "pre_boot_sealing_decision": "EXPLICIT_HUMAN_REPLACEMENT_AUTHORITY_REQUIRED",
+      "preboot_authority_state": "EXPLICIT_HUMAN_REPLACEMENT_AUTHORITY_REQUIRED",
+      "fg_authority_consumption_model": "READ_FROM_SEPARATE_COMMITTED_AUTHORITY",
+      "can_the_same_materialized_ff_still_resume": "YES__ORIGINAL_BINDINGS_REMAIN_VALID",
+      "ff_required_external_capability": "NONE",
+      "exact_ff_external_capability_requirement": "NONE",
+      "external_provider_capability_state": "UNKNOWN_OR_NOT_ESTABLISHED__NOT_REQUIRED_FOR_EXACT_FF_OPERATION",
+      "ff_operational_resume_readiness": "BLOCKED__PREBOOT_AUTHORITY"
+    },
+    "minimum_next_boundary": {
+      "required_human_action": "EXPLICITLY_AUTHORIZE_ONE_REPOSITORY_ONLY_REPLACEMENT_AND_SEALING_OF_THE_EXISTING_EXACT_G77_256FF_PRE_BOOT_PLACEHOLDER_WITHOUT_BOOT_OR_EXECUTION",
+      "required_repository_action_after_authorization": "REAUTHENTICATE_THE_SAME_FE_FF_AND_FG_BASELINES__REPLACE_ONLY_THE_EXACT_PREBOOT_PLACEHOLDER__FULLY_SEAL_AND_VALIDATE_IT",
+      "required_operational_action_after_valid_preboot_seal": "OBTAIN_SEPARATE_HUMAN_AUTHORIZATION_FOR_ONE_OPERATIONAL_GENERATION__REAUTHENTICATE_ALL_EXISTING_BINDINGS__THEN_AND_ONLY_THEN_BOOT_THE_SAME_VM_ONCE",
+      "external_provider_action_required": false,
+      "default_fail_closed_result": "KEEP_FF_SUSPENDED__NO_BOOT"
+    },
+    "ff_final_counters": {
+      "candidate_count": 1,
+      "materialization_count": 1,
+      "vm_creation_count": 1,
+      "vm_boot_count": 0,
+      "qemu_execution_count": 0,
+      "wrong_attempt_execution_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0,
+      "execution_replay_count": 0
+    },
+    "authority_separation_proof": {
+      "provider_capability_available_not_human_authorization": "PROVEN",
+      "provider_capability_available_not_p11_authorization": "PROVEN",
+      "human_authorization_not_provider_capability_available": "PROVEN",
+      "p11_authorization_not_provider_capability_available": "PROVEN",
+      "worker_eligible_not_worker_selected": "PROVEN",
+      "worker_eligible_not_execution_authorized": "PROVEN",
+      "ff_return_contract_not_execution_authority": "PROVEN"
+    },
+    "provider_capability_metrics": {
+      "external_provider_registry_state": "PRESENT__COMMITTED_FG__READ_ONLY_CONSUMPTION",
+      "trusted_access_capability_state": "UNKNOWN_OR_NOT_ESTABLISHED_FOR_CURRENT_WORKER",
+      "provider_fact_consumer_policy_separation": "PASS",
+      "trust_capability_state_duplication_count": 0,
+      "capability_consumer_count": "0_FOR_EXACT_FF__2_DEMONSTRATED_BY_COMMITTED_FG_TESTS",
+      "central_capability_query_count": "1_INTERFACE__0_FH_FF_QUERY_EXECUTIONS",
+      "parallel_capability_registry_count": 0,
+      "duplicate_provider_fact_count": 0
+    },
+    "constitutional_health": {
+      "constitutional_health_evidence": "SEALED_PHASE_A_B_C_D_CHAIN__FF_BYTE_REAUTHENTICATION__FG_EXACT_COMMIT_AUTHENTICATION__EX_12_OF_12__GOVERNANCE_5_TESTS_AND_20_ENGINE_CHECKS",
+      "constitutional_health": "PASS_WITH_EXPLICIT_PREBOOT_AUTHORITY_BLOCKER",
+      "ex_certified_component_reuse_count": 17,
+      "ex_reconstruction_count": 0,
+      "critical_violation_count": 0,
+      "fail_closed_state": "ACTIVE__FF_SUSPENDED",
+      "ff_immutability_state": "PASS",
+      "provider_authority_separation_state": "PASS",
+      "preboot_authority_state": "FAIL__UNSEALED_PLACEHOLDER__REPLACEMENT_AUTHORITY_REQUIRED"
+    },
+    "frontier": {
+      "constitutional_frontier_distance": "NOT_MEASURED__NO_CERTIFIED_WHOLE_PROJECT_DENOMINATOR",
+      "constitutional_frontier_distance_e05": "12_OF_18_REMAIN_UNSATISFIED",
+      "e05_before": "6/18",
+      "e05_after": "6/18",
+      "wrong_attempt": "UNSATISFIED",
+      "e05_credit_granted": false
+    },
+    "reuse_and_efficiency": {
+      "governance_efficiency": "DERIVED__EX_PROVIDER_CONTROL_PLANE_FF_CANDIDATE_MATERIALIZATION_AND_VM_REUSED__PROOF_DUPLICATION_AND_OPERATIONAL_REPLAY_AVOIDED",
+      "cognition_assisted_handoff": "PROVEN__SEALED_PHASE_CHAIN_AND_EXACT_NEXT_BOUNDARY_PERSISTED",
+      "prompt_context_reuse_ratio": "NOT_MEASURED__NO_TOKEN_TELEMETRY",
+      "common_authority_reused": true,
+      "generation_state_reused": true,
+      "candidate_reused": true,
+      "materialization_reused": true,
+      "provider_control_plane_reused": true,
+      "reconstruction_avoided": true,
+      "llm_cost_reduction_ratio": "NOT_MEASURED",
+      "lcrr": "NOT_MEASURED",
+      "architectural_lcrr": "DERIVED_STRUCTURAL_AVOIDANCE__EX_FF_AND_FG_REUSE__NO_NUMERIC_RATIO",
+      "observed_prompt_execution_efficiency": "NOT_MEASURED",
+      "spce_handoff_efficiency": "STRUCTURALLY_IMPROVED__NO_RECONSTRUCTION_OR_REPLAY",
+      "sher": "NOT_MEASURED__NO_VALID_DENOMINATOR"
+    },
+    "telemetry": {
+      "session_or_thread": "NOT_MEASURED__NO_STATUS_INTERFACE_EXPOSED",
+      "context_used_start": "NOT_MEASURED",
+      "context_used_end": "NOT_MEASURED",
+      "five_hour_remaining_start": "NOT_MEASURED",
+      "five_hour_remaining_end": "NOT_MEASURED",
+      "seven_day_remaining_start": "NOT_MEASURED",
+      "seven_day_remaining_end": "NOT_MEASURED",
+      "elapsed_runtime": "NOT_EXACTLY_MEASURED",
+      "aigol_codex_work_share": "NOT_MEASURED"
+    },
+    "overengineering_and_topology": {
+      "code_mutation_count": 0,
+      "new_runtime_schema_count": 0,
+      "new_evidence_envelope_count": 4,
+      "new_service_count": 0,
+      "new_executor_count": 0,
+      "new_control_plane_count": 0,
+      "new_production_path_count": 0,
+      "duplicate_proof_path_count": 0,
+      "duplicate_provider_fact_count": 0,
+      "capability_reachability_loss_count": 0,
+      "parallel_flow_created": false,
+      "premature_generalization_risk": "LOW__EXACT_FF_DECISION_ONLY",
+      "overengineering_risk": "LOW__EVIDENCE_ONLY"
+    },
+    "reuse_impact_answers": {
+      "existing_certified_capabilities_reused": "EX_17_COMPONENTS__FE_DU_EB_EE__FF_CANDIDATE_MATERIALIZATION_VM__FG_PROVIDER_CAPABILITY_AUTHORITY",
+      "new_capabilities_created": "NONE",
+      "existing_capability_unreachable": "NO",
+      "parallel_flow_created": "NO",
+      "production_path_count_effect": "UNCHANGED__DELTA_0",
+      "provider_capability_multi_consumer_access": "ONE_COMMITTED_CENTRAL_SOURCE__NO_DUPLICATION",
+      "provider_facts_separate_from_consumer_policy": "YES",
+      "future_provider_extension": "REGISTRATION_PLUS_RELEVANT_POLICY_BINDING__NOT_EVERY_CONSUMER"
+    },
+    "candidate_and_shadow_state": {
+      "candidate_capability": "ONE_LOCAL_NO_NETWORK_QEMU_WRONG_ATTEMPT_DENIAL_BEFORE_P11_ENTRY_PROBE",
+      "shadow_design_target": "UNCHANGED__NOT_APPLICABLE",
+      "shadow_automation_state": "UNCHANGED__NOT_AUTHORIZED"
+    },
+    "continuation_chain": [
+      "G77_256FE",
+      "G77_256FF_PREFLIGHT",
+      "G77_256FF_CANDIDATE",
+      "G77_256FF_MATERIALIZATION",
+      "G77_256FF_SUSPENDED",
+      "G77_256FG_PROVIDER_CAPABILITY_AUTHORITY",
+      "G77_256FH_RETURN_ADMISSION_RESOLUTION"
+    ],
+    "no_reconstruction_or_replay": {
+      "ex_reconstruction": false,
+      "ff_phase_a_reconstruction": false,
+      "ff_candidate_reconstruction": false,
+      "ff_candidate_replacement": false,
+      "ff_materialization_reconstruction": false,
+      "ff_vm_recreation": false,
+      "du_replay": false,
+      "eb_replay": false,
+      "ee_replay": false,
+      "boot": false,
+      "qemu_execution": false,
+      "wrong_attempt_execution": false,
+      "retry": false,
+      "repair": false,
+      "operational_replay": false,
+      "fg_reimplementation": false,
+      "provider_control_plane_duplication": false
+    },
+    "next_session_authentication": {
+      "ff_head": "92ccdedb2d846c91878bf7a5b2ac958c547d60a1",
+      "ff_tree": "7cf4ab8dc22849db2445a80bf9e1dcae639747b0",
+      "fg_head": "86c1d60df3b17b8472234105a6dc2b50d2f5ba55",
+      "fg_tree": "53b71ac9927c65ad1a0a2a5dad9b5d56986d7302",
+      "ff_candidate_sha256": "371663c5afec8baa9513da0a6e14566ffe1a8f9f62d2e274a47a90dcd43f4447",
+      "ff_materialization_file_sha256": "331877b9b824a0d33c3866174523a30aec7b0b3a40bf4681a740eec3daea1d7e",
+      "ff_preboot_placeholder_file_sha256": "2deb5f5b3f8a8455737c4e2a9b6095e62fd2407692ac060f8dd1725385c4446c",
+      "fh_phase_chain_required": "AUTHENTICATE_PHASE_A_B_C_D_AND_G48_REPORT",
+      "account_change_is_generation_change": false,
+      "auto_continuable": false
+    },
+    "g48_report_binding": {
+      "path": ".github/governance/evidence/g77_256fh_suspended_ff_return_admission_v1/G77_256FH_G48_IMPLEMENTATION_REPORT_V1.md",
+      "file_sha256": "7196eee951cc6f69c385249939d4db8ab5d3844c8c35350f4ea44013518626d9",
+      "top_level_section_count": 6,
+      "result": "PASS__BOUND_TO_FINAL_REDUCTION"
+    },
+    "final_validation": "PASS__REPOSITORY_ONLY_RESOLUTION_COMPLETE__FF_PRESERVED__PREBOOT_AUTHORITY_BLOCKED",
+    "checkpoint_is_authority": false,
+    "auto_continuable": false,
+    "human_review_required": true,
+    "human_authorization_required_for_next_step": true,
+    "exact_next_legal_action": "HUMAN_REVIEW__OPTIONALLY_AUTHORIZE_ONE_NEW_REPOSITORY_ONLY_PREBOOT_PLACEHOLDER_REPLACEMENT_AND_SEALING_GENERATION__NO_BOOT"
+  },
+  "checkpoint_sha256": "0835f542f5390182a1b8c50c80243ed2ef1f0da2d69e34fd8de3cc41c965bea8"
+}

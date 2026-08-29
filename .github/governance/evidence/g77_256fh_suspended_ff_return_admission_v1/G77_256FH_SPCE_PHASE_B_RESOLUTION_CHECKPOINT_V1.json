@@ -1,0 +1,209 @@
+{
+  "schema_id": "G77_256FH_SPCE_PHASE_B_RESOLUTION_CHECKPOINT_ENVELOPE_V1",
+  "checkpoint": {
+    "schema_id": "G77_256FH_SPCE_PHASE_B_RESOLUTION_CHECKPOINT_V1",
+    "generation_identity": "G77_256FH_REPOSITORY_ONLY_SUSPENDED_FF_CONSTITUTIONAL_RETURN_ADMISSION_V1",
+    "phase_a_binding": {
+      "path": ".github/governance/evidence/g77_256fh_suspended_ff_return_admission_v1/G77_256FH_SPCE_PHASE_A_CHECKPOINT_V1.json",
+      "file_sha256": "76609d7170519e323274841eaaaad19270e5f9553542e3a06f5c594c912f5788",
+      "inner_sha256": "64fc4ef3e82ab45c3aac27c2491893b5b08f221f174116b31d924504900ba75a",
+      "authentication": "PASS"
+    },
+    "provider_requirement_resolution": {
+      "ff_required_external_capability": "NONE",
+      "exact_ff_external_capability_requirement": "NONE",
+      "result_class": "PROVEN",
+      "repository_basis": [
+        "BOUND_QEMU_ARGV_HAS_EXACTLY_ONE_NIC_SETTING_EQUAL_TO_NONE",
+        "BOUND_LAUNCHER_INVOKES_LOCAL_QEMU_DIRECTLY_WITH_SHELL_INTERPRETATION_FALSE",
+        "FF_CANDIDATE_AND_OPERATIONAL_BINDINGS_CONTAIN_NO_EXTERNAL_PROVIDER_REQUIREMENT",
+        "FF_WRONG_ATTEMPT_VECTOR_EXECUTES_INSIDE_THE_EXISTING_LOCAL_VM_SUBSTRATE",
+        "FG_RETURN_CONTRACT_MARKED_PRIOR_UI_TRIGGER_AS_NOT_A_REPOSITORY_POLICY_BINDING"
+      ],
+      "provider": "NOT_APPLICABLE",
+      "account_or_workspace": "NOT_APPLICABLE",
+      "access_path": "NOT_APPLICABLE",
+      "worker_identity": "NOT_APPLICABLE",
+      "aigol_role": "NOT_APPLICABLE",
+      "task": "G77_256FF_E05_WRONG_ATTEMPT_DENIAL_BEFORE_ENTRY_001",
+      "operation_class": "LOCAL_NO_NETWORK_QEMU_WRONG_ATTEMPT_VALIDATION",
+      "scope": "EXISTING_FE_PINNED_FF_MATERIALIZATION_ONLY",
+      "quota_requirement": "NONE",
+      "trusted_access_required": false,
+      "external_provider_invocation_required": false
+    },
+    "external_capability_evidence_state": {
+      "current_worker_trusted_access_state": "UNKNOWN_OR_NOT_ESTABLISHED",
+      "trusted_access_capability_state": "UNKNOWN_OR_NOT_ESTABLISHED",
+      "external_provider_capability_state": "UNKNOWN_OR_NOT_ESTABLISHED",
+      "fabricated_provider_fact_count": 0,
+      "new_provider_fact_count": 0,
+      "effect_on_ff_admission": "NONE__NO_EXTERNAL_CAPABILITY_IS_REQUIRED",
+      "future_evidence_if_a_later_operation_requires_capability": "SCOPE_KEYED_PROVIDER_EVIDENCE_BINDING_PROVIDER_ACCOUNT_OR_WORKSPACE_ACCESS_PATH_WORKER_CAPABILITY_SCOPE_VALIDITY_AND_QUOTA_AS_REQUIRED__NO_RAW_SECRETS"
+    },
+    "fg_authority_consumption": {
+      "fg_authority_consumption_model": "READ_FROM_SEPARATE_COMMITTED_AUTHORITY",
+      "mechanism": "READ_ONLY_GIT_AND_FILE_AUTHENTICATION_IN_CLEAN_FG_WORKTREE_AT_EXACT_COMMIT_AND_TREE",
+      "fg_integration_required_for_ff": false,
+      "fg_rebind_required_for_ff": false,
+      "merge_or_copy_required": false,
+      "reason": "FH_CONSUMED_COMMITTED_FG_AUTHORITY_TO_PRESERVE_CAPABILITY_SEMANTICS_AND_CONFIRM_NO_FF_POLICY_BINDING__THE_EXACT_FF_OPERATION_ITSELF_REQUIRES_NO_PROVIDER_CAPABILITY",
+      "central_provider_capability_model": "PRESENT__COMMITTED_FG",
+      "consumer_runtime_integration_state": "NOT_REQUIRED_FOR_FF"
+    },
+    "pre_boot_authority_resolution": {
+      "preboot_authority_state": "EXPLICIT_HUMAN_REPLACEMENT_AUTHORITY_REQUIRED",
+      "pre_boot_sealing_decision": "EXPLICIT_HUMAN_REPLACEMENT_AUTHORITY_REQUIRED",
+      "result_class": "PROVEN",
+      "basis": [
+        "EXISTING_ARTIFACT_HAS_TO_BE_SEALED_SENTINEL",
+        "RECORDED_HASH_DOES_NOT_EQUAL_COMPUTED_INNER_HASH",
+        "COMMITTED_WRITER_REFUSES_EXISTING_OUTPUT_REPLACEMENT",
+        "FG_RETURN_CONTRACT_RECORDED_FIRST_BOOT_CURRENTLY_AUTHORIZED_FALSE",
+        "FH_AUTHORIZATION_EXPLICITLY_PROHIBITS_SILENT_REPLACEMENT_OR_COMPLETION"
+      ],
+      "existing_preboot_authority_now_sufficient": false,
+      "topology_change_invalidated_original_bindings": false,
+      "new_operational_action_required_to_answer_fh": false,
+      "placeholder_modified": false
+    },
+    "same_materialization_resolution": {
+      "can_the_same_materialized_ff_still_resume": "YES__ORIGINAL_BINDINGS_REMAIN_VALID",
+      "result_class": "PROVEN",
+      "candidate_2_required": false,
+      "materialization_2_required": false,
+      "vm_creation_2_required": false,
+      "du_replay_required": false,
+      "eb_replay_required": false,
+      "ee_replay_required": false,
+      "operational_replay_required": false,
+      "repair_and_continue_required": false,
+      "condition": "EXACT_EXISTING_PREBOOT_PLACEHOLDER_MUST_FIRST_BE_REPLACED_AND_SEALED_UNDER_EXPLICIT_NEW_HUMAN_AUTHORITY__THEN_A_SEPARATE_OPERATIONAL_GENERATION_MUST_REAUTHENTICATE_ALL_BINDINGS_BEFORE_ONE_BOOT"
+    },
+    "authority_separation": {
+      "human_intent_to_aigol_constitutional_authority": "SEPARATE",
+      "aigol_constitutional_to_external_provider_capability_authority": "SEPARATE",
+      "external_provider_capability_to_p11_runtime_authority": "SEPARATE",
+      "p11_runtime_authority_to_machine_effect": "SEPARATE",
+      "provider_capability_available_implies_human_authorization": false,
+      "provider_capability_available_implies_p11_authorization": false,
+      "human_authorization_implies_provider_capability_available": false,
+      "p11_authorization_implies_provider_capability_available": false,
+      "worker_eligible_implies_worker_selected": false,
+      "worker_eligible_implies_execution_authorized": false,
+      "ff_return_contract_implies_execution_authority": false
+    },
+    "minimum_human_action": {
+      "question": "DOES_THE_HUMAN_EXPLICITLY_AUTHORIZE_ONE_REPOSITORY_ONLY_REPLACEMENT_AND_SEALING_OF_THE_EXISTING_EXACT_G77_256FF_PRE_BOOT_PLACEHOLDER_WITHOUT_BOOT_OR_EXECUTION",
+      "why_repository_cannot_decide": "THE_WRITER_PROHIBITS_REPLACEMENT_AND_NO_EXISTING_ARTIFACT_GRANTS_REPLACEMENT_AUTHORITY__ONLY_HUMAN_AUTHORITY_CAN_AUTHORIZE_THIS_NEW_REPOSITORY_ACT",
+      "minimum_allowed_choices": [
+        {
+          "choice": "AUTHORIZE_EXACT_PLACEHOLDER_REPLACEMENT_AND_SEALING_ONLY",
+          "consequence": "A_NEW_REPOSITORY_ONLY_GENERATION_MAY_REAUTHENTICATE_AND_REPLACE_ONLY_THAT_PLACEHOLDER__BOOT_REMAINS_PROHIBITED_UNTIL_SEPARATELY_AUTHORIZED"
+        },
+        {
+          "choice": "DO_NOT_AUTHORIZE",
+          "consequence": "FF_REMAINS_SUSPENDED_AND_THE_EXISTING_MATERIALIZATION_REMAINS_INTACT"
+        }
+      ],
+      "default_fail_closed_result": "BLOCKED__PREBOOT_AUTHORITY"
+    },
+    "ff_operational_resume_reduction": {
+      "ff_suspension_state": "MATERIALIZED__NOT_BOOTED",
+      "ff_return_readiness": "SAME_MATERIALIZATION_PRESERVED__NOT_OPERATIONALLY_READY",
+      "ff_operational_resume_readiness": "BLOCKED__PREBOOT_AUTHORITY",
+      "blocking_condition_count": 1,
+      "blocking_conditions": [
+        "EXPLICIT_HUMAN_REPLACEMENT_AUTHORITY_FOR_EXISTING_UNSEALED_PREBOOT_ARTIFACT"
+      ],
+      "external_capability_policy_blocker": false,
+      "external_capability_evidence_blocker": false,
+      "fg_ff_integration_blocker": false
+    },
+    "reuse_impact": {
+      "existing_certified_capabilities_reused": [
+        "G77_256EX_COMMON_P11_SPCE_SUBSTRATE_17_COMPONENTS",
+        "G77_256FE_DU_EB_EE_PREFLIGHT",
+        "G77_256FF_CANDIDATE",
+        "G77_256FF_MATERIALIZATION",
+        "G77_256FF_VM",
+        "G77_256FG_CENTRAL_PROVIDER_CAPABILITY_AUTHORITY"
+      ],
+      "new_capabilities_created": 0,
+      "existing_capability_reachability_loss": 0,
+      "parallel_flow_created": false,
+      "production_path_delta": 0,
+      "provider_capability_available_through_one_central_source": true,
+      "provider_facts_separated_from_consumer_policy": true,
+      "future_provider_extension_model": "REGISTRATION_PLUS_RELEVANT_POLICY_BINDING__NO_PER_CONSUMER_PROVIDER_FACT_COPY"
+    },
+    "provider_capability_metrics": {
+      "external_provider_registry_state": "PRESENT__COMMITTED_FG__NOT_INTEGRATED_INTO_FE_PINNED_FF",
+      "provider_fact_consumer_policy_separation": "PASS",
+      "trust_capability_state_duplication_count": 0,
+      "fh_ff_capability_consumer_count": 0,
+      "fg_demonstrated_capability_consumer_count": 2,
+      "central_capability_query_interface_count": 1,
+      "fh_central_capability_query_execution_count": 0,
+      "parallel_capability_registry_count": 0,
+      "duplicate_provider_fact_count": 0
+    },
+    "overengineering_check": {
+      "new_schema_count": 0,
+      "new_service_count": 0,
+      "new_executor_count": 0,
+      "new_control_plane_count": 0,
+      "new_production_path_count": 0,
+      "duplicate_proof_path_count": 0,
+      "duplicate_provider_fact_count": 0,
+      "premature_generalization_risk": "LOW__FH_ADDS_EVIDENCE_ONLY",
+      "overengineering_risk": "LOW__NO_CODE_OR_RUNTIME_INTEGRATION"
+    },
+    "cognition_provenance": {
+      "human_decisions": "FH_SCOPE_AND_PROHIBITIONS__FF_VECTOR_SELECTION__NEXT_REPLACEMENT_DECISION_RETAINED_BY_HUMAN",
+      "repository_facts": "FE_FF_BYTES_COUNTERS_LAUNCHER_ARGV_PREBOOT_PLACEHOLDER_AND_WORKTREE_TOPOLOGY",
+      "ex_certified_authority": "17_OF_17_COMMON_COMPONENTS",
+      "fg_committed_authority": "CENTRAL_PROVIDER_FACT_MODEL_AND_AUTHORITY_SEPARATION",
+      "codex_reasoning": "DERIVATION_OF_NONE_PROVIDER_REQUIREMENT_AND_PREBOOT_ONLY_BLOCKER",
+      "external_provider_facts": "NOT_ESTABLISHED__NOT_REQUIRED_FOR_EXACT_FF_OPERATION",
+      "derived_conclusions": "SAME_MATERIALIZATION_REMAINS_VALID__PREBOOT_REPLACEMENT_AUTHORITY_REQUIRED"
+    },
+    "candidate_and_shadow_state": {
+      "candidate_capability": "ONE_LOCAL_NO_NETWORK_QEMU_WRONG_ATTEMPT_DENIAL_BEFORE_P11_ENTRY_PROBE",
+      "shadow_design_target": "UNCHANGED__NOT_APPLICABLE_TO_FH",
+      "shadow_automation_state": "UNCHANGED__NOT_AUTHORIZED"
+    },
+    "generation_wide_counters": {
+      "candidate_count": 1,
+      "materialization_count": 1,
+      "vm_creation_count": 1,
+      "vm_boot_count": 0,
+      "qemu_execution_count": 0,
+      "wrong_attempt_execution_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0,
+      "execution_replay_count": 0
+    },
+    "frontier": {
+      "e05_before": "6/18",
+      "e05_after": "6/18",
+      "e05_remaining": 12,
+      "wrong_attempt": "UNSATISFIED",
+      "e05_credit_granted": false
+    },
+    "mutation_summary": {
+      "code_mutation_count": 0,
+      "ff_artifact_mutation_count": 0,
+      "fg_artifact_mutation_count": 0,
+      "fh_evidence_artifacts_created_through_phase_b": 2,
+      "provider_invocation_count": 0,
+      "secret_or_credential_copy_count": 0
+    },
+    "phase_b_result": "PASS__MINIMUM_REPOSITORY_ONLY_RETURN_ADMISSION_RESOLUTION_COMPLETE",
+    "checkpoint_is_authority": false,
+    "auto_continuable": false,
+    "human_review_required": true,
+    "exact_next_legal_action": "PHASE_C_INDEPENDENT_VALIDATION__NO_BOOT__NO_PROVIDER_INVOCATION__NO_PREBOOT_REPLACEMENT"
+  },
+  "checkpoint_sha256": "c265890bd7b986355bb44f3386fa88402f303d112ef3bd6412d5fc5fdc5e7ac5"
+}
