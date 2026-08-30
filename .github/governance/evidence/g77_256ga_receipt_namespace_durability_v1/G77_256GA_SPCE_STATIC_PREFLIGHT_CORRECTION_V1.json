@@ -1,0 +1,138 @@
+{
+  "schema_id": "G77_256GA_SPCE_STATIC_PREFLIGHT_CORRECTION_ENVELOPE_V1",
+  "checkpoint": {
+    "schema_id": "G77_256GA_SPCE_STATIC_PREFLIGHT_CORRECTION_V1",
+    "generation": "G77-256GA",
+    "generation_identity": "G77_256GA_ONE_BOUNDED_FRESH_RECEIPT_NAMESPACE_DURABILITY_AND_PRELAUNCH_PREFLIGHT_CORRECTION_V1",
+    "reporting_timestamp": "2026-08-30T07:59:44Z",
+    "human_instruction_sha256": "925116054ec437d6301789c54bfcb742e6c01a0afc016eca41d9352fc8717b41",
+    "strategy": "FORMALIZE_REUSE_BIND_VERIFY__SPCE_REPOSITORY_ONLY",
+    "authority": {
+      "root_head": "083e344abd8f4d0a087b6c41e468c482c11b1f58",
+      "root_tree": "6d7bec71dc0510174758b142dd914dca229b5bfd",
+      "root_subject": "G77-256FZ fail closed before QEMU on missing receipt parent",
+      "root_branch": "g77-256fl-wrong-attempt-preboot-blocker",
+      "root_status_before": "CLEAN",
+      "root_index_before": "EMPTY",
+      "remote_head_observed": "132cd8957142a043c426a39edf517ee8f202ff42",
+      "remote_checkpoint_status": "AUTHENTICATED__REMOTE_LAGS_LOCAL_FZ_COMMIT__NO_REMOTE_MUTATION",
+      "nested_head": "3183bab71f8f30397c0309dd2e6d846d14a11f66",
+      "nested_tree": "7c32ec05efc2be43297849bc38ec8766514a523d",
+      "nested_state": "CLEAN__DETACHED__PINNED"
+    },
+    "fz_failure_authentication": {
+      "report_sha256": "ce912270cc94885591c4d9f2171d89848feb0b2af748e40409e14ae4b729dbfc",
+      "authorization_sha256": "34746b0952bb5ef126729ec8acf0fd829a2d119cb957be875f2cd11596bb6a8d",
+      "reduction_sha256": "5c2516ea90077e1d87cd883809d596e9662fb8943935187a9d8ea25c322d3252",
+      "raw_traceback_sha256": "55c1b5a2f0ef9df89e6aad9a0027b328b1c859803c2a092ffd18be7808aebd23",
+      "root_cause_confirmed": true,
+      "first_broken_edge": "GOVERNED_LAUNCHER_ADMISSION_TO_DURABLE_PRE_RECEIPT_WRITE",
+      "failure_identity": "FY_RECEIPT_PARENT_DIRECTORY_ABSENT",
+      "qemu_execution_count": 0
+    },
+    "ex_reuse": {
+      "certificate_sha256": "91c477171147c56516c0f473ab887c12173c4bab225f2733c274b32467824b2f",
+      "final_seal_sha256": "46115a7627264793af5e289abe85565fcaaf8a381b009e185c35ebc3d4b8a543",
+      "validator_result": "PASS__12_OF_12",
+      "ex_reused": 17,
+      "ex_reconstructed": 0
+    },
+    "architectural_placement": {
+      "existing_owner": "FM_MATERIALIZATION_AND_PREBOOT_OWNER_COMPOSED_WITH_FO_FINAL_ADMISSION",
+      "owner_path": ".github/governance/evidence/g77_256fm_wrong_attempt_preboot_v1/launcher/G77_256FM_ONE_SHOT_QEMU_LAUNCHER_V1.py",
+      "preparation_function": "prepare_receipt_parent",
+      "read_only_admission_function": "validate_receipt_parent_ready",
+      "final_composition_function": "validate_final_admission",
+      "preparation_is_not_automatic_in_launcher_main": true,
+      "parallel_subsystem_required": false,
+      "new_execution_route": false,
+      "production_route_delta": 0
+    },
+    "minimum_safe_delta": {
+      "launcher_sha256_after": "b8cbf6416c58c87bb95f2a945e1314b47a5522caf00680f7fd70c19ad412eaac",
+      "ga_test_sha256": "579eddf4976ef8988f390d2bb49b9017d53e06ee0b81c9407dff8392b150c5e6",
+      "fy_test_sha256_after": "8d1bde42f669bc3c50961d9f2b23bb33e53834afa5f087381afe1e437bfbf038",
+      "semantics": [
+        "EXACT_RECEIPT_PARENT_PATH_ONLY",
+        "NO_ABSOLUTE_OR_TRAVERSAL_PATH",
+        "NO_EVIDENCE_ROOT_OR_PARENT_SYMLINK_SUBSTITUTION",
+        "EXPECTED_DIRECTORY_TYPE",
+        "WRITER_ACCESS_AND_DURABILITY_PROBE",
+        "PRE_AND_POST_RECEIPT_FILES_ABSENT",
+        "GUEST_OUTPUTS_ABSENT",
+        "PARENT_EMPTY",
+        "FINAL_ADMISSION_REAUTHENTICATES_RECEIPT_PARENT_READY",
+        "LAUNCHER_MAIN_DOES_NOT_SILENTLY_PREPARE"
+      ]
+    },
+    "fy_preservation": {
+      "manifest_sha256": "a28d2c6d903ed0abafd6fecdc1979f763de4c79127018655370975d52fc05fb4",
+      "argv_file_sha256": "d4e38fb7c6510cec380a95f66352b272a91b40753b199e6ee2ea9774a4bcf4a3",
+      "canonical_argv_sha256": "40a0c1382725a68f33beb0a351e2661cec5c1851041b4fb1058626a1d1da818e",
+      "composition_sha256": "bad42f1361aac5e45a773242fb6a00445282f8d996ad592d15d363019eaa6baf",
+      "visibility_semantics_changed": false
+    },
+    "reuse_accounting": {
+      "du_schema_sha256": "a21ba1567c65101a5f178afdfefb5d500c97fc2cc6a9eb9da6c9fb4cc914478e",
+      "eb_final_seal_sha256": "fd5242d03f7205807fc43f1919e062e80441a7d8200f3f3d4d2cc2aea9f4cc04",
+      "ee_final_seal_sha256": "a25b7a86946611fba55d999af32eb95be25fd30f94b8835e0e8398f6133ac437",
+      "fk_final_reduction_sha256": "125c77656463884c1260134b09695e84c1b4f2bd176b144a8bae2c69925b1359",
+      "du_rerun": 0,
+      "eb_rerun": 0,
+      "ee_rerun": 0,
+      "fk_changed": false,
+      "p11_changed": false,
+      "candidate_rebuilt": false,
+      "base_rebuilt": false,
+      "new_validators": 0,
+      "new_production_routes": 0
+    },
+    "static_proof": {
+      "static_prelaunch_receipt_durability_proof": "PASS",
+      "fz_failure_mode_statically_blocked": true,
+      "positive_result": "PASS__PREPARED_EMPTY_USABLE_PARENT_PLUS_UNUSED_NAMESPACE_COMPOSES_TO_STATIC_ADMISSION",
+      "negative_result": "PASS__ABSENT_OR_UNSAFE_PARENT_DENIED_BEFORE_OTHER_FINAL_ADMISSION_GATES",
+      "safety_probes": "PASS__NON_DIRECTORY_SYMLINK_EVIDENCE_ROOT_SYMLINK_RECEIPT_COLLISION_GUEST_OUTPUT_COLLISION_UNEXPECTED_CONTENT_AND_TRAVERSAL_DENIED",
+      "future_qemu_execution_proven": false,
+      "future_wrong_attempt_proven": false,
+      "future_e05_proven": false
+    },
+    "validation": {
+      "ga_focused": "11_OF_11_PASS",
+      "fy_regression": "6_OF_6_PASS",
+      "fo_regression": "11_OF_11_PASS",
+      "combined_focused": "28_OF_28_PASS",
+      "governance_tests": "9_OF_9_PASS",
+      "governance_engine": "20_OF_20_PASS__CONFORMANT__ZERO_WARNINGS__ZERO_CRITICAL_VIOLATIONS",
+      "python_syntax": "3_OF_3_PASS",
+      "git_diff_check": "PASS",
+      "development_test_assertion_corrections": 1
+    },
+    "ga_counters": {
+      "new_human_operational_authorization": 0,
+      "authorized_operational_attempts": 0,
+      "governed_launcher_activations": 0,
+      "qemu_execution_count": 0,
+      "vm_boot_count": 0,
+      "wrong_attempt_execution_count": 0,
+      "request_count": 0,
+      "p11_entry_count": 0,
+      "protected_invocation_count": 0,
+      "protected_effect_count": 0,
+      "retry_count": 0,
+      "repair_execution_count": 0,
+      "replay_execution_count": 0,
+      "e05_credits_gained": 0
+    },
+    "frontier": {
+      "e05_before": "6_OF_18",
+      "e05_after": "6_OF_18",
+      "operational_proof_yield": "NOT_MEASURED__UNDEFINED__ZERO_OPERATIONAL_ATTEMPTS",
+      "auto_continuable": false,
+      "human_review_required": true,
+      "exact_next_legal_action": "HUMAN_REVIEW_AND_OPTIONAL_BOUNDED_COMMIT__THEN_EXACT_NEW_HEAD_TREE_CLEAN_INDEX_BEFORE_ANY_SEPARATE_OPERATIONAL_GENERATION"
+    },
+    "final_verdict": "PASS__G77_256GA_FRESH_RECEIPT_NAMESPACE_DURABILITY_AND_PRELAUNCH_PREFLIGHT_CORRECTED__FZ_FAILURE_MODE_STATICALLY_BLOCKED__NO_QEMU_EXECUTION__E05_REMAINS_6_OF_18__HUMAN_REVIEW_REQUIRED"
+  },
+  "checkpoint_sha256": "375b564dcb728cd63f0538a7d6b743865c621e77e2ff36e8a46b988cf79db7e0"
+}

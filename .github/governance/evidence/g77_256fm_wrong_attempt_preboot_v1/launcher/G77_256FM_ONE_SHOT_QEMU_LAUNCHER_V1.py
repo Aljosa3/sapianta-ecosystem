@@ -126,6 +126,114 @@ def sha256_path(path: Path) -> str:
     return digest.hexdigest()
 
 
+def receipt_namespace_paths(repository_root: Path) -> tuple[Path, Path, Path]:
+    """Resolve the one exact receipt parent without following substitutions."""
+
+    root = repository_root
+    if not root.is_absolute() or root.is_symlink() or not root.is_dir():
+        raise RuntimeError("repository root absent, relative, symlinked, or non-directory")
+    relative_pre = Path(PRE_RECEIPT)
+    relative_post = Path(POST_RECEIPT)
+    expected_parent = Path(FY_ROOT) / "receipts"
+    for relative in (relative_pre, relative_post, expected_parent):
+        if relative.is_absolute() or ".." in relative.parts:
+            raise RuntimeError("receipt namespace path is absolute or traverses its root")
+    if relative_pre.parent != expected_parent or relative_post.parent != expected_parent:
+        raise RuntimeError("receipt files do not share the exact expected parent")
+
+    cursor = root
+    for part in Path(FY_ROOT).parts:
+        cursor = cursor / part
+        if cursor.is_symlink():
+            raise RuntimeError("receipt evidence root contains a symlink substitution")
+    evidence_root = root / FY_ROOT
+    if not evidence_root.is_dir():
+        raise RuntimeError("receipt evidence root absent or non-directory")
+    if evidence_root.resolve() != (root.resolve() / FY_ROOT):
+        raise RuntimeError("receipt evidence root resolves outside its exact identity")
+    return root / expected_parent, root / relative_pre, root / relative_post
+
+
+def receipt_consumable_paths(repository_root: Path) -> tuple[Path, ...]:
+    parent, pre_receipt, post_receipt = receipt_namespace_paths(repository_root)
+    del parent
+    return (
+        pre_receipt,
+        post_receipt,
+        repository_root / RAW_EXECUTION,
+        repository_root / EXECUTION_SEAL,
+        repository_root / TEARDOWN_SEAL,
+    )
+
+
+def validate_receipt_parent_ready(repository_root: Path) -> dict[str, Any]:
+    """Read-only proof that the durable receipt parent and namespace are fresh."""
+
+    parent, pre_receipt, post_receipt = receipt_namespace_paths(repository_root)
+    if parent.is_symlink() or not parent.is_dir():
+        raise RuntimeError("durable receipt parent absent, symlinked, or non-directory")
+    if parent.resolve() != ((repository_root / FY_ROOT).resolve() / "receipts"):
+        raise RuntimeError("durable receipt parent resolves outside the evidence root")
+
+    flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0)
+    directory = os.open(parent, flags)
+    os.close(directory)
+    if not os.access(parent, os.W_OK | os.X_OK):
+        raise RuntimeError("durable receipt parent is not usable by the receipt writer")
+
+    receipt_files_absent = not pre_receipt.exists() and not post_receipt.exists()
+    guest_outputs_absent = not any(
+        path.exists() for path in receipt_consumable_paths(repository_root)[2:]
+    )
+    parent_empty = next(parent.iterdir(), None) is None
+    if not receipt_files_absent:
+        raise RuntimeError("receipt file collision proves namespace consumption")
+    if not guest_outputs_absent:
+        raise RuntimeError("guest evidence collision proves namespace consumption")
+    if not parent_empty:
+        raise RuntimeError("unexpected durable receipt parent content")
+    return {
+        "receipt_parent": str(parent),
+        "receipt_parent_ready": True,
+        "receipt_files_absent": True,
+        "guest_outputs_absent": True,
+        "receipt_namespace_unused": True,
+    }
+
+
+def prepare_receipt_parent(repository_root: Path) -> dict[str, Any]:
+    """Materialize and durability-probe only the exact fresh receipt parent."""
+
+    parent, _, _ = receipt_namespace_paths(repository_root)
+    if any(path.exists() for path in receipt_consumable_paths(repository_root)):
+        raise RuntimeError("consumed receipt or guest evidence namespace cannot be prepared")
+    if parent.is_symlink():
+        raise RuntimeError("durable receipt parent symlink prohibited")
+    if parent.exists():
+        if not parent.is_dir():
+            raise RuntimeError("durable receipt parent exists as a non-directory")
+        if next(parent.iterdir(), None) is not None:
+            raise RuntimeError("non-empty durable receipt parent cannot be prepared as fresh")
+    else:
+        parent.mkdir(mode=0o700, parents=False, exist_ok=False)
+
+    flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0)
+    directory = os.open(parent, flags)
+    probe_name = ".g77_256_receipt_parent_durability_probe"
+    probe_flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0)
+    try:
+        probe = os.open(probe_name, probe_flags, 0o600, dir_fd=directory)
+        try:
+            os.fsync(probe)
+        finally:
+            os.close(probe)
+        os.unlink(probe_name, dir_fd=directory)
+        os.fsync(directory)
+    finally:
+        os.close(directory)
+    return validate_receipt_parent_ready(repository_root)
+
+
 def write_atomic(path: Path, value: dict[str, Any]) -> str:
     payload = canonical_bytes(value)
     temporary = path.with_name(f".{path.name}.tmp-{os.getpid()}")
@@ -551,6 +659,7 @@ def validate_final_admission(
 ) -> dict[str, str]:
     """FO final admission extended by the existing FM preboot composition gate."""
 
+    receipt_readiness = validate_receipt_parent_ready(repository_root)
     visibility = validate_preboot_visibility(
         repository_root,
         argv,
@@ -570,6 +679,10 @@ def validate_final_admission(
         receipt_namespace_consumed=receipt_namespace_consumed,
     )
     admission.update({
+        "receipt_parent": receipt_readiness["receipt_parent"],
+        "receipt_parent_ready": "PASS",
+        "receipt_files_absent": "PASS",
+        "receipt_namespace_unused": "PASS",
         "preboot_visibility_composition": visibility["result"],
         "runtime_export_root": visibility["host_export_root"],
         "guest_required_manifest_path": visibility["guest_required_path"],
@@ -647,9 +760,7 @@ def main() -> int:
     repository_root = Path.cwd().resolve()
     pre_path = repository_root / PRE_RECEIPT
     post_path = repository_root / POST_RECEIPT
-    consumable_paths = [repository_root / path for path in (
-        PRE_RECEIPT, POST_RECEIPT, RAW_EXECUTION, EXECUTION_SEAL, TEARDOWN_SEAL,
-    )]
+    consumable_paths = receipt_consumable_paths(repository_root)
     argv = json.loads((repository_root / VECTOR).read_text(encoding="utf-8"))
     canonicalizer = load_canonicalizer(repository_root)
     digest = canonicalizer.argv_sha256(argv)

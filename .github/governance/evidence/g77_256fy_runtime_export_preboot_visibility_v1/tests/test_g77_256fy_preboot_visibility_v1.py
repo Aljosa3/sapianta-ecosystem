@@ -11,6 +11,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest import mock
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[5]
@@ -76,20 +77,32 @@ def vector() -> list[str]:
 def final_admission(argv: list[str], digest: str):
     authority = sealed_authority()
     file_sha = authority_file_sha(authority)
-    return LAUNCHER.validate_final_admission(
-        repository_root=REPOSITORY_ROOT,
-        authority=authority,
-        authority_file_sha256=file_sha,
-        supplied_authority_sha256=file_sha,
-        observed_head=HEAD,
-        observed_tree=TREE,
-        anchor_is_ancestor=True,
-        repository_clean=True,
-        observed_asset_sha256=LAUNCHER.asset_observations(REPOSITORY_ROOT),
-        argv=argv,
-        canonical_argv_sha256=digest,
-        receipt_namespace_consumed=False,
-    )
+    readiness = {
+        "receipt_parent": str(REPOSITORY_ROOT / LAUNCHER.FY_ROOT / "receipts"),
+        "receipt_parent_ready": True,
+        "receipt_files_absent": True,
+        "guest_outputs_absent": True,
+        "receipt_namespace_unused": True,
+    }
+    with mock.patch.object(
+        LAUNCHER,
+        "validate_receipt_parent_ready",
+        return_value=readiness,
+    ):
+        return LAUNCHER.validate_final_admission(
+            repository_root=REPOSITORY_ROOT,
+            authority=authority,
+            authority_file_sha256=file_sha,
+            supplied_authority_sha256=file_sha,
+            observed_head=HEAD,
+            observed_tree=TREE,
+            anchor_is_ancestor=True,
+            repository_clean=True,
+            observed_asset_sha256=LAUNCHER.asset_observations(REPOSITORY_ROOT),
+            argv=argv,
+            canonical_argv_sha256=digest,
+            receipt_namespace_consumed=False,
+        )
 
 
 class G77256FYPrebootVisibilityTests(unittest.TestCase):
