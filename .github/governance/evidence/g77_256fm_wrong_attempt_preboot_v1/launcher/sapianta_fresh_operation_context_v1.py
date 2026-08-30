@@ -18,6 +18,14 @@ CONSTITUTIONAL_ANCHOR_HEAD = "5c972e9960987ab27420395b54ace693df097e7b"
 MOUNT_TAG = "g77_evidence"
 GUEST_MOUNT_ROOT = "/mnt/g77-evidence"
 GUEST_CONTEXT_FILENAME = "SAPIANTA_FRESH_OPERATION_CONTEXT_V1.json"
+GUEST_HARNESS_MOUNT_TAG = "fm_harness"
+GUEST_HARNESS_ROOT = "/mnt/dp-harness"
+ADAPTER_SOURCE_RELATIVE_PATH = (
+    ".github/governance/evidence/g77_256fm_wrong_attempt_preboot_v1/harness/"
+    "G77_256FM_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py"
+)
+ADAPTER_BOOTSTRAP_FILENAME = "G77_256FM_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py"
+ADAPTER_IDENTITY_SUFFIX = "_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py"
 CANONICAL_ARGV_DOMAIN = b"SAPIANTA_G77_256ER_CANONICAL_QEMU_ARGV_V1\x00"
 U64 = struct.Struct(">Q")
 HEX_40 = re.compile(r"^[0-9a-f]{40}$")
@@ -52,6 +60,7 @@ CONTEXT_FIELDS = frozenset({
     "guest_context_path",
     "guest_output_relative_paths",
     "guest_fixture_root",
+    "guest_adapter_binding",
     "canonical_argv",
     "canonical_argv_sha256",
     "authorization_binding_policy",
@@ -180,6 +189,38 @@ def guest_output_relative_paths(prefix: str) -> list[str]:
     ]
 
 
+def derive_guest_adapter_binding(
+    prefix: str,
+    operation_evidence_root: Path,
+    source_sha256: str,
+) -> dict[str, Any]:
+    """Derive the one operation-local adapter projection and guest consumer path."""
+
+    _validate_prefix(prefix)
+    if not isinstance(source_sha256, str) or HEX_64.fullmatch(source_sha256) is None:
+        raise ContextError("adapter source SHA-256 malformed")
+    projection_root = operation_evidence_root.absolute() / "guest_harness"
+    adapter_identity = f"{prefix}{ADAPTER_IDENTITY_SUFFIX}"
+    return {
+        "source_path": ADAPTER_SOURCE_RELATIVE_PATH,
+        "source_sha256": source_sha256,
+        "adapter_identity": adapter_identity,
+        "projection_root": str(projection_root),
+        "projected_path": str(projection_root / adapter_identity),
+        "guest_path": f"{GUEST_HARNESS_ROOT}/{adapter_identity}",
+        "bootstrap_identity": ADAPTER_BOOTSTRAP_FILENAME,
+        "bootstrap_projected_path": str(
+            projection_root / ADAPTER_BOOTSTRAP_FILENAME
+        ),
+        "bootstrap_guest_path": (
+            f"{GUEST_HARNESS_ROOT}/{ADAPTER_BOOTSTRAP_FILENAME}"
+        ),
+        "mount_tag": GUEST_HARNESS_MOUNT_TAG,
+        "guest_mount_root": GUEST_HARNESS_ROOT,
+        "read_only": True,
+    }
+
+
 def derive_canonical_argv(
     *,
     overlay_path: Path,
@@ -254,6 +295,11 @@ def build_context(
     _validate_prefix(prefix)
     receipt_parent = operation_evidence_root / "receipts"
     runtime_export = operation_evidence_root / "runtime_export"
+    adapter_binding = derive_guest_adapter_binding(
+        prefix,
+        operation_evidence_root,
+        wrapper_fc_er_che_schema_hashes["wrapper"],
+    )
     overlay = transient_root / "guest-overlay.qcow2"
     serial = transient_root / "serial.log"
     manifest = runtime_export / f"{prefix}_CONTINUATION_MANIFEST_V1.json"
@@ -263,9 +309,7 @@ def build_context(
         serial_path=serial,
         seed_path=Path(bindings["seed"]["path"]),
         checkout_path=Path(bindings["checkout"]["path"]),
-        wrapper_host_root=repository_root / (
-            ".github/governance/evidence/g77_256fm_wrong_attempt_preboot_v1/harness"
-        ),
+        wrapper_host_root=Path(adapter_binding["projection_root"]),
         dn_harness_host_root=repository_root / (
             ".github/governance/evidence/g77_256dn_p03_diagnostic_v1/harness"
         ),
@@ -291,6 +335,7 @@ def build_context(
         "guest_context_path": f"{GUEST_MOUNT_ROOT}/{GUEST_CONTEXT_FILENAME}",
         "guest_output_relative_paths": guest_output_relative_paths(prefix),
         "guest_fixture_root": f"/run/{prefix.lower().replace('_', '-')}-p11",
+        "guest_adapter_binding": adapter_binding,
         "canonical_argv": argv,
         "canonical_argv_sha256": argv_sha256(argv),
         "authorization_binding_policy": AUTHORIZATION_BINDING_POLICY,
@@ -408,6 +453,22 @@ def validate_context(context: dict[str, Any], *, repository_root: Path) -> dict[
         "runtime_export_root", "runtime_manifest_path",
     )
     paths = {field: _absolute_canonical_path(context[field], field) for field in fresh_fields}
+    adapter = context["guest_adapter_binding"]
+    if not isinstance(adapter, dict):
+        raise ContextError("guest adapter binding missing or malformed")
+    expected_adapter = derive_guest_adapter_binding(
+        prefix,
+        paths["operation_evidence_root"],
+        context["wrapper_fc_er_che_schema_hashes"].get("wrapper", ""),
+    )
+    if adapter != expected_adapter:
+        raise ContextError("guest adapter binding is not canonically derived")
+    adapter_paths = {
+        field: _absolute_canonical_path(adapter[field], f"guest_adapter_binding.{field}")
+        for field in ("projection_root", "projected_path", "bootstrap_projected_path")
+    }
+    for path in adapter_paths.values():
+        _assert_no_symlink_components(path, allow_missing=True)
     for field, path in paths.items():
         if any(marker in str(path).lower() for marker in FORBIDDEN_HISTORICAL_PATH_MARKERS):
             raise ContextError(f"{field} reuses a historical namespace")
@@ -429,6 +490,12 @@ def validate_context(context: dict[str, Any], *, repository_root: Path) -> dict[
         raise ContextError("receipt paths escape the context receipt parent")
     if paths["runtime_manifest_path"].parent != paths["runtime_export_root"]:
         raise ContextError("runtime manifest escapes the context runtime export")
+    if adapter_paths["projection_root"].parent != operation_root:
+        raise ContextError("adapter projection root escapes operation evidence root")
+    if adapter_paths["projected_path"].parent != adapter_paths["projection_root"]:
+        raise ContextError("derived adapter projection escapes its exact root")
+    if adapter_paths["bootstrap_projected_path"].parent != adapter_paths["projection_root"]:
+        raise ContextError("adapter bootstrap projection escapes its exact root")
     mutable_destinations = [
         paths["overlay_path"], paths["serial_path"], paths["pre_receipt_path"],
         paths["post_receipt_path"], paths["runtime_manifest_path"],
@@ -481,7 +548,7 @@ def validate_context(context: dict[str, Any], *, repository_root: Path) -> dict[
         serial_path=paths["serial_path"],
         seed_path=Path(bindings["seed"]["path"]),
         checkout_path=Path(checkout["path"]),
-        wrapper_host_root=repository_root / ".github/governance/evidence/g77_256fm_wrong_attempt_preboot_v1/harness",
+        wrapper_host_root=adapter_paths["projection_root"],
         dn_harness_host_root=repository_root / ".github/governance/evidence/g77_256dn_p03_diagnostic_v1/harness",
         runtime_export_root=paths["runtime_export_root"],
     )
@@ -536,6 +603,18 @@ def validate_freshness(
         unexpected = {path for path in runtime_export.iterdir() if path not in allowed}
         if unexpected:
             raise ContextError("runtime export contains undeclared writable sink")
+    adapter = context["guest_adapter_binding"]
+    projection_root = Path(adapter["projection_root"])
+    if projection_root.exists():
+        if projection_root.is_symlink() or not projection_root.is_dir():
+            raise ContextError("adapter projection root collision or unsafe state")
+        expected = {
+            Path(adapter["projected_path"]),
+            Path(adapter["bootstrap_projected_path"]),
+        }
+        actual = set(projection_root.iterdir())
+        if actual != expected:
+            raise ContextError("adapter projection contains stale, duplicate, or ambiguous entry")
     return {
         "complete_sink_count": len(sinks),
         "complete_sink_absence": "PASS",

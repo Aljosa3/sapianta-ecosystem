@@ -23,14 +23,14 @@ TEMPLATE_PATH = Path(
     "G77_256GD_CANONICAL_CONTINUATION_MANIFEST_BINDING_REISSUE_V1.json"
 )
 TEMPLATE_SHA256 = "8af5ba1cbf9e396aa2f4f981a6f20b821c5fd1c38e091ed1cb3646c76c953b4a"
-TEMPLATE_SEMANTIC_SHA256 = "338ca4167a7f600c74a92a75a690b688bc455fd49ec37cb31b02d735ae9e0833"
+TEMPLATE_SEMANTIC_SHA256 = "df1d030fad63cc5f814af26040a39711bc268488f3a34e8fe1993574ffcfe404"
 CERTIFICATION_PROVENANCE_HEAD = "7196cfe3f285ced74e0d353bac609881553d857a"
 TEMPLATE_COMMIT_HEAD = "394ac2f0776a49d6ac1afabc1e21cc7fee6f7994"
 BUILDER_PATH = Path(
     ".github/governance/evidence/g77_256gd_fresh_operation_context_v1/builder/"
     "G77_256GD_CANDIDATE_BINDING_REISSUE_V1.py"
 )
-BUILDER_SHA256 = "a5067f2408f874356909ea2573f366b627b5befa2752af7b1ca2d47ae56a82b8"
+BUILDER_SHA256 = "5f0529226ec366c8c06caf19d7b7d19f89ed0751ed0c0521fe80c11ee7d906da"
 LAUNCHER_PATH = Path(
     ".github/governance/evidence/g77_256fm_wrong_attempt_preboot_v1/launcher/"
     "G77_256FM_ONE_SHOT_QEMU_LAUNCHER_V1.py"
@@ -108,6 +108,31 @@ def semantic_projection(envelope: dict[str, Any]) -> dict[str, Any]:
     manifest = projection["manifest"]
     manifest.pop("required_head")
     manifest.pop("source_tree")
+    context_bindings = [
+        binding
+        for binding in manifest["extension_bindings"]
+        if binding.get("identity")
+        == "SAPIANTA_FRESH_OPERATION_CONTEXT_V1_IMPLEMENTATION"
+    ]
+    if len(context_bindings) != 1 or context_bindings[0].get("path") != (
+        ".github/governance/evidence/g77_256fm_wrong_attempt_preboot_v1/launcher/"
+        "sapianta_fresh_operation_context_v1.py"
+    ):
+        raise LiveBindingError("CONTEXT_IMPLEMENTATION_BINDING_MISSING_OR_AMBIGUOUS")
+    context_bindings[0]["sha256"] = "<LIVE_CONTEXT_IMPLEMENTATION_BINDING>"
+    cloud_bindings = [
+        binding
+        for binding in manifest["extension_bindings"]
+        if binding.get("identity") == "G77_256FM_CLOUD_INIT_USER_DATA"
+    ]
+    if len(cloud_bindings) != 1:
+        raise LiveBindingError("CLOUD_INIT_BINDING_MISSING_OR_AMBIGUOUS")
+    cloud_bindings[0]["sha256"] = "<LIVE_CLOUD_INIT_BINDING>"
+    manifest["extension_bindings"] = [
+        binding
+        for binding in manifest["extension_bindings"]
+        if binding.get("identity") != "SAPIANTA_WRONG_ATTEMPT_NOCLOUD_SEED_V1"
+    ]
     projection.pop("manifest_sha256")
     return projection
 

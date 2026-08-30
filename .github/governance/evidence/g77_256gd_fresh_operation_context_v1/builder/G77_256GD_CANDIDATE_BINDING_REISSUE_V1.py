@@ -24,6 +24,14 @@ CONTEXT_IMPLEMENTATION = Path(
     ".github/governance/evidence/g77_256fm_wrong_attempt_preboot_v1/launcher/"
     "sapianta_fresh_operation_context_v1.py"
 )
+CLOUD_INIT_USER_DATA = Path(
+    ".github/governance/evidence/g77_256fm_wrong_attempt_preboot_v1/raw/"
+    "G77_256FM_CLOUD_INIT_USER_DATA_V1.yaml"
+)
+NOCLOUD_SEED = Path(
+    ".github/governance/evidence/g77_256gh_guest_adapter_path_binding_v1/static/"
+    "SAPIANTA_WRONG_ATTEMPT_NOCLOUD_SEED_V1.img"
+)
 
 
 def canonical_bytes(value: Any) -> bytes:
@@ -51,11 +59,22 @@ def build(root: Path) -> dict[str, Any]:
         item for item in extensions if item["identity"] == "G77_256FM_WRONG_ATTEMPT_ADAPTER"
     )
     wrapper["sha256"] = sha256(root / WRAPPER)
+    cloud_init = next(
+        item
+        for item in extensions
+        if item["identity"] == "G77_256FM_CLOUD_INIT_USER_DATA"
+    )
+    cloud_init["sha256"] = sha256(root / CLOUD_INIT_USER_DATA)
     extensions.extend([
         {
             "identity": "SAPIANTA_FRESH_OPERATION_CONTEXT_V1_IMPLEMENTATION",
             "path": str(CONTEXT_IMPLEMENTATION),
             "sha256": sha256(root / CONTEXT_IMPLEMENTATION),
+        },
+        {
+            "identity": "SAPIANTA_WRONG_ATTEMPT_NOCLOUD_SEED_V1",
+            "path": str(NOCLOUD_SEED),
+            "sha256": sha256(root / NOCLOUD_SEED),
         },
     ])
     envelope["manifest_sha256"] = hashlib.sha256(canonical_bytes(manifest)).hexdigest()

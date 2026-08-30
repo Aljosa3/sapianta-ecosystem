@@ -29,7 +29,7 @@ CANDIDATE_SHA256 = "8af5ba1cbf9e396aa2f4f981a6f20b821c5fd1c38e091ed1cb3646c76c95
 MATERIALIZATION_SHA256 = "bad42f1361aac5e45a773242fb6a00445282f8d996ad592d15d363019eaa6baf"
 MATERIALIZATION_INNER_SHA256 = "e0452f63fbbf0cc890623b63a273973914852c7e24dad11b5b95f5ed0159a1d5"
 CANONICAL_ARGV_SHA256 = "40a0c1382725a68f33beb0a351e2661cec5c1851041b4fb1058626a1d1da818e"
-ADAPTER_SHA256 = "b7d8f5b3478d7cfff2cadce7e36b3a12c9b4a1ac5054da867668086f84e866d7"
+ADAPTER_SHA256 = "f2808a148bc9839f083ea9e59903674fe0dcd2a7587eee342fca44066ee9ad2b"
 FK_ADAPTER_SHA256 = "7ae104802f49613ca60836913d2c68269b59728bc35bb677fdb3637aaf4b84c6"
 FM_ROOT = ".github/governance/evidence/g77_256fm_wrong_attempt_preboot_v1"
 FY_ROOT = ".github/governance/evidence/g77_256fy_runtime_export_preboot_visibility_v1"
@@ -57,11 +57,30 @@ CANDIDATE = (
 MATERIALIZATION = f"{FY_ROOT}/G77_256FY_RUNTIME_EXPORT_PREBOOT_COMPOSITION_V1.json"
 WRAPPER = f"{FM_ROOT}/harness/G77_256FM_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py"
 CLOUD_INIT = f"{FM_ROOT}/raw/G77_256FM_CLOUD_INIT_USER_DATA_V1.yaml"
+CLOUD_INIT_META_DATA = f"{FM_ROOT}/raw/G77_256FM_CLOUD_INIT_META_DATA_V1.yaml"
+CLOUD_INIT_NETWORK_CONFIG = f"{FM_ROOT}/raw/G77_256FM_CLOUD_INIT_NETWORK_CONFIG_V1.yaml"
+CLOUD_INIT_SHA256 = "3a4c989de77abec366ec5587b038a7341e71aac916d9cd9c7deba424f4a275ec"
 FK_ADAPTER = ".github/governance/evidence/g77_256fc_wrong_attempt_operational_v1/harness/G77_256FC_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py"
 CANONICAL_CHE = "aigol/runtime/canonical_che_evidence_correlation_contract_v1.py"
+ER_HARNESS_RELATIVE = (
+    ".github/governance/evidence/g77_256er_p11_operational_v1/harness/"
+    "G77_256ER_P11_OPERATIONAL_HARNESS_V1.py"
+)
+DN_HARNESS = (
+    ".github/governance/evidence/g77_256dn_p03_diagnostic_v1/harness/"
+    "G77_256DN_P03_DIAGNOSTIC_HARNESS_V1.py"
+)
+RAW_EVIDENCE_SCHEMA = (
+    ".github/governance/evidence/g77_256er_p11_operational_v1/"
+    "G77_256ER_RAW_EVIDENCE_SCHEMA_V1.json"
+)
 BASE_IMAGE = "/tmp/g77_256cw.IkqZJN/noble-server-cloudimg-amd64.img"
 OVERLAY = "/tmp/g77_256fy/guest-overlay.qcow2"
-SEED = "/tmp/g77_256fy/nocloud-seed.img"
+SEED = (
+    "/home/pisarna/work/sapianta-fl/.github/governance/evidence/"
+    "g77_256gh_guest_adapter_path_binding_v1/static/"
+    "SAPIANTA_WRONG_ATTEMPT_NOCLOUD_SEED_V1.img"
+)
 CHECKOUT = "/tmp/g77_256fm/checkout"
 CHECKOUT_HEAD = "7dce67ec18696ba0bad73130f3f7a84168f25277"
 CHECKOUT_TREE = "3cb61ec34e9593efb711dce61014dc8fdf0f6dd9"
@@ -86,13 +105,13 @@ EXPECTED_ASSET_SHA256 = {
     VECTOR: "d4e38fb7c6510cec380a95f66352b272a91b40753b199e6ee2ea9774a4bcf4a3",
     RUNTIME_MANIFEST: CANDIDATE_SHA256,
     WRAPPER: ADAPTER_SHA256,
-    CLOUD_INIT: "5593e4491ce10e1efffe6584284d234f9d11bbbc8383acbafd5a83a294eaacd9",
+    CLOUD_INIT: CLOUD_INIT_SHA256,
     FK_ADAPTER: FK_ADAPTER_SHA256,
     CANONICAL_CHE: "75801995214e81419aab9a02326499c771ec0039658fb49598aa54bd033e13c5",
     CANONICALIZER: CANONICALIZER_SHA256,
     BASE_IMAGE: "6e40c07ae715f744f84af0bec76415cc1987dd115b4b8de437818561f01a3733",
     OVERLAY: "6ea4eed169518c646774cfbe2c7b8c00646a9cdead8798f7c94c786c6b6ce8b2",
-    SEED: "b36a1aac42f687fe3d6b71200b5b65ec93a8a6de59b7dce31d3e6bf2c3b93c2f",
+    SEED: "966f1910bbffe20fa18c4cee56ff61dcbb069348e2929bfda74e029a9dc0ec58",
 }
 
 AUTHORIZATION_FIELDS = {
@@ -384,6 +403,181 @@ def g77_evidence_virtfs_argument(argv: list[str]) -> str:
     return matches[0]
 
 
+def guest_harness_virtfs_argument(argv: list[str]) -> str:
+    """Return the single read-only operation-local guest harness export."""
+
+    matches: list[str] = []
+    for index, argument in enumerate(argv):
+        if argument != "-virtfs":
+            continue
+        if index + 1 >= len(argv):
+            raise RuntimeError("QEMU -virtfs argument missing")
+        candidate = argv[index + 1]
+        fields = candidate.split(",")
+        if not fields or fields[0] != "local":
+            continue
+        options: dict[str, str] = {}
+        flags: set[str] = set()
+        for field in fields[1:]:
+            if "=" in field:
+                key, value = field.split("=", 1)
+                if key in options:
+                    raise RuntimeError("QEMU local -virtfs option ambiguous")
+                options[key] = value
+            else:
+                if field in flags:
+                    raise RuntimeError("QEMU local -virtfs flag ambiguous")
+                flags.add(field)
+        if options.get("mount_tag") == fresh_context.GUEST_HARNESS_MOUNT_TAG:
+            if (
+                set(options)
+                != {"path", "mount_tag", "security_model", "readonly"}
+                or options.get("readonly") != "on"
+                or flags
+            ):
+                raise RuntimeError("guest harness QEMU export options are not exact")
+            matches.append(candidate)
+    if len(matches) != 1:
+        raise RuntimeError("guest harness QEMU export missing or ambiguous")
+    return matches[0]
+
+
+def fc_guest_consumer_path(repository_root: Path, prefix: str) -> str:
+    """Authenticate and derive the specialized FC/ER adapter open path."""
+
+    source_path = repository_root / FK_ADAPTER
+    if sha256_path(source_path) != FK_ADAPTER_SHA256:
+        raise RuntimeError("committed FK-hardened FC adapter identity mismatch")
+    tree = ast.parse(source_path.read_text(encoding="utf-8"), filename=str(source_path))
+    paths: list[str] = []
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Assign) or len(node.targets) != 1:
+            continue
+        target = node.targets[0]
+        value = node.value
+        if (
+            isinstance(target, ast.Attribute)
+            and target.attr == "EN_HARNESS_PATH"
+            and isinstance(value, ast.Call)
+            and isinstance(value.func, ast.Name)
+            and value.func.id == "Path"
+            and len(value.args) == 1
+            and isinstance(value.args[0], ast.Constant)
+            and isinstance(value.args[0].value, str)
+            and not value.keywords
+        ):
+            paths.append(value.args[0].value)
+    if paths != [
+        "/mnt/dp-harness/G77_256FC_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py"
+    ]:
+        raise RuntimeError("FC guest adapter consumer path missing or ambiguous")
+    fresh_context._validate_prefix(prefix)
+    return paths[0].replace("G77_256FC", prefix)
+
+
+def prove_guest_adapter_binding(
+    repository_root: Path,
+    context: dict[str, Any],
+) -> dict[str, Any]:
+    """Prove source, projection, QEMU exposure, bootstrap, and consumer identity."""
+
+    fresh_context.validate_context(context, repository_root=repository_root)
+    binding = context["guest_adapter_binding"]
+    source = repository_root / binding["source_path"]
+    projection_root = Path(binding["projection_root"])
+    projected = Path(binding["projected_path"])
+    bootstrap = Path(binding["bootstrap_projected_path"])
+    if source.is_symlink() or not source.is_file():
+        raise RuntimeError("adapter source absent or unsafe")
+    source_sha = sha256_path(source)
+    if source_sha != binding["source_sha256"]:
+        raise RuntimeError("adapter source SHA-256 mismatch")
+    if projection_root.is_symlink() or not projection_root.is_dir():
+        raise RuntimeError("adapter projection root absent or unsafe")
+    expected_entries = {projected, bootstrap}
+    if set(projection_root.iterdir()) != expected_entries:
+        raise RuntimeError("adapter projection stale, duplicate, or ambiguous")
+    for path in expected_entries:
+        if path.is_symlink() or not path.is_file():
+            raise RuntimeError("adapter projection entry absent or unsafe")
+        if sha256_path(path) != source_sha or path.read_bytes() != source.read_bytes():
+            raise RuntimeError("adapter source/projected exact bytes differ")
+
+    qemu_argument = guest_harness_virtfs_argument(context["canonical_argv"])
+    expected_argument = (
+        f"local,path={projection_root},"
+        f"mount_tag={fresh_context.GUEST_HARNESS_MOUNT_TAG},"
+        "security_model=none,readonly=on"
+    )
+    if qemu_argument != expected_argument:
+        raise RuntimeError("adapter projection/QEMU mount binding mismatch")
+
+    cloud_init = repository_root / CLOUD_INIT
+    if sha256_path(cloud_init) != context["wrapper_fc_er_che_schema_hashes"]["cloud_init"]:
+        raise RuntimeError("cloud-init source identity mismatch")
+    cloud_text = cloud_init.read_text(encoding="utf-8")
+    mount_literal = (
+        f"{fresh_context.GUEST_HARNESS_MOUNT_TAG} "
+        f"{fresh_context.GUEST_HARNESS_ROOT}"
+    )
+    if cloud_text.count(mount_literal) != 1:
+        raise RuntimeError("cloud-init guest harness mount missing or ambiguous")
+    if cloud_text.count(binding["bootstrap_guest_path"]) != 1:
+        raise RuntimeError("cloud-init adapter bootstrap consumer mismatch")
+    seed = Path(
+        context["qemu_executable_base_seed_checkout_bindings"]["seed"]["path"]
+    )
+    seed_sha = sha256_path(seed)
+    if seed_sha != context["qemu_executable_base_seed_checkout_bindings"]["seed"]["sha256"]:
+        raise RuntimeError("NoCloud seed SHA-256 mismatch")
+    seed_sources = {
+        "/user-data": cloud_init,
+        "/meta-data": repository_root / CLOUD_INIT_META_DATA,
+        "/network-config": repository_root / CLOUD_INIT_NETWORK_CONFIG,
+    }
+    for member, source_path in seed_sources.items():
+        try:
+            projected_bytes = subprocess.check_output(
+                ["isoinfo", "-i", str(seed), "-R", "-x", member],
+                stderr=subprocess.DEVNULL,
+            )
+        except (FileNotFoundError, subprocess.CalledProcessError) as exc:
+            raise RuntimeError("NoCloud seed static source projection unavailable") from exc
+        if projected_bytes != source_path.read_bytes():
+            raise RuntimeError(f"NoCloud seed {member} source bytes differ")
+    command_bindings = (
+        binding["bootstrap_guest_path"],
+        binding["source_sha256"],
+        context["wrapper_fc_er_che_schema_hashes"]["raw_evidence_schema"],
+        context["qemu_executable_base_seed_checkout_bindings"]["checkout"]["head"],
+        context["qemu_executable_base_seed_checkout_bindings"]["checkout"]["tree"],
+        sha256_path(repository_root / DN_HARNESS),
+    )
+    if any(cloud_text.count(value) != 1 for value in command_bindings):
+        raise RuntimeError("cloud-init pre-request argument binding missing or ambiguous")
+
+    consumer_path = fc_guest_consumer_path(
+        repository_root, context["identity_namespace_prefix"]
+    )
+    if consumer_path != binding["guest_path"]:
+        raise RuntimeError("projected adapter and guest consumer path differ")
+    return {
+        "result": "PREAUTHORITY_GUEST_ADAPTER_BINDING_PASS",
+        "adapter_identity": binding["adapter_identity"],
+        "source_path": binding["source_path"],
+        "source_sha256": source_sha,
+        "projected_path": str(projected),
+        "projected_sha256": sha256_path(projected),
+        "guest_path": binding["guest_path"],
+        "guest_consumer_path": consumer_path,
+        "qemu_virtfs_argument": qemu_argument,
+        "nocloud_seed_sha256": seed_sha,
+        "nocloud_source_projection_identity": "PASS",
+        "source_projected_byte_identity": "PASS",
+        "stale_generation_alias": "ABSENT_AS_DYNAMIC_SUBSTITUTE",
+    }
+
+
 def prove_visibility_composition(
     *,
     repository_root: Path,
@@ -629,6 +823,7 @@ def context_asset_expectations(
     candidate_key = CANDIDATE if candidate_source_path is None else candidate_source_path.as_posix()
     if Path(candidate_key).is_absolute() or ".." in Path(candidate_key).parts:
         raise RuntimeError("candidate asset key must be repository-relative")
+    checkout_root = Path(bindings["checkout"]["path"])
     return {
         candidate_key: context["candidate_manifest_sha256"],
         WRAPPER: hashes["wrapper"],
@@ -636,6 +831,11 @@ def context_asset_expectations(
         FK_ADAPTER: hashes["fc_fk_adapter"],
         CANONICAL_CHE: hashes["canonical_che"],
         CANONICALIZER: hashes["canonicalizer"],
+        RAW_EVIDENCE_SCHEMA: hashes["raw_evidence_schema"],
+        DN_HARNESS: "4e5d01699796d4bb451818408f7cd6a080b6d55fde518df8a9dd2acd3f1a73bb",
+        str(checkout_root / ER_HARNESS_RELATIVE): hashes["er_harness"],
+        str(checkout_root / FK_ADAPTER): hashes["fc_fk_adapter"],
+        str(checkout_root / CANONICAL_CHE): hashes["canonical_che"],
         bindings["qemu_executable"]["path"]: bindings["qemu_executable"]["sha256"],
         bindings["base"]["path"]: bindings["base"]["sha256"],
         bindings["seed"]["path"]: bindings["seed"]["sha256"],
@@ -659,7 +859,7 @@ def validate_immutable_context_bindings(
         "canonical_che": "75801995214e81419aab9a02326499c771ec0039658fb49598aa54bd033e13c5",
         "raw_evidence_schema": "95ca9b753b2e4256b6530652d5a6e2a8220fed68c52f774928e1e39721f4ca67",
         "canonicalizer": CANONICALIZER_SHA256,
-        "cloud_init": "5593e4491ce10e1efffe6584284d234f9d11bbbc8383acbafd5a83a294eaacd9",
+        "cloud_init": CLOUD_INIT_SHA256,
     }
     if hashes != expected_hashes:
         raise RuntimeError("context immutable wrapper/FC/ER/CHE/schema binding mismatch")
@@ -911,7 +1111,7 @@ def build_operation_context(
         "canonical_che": "75801995214e81419aab9a02326499c771ec0039658fb49598aa54bd033e13c5",
         "raw_evidence_schema": "95ca9b753b2e4256b6530652d5a6e2a8220fed68c52f774928e1e39721f4ca67",
         "canonicalizer": CANONICALIZER_SHA256,
-        "cloud_init": "5593e4491ce10e1efffe6584284d234f9d11bbbc8383acbafd5a83a294eaacd9",
+        "cloud_init": CLOUD_INIT_SHA256,
     }
     bindings = {
         "qemu_executable": {"path": "/usr/bin/qemu-system-x86_64", "sha256": QEMU_EXECUTABLE_SHA256},
@@ -965,6 +1165,13 @@ def materialize_operation_state(
             raise RuntimeError(f"fresh materialization parent absent or unsafe: {root.parent}")
         root.mkdir(mode=0o700, parents=False, exist_ok=False)
     runtime_export.mkdir(mode=0o700, parents=False, exist_ok=False)
+    adapter_binding = context["guest_adapter_binding"]
+    adapter_projection_root = Path(adapter_binding["projection_root"])
+    adapter_projection_root.mkdir(mode=0o700, parents=False, exist_ok=False)
+    adapter_source = repository_root / adapter_binding["source_path"]
+    adapter_bytes = adapter_source.read_bytes()
+    Path(adapter_binding["projected_path"]).write_bytes(adapter_bytes)
+    Path(adapter_binding["bootstrap_projected_path"]).write_bytes(adapter_bytes)
     _, candidate = resolve_candidate_source(repository_root, candidate_source_path)
     runtime_manifest = Path(context["runtime_manifest_path"])
     runtime_manifest.write_bytes(candidate.read_bytes())
@@ -988,6 +1195,9 @@ def materialize_operation_state(
         "transient_root": str(transient_root),
         "runtime_manifest_sha256": sha256_path(runtime_manifest),
         "context_projection_sha256": sha256_path(context_projection),
+        "adapter_projection_sha256": sha256_path(
+            Path(adapter_binding["projected_path"])
+        ),
         "overlay_materialized": True,
         "qemu_execution_count": 0,
     }
@@ -1077,6 +1287,7 @@ def authority_free_static_readiness(
         candidate_source_path=Path(candidate_relative),
     )
     checkout = validate_checkout_preboot_readiness(context)
+    adapter = prove_guest_adapter_binding(repository_root, context)
     reduction = {
         "result": "STATIC_READINESS_PASS",
         "phase": "AUTHORITY_FREE_STATIC_READINESS",
@@ -1086,6 +1297,7 @@ def authority_free_static_readiness(
         "qemu_execution_count": 0,
         "complete_freshness_closure": freshness,
         "preboot_visibility": visibility,
+        "guest_adapter_binding": adapter,
         "checkout_readiness": checkout,
         "one_launcher_route": True,
         "one_qemu_call_site": True,

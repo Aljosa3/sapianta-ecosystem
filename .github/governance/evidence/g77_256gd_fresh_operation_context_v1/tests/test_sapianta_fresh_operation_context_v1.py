@@ -273,6 +273,11 @@ class FreshContextNegativeTests(unittest.TestCase):
             symlinked["post_receipt_path"] = str(alias / "receipts" / f"{PREFIX}_POST_EXECUTED_QEMU_ARGV_RECEIPT_V1.json")
             symlinked["runtime_export_root"] = str(alias / "runtime_export")
             symlinked["runtime_manifest_path"] = str(alias / "runtime_export" / f"{PREFIX}_CONTINUATION_MANIFEST_V1.json")
+            symlinked["guest_adapter_binding"] = LAUNCHER.fresh_context.derive_guest_adapter_binding(
+                PREFIX,
+                alias,
+                symlinked["wrapper_fc_er_che_schema_hashes"]["wrapper"],
+            )
             argv = symlinked["canonical_argv"]
             symlinked["canonical_argv"] = [item.replace(str(root / "operation"), str(alias)) for item in argv]
             symlinked["canonical_argv_sha256"] = LAUNCHER.fresh_context.argv_sha256(symlinked["canonical_argv"])
@@ -288,7 +293,7 @@ class FreshContextNegativeTests(unittest.TestCase):
                 serial_path=Path(overlap["serial_path"]),
                 seed_path=Path(overlap["qemu_executable_base_seed_checkout_bindings"]["seed"]["path"]),
                 checkout_path=Path(overlap["qemu_executable_base_seed_checkout_bindings"]["checkout"]["path"]),
-                wrapper_host_root=REPOSITORY_ROOT / ".github/governance/evidence/g77_256fm_wrong_attempt_preboot_v1/harness",
+                wrapper_host_root=Path(overlap["guest_adapter_binding"]["projection_root"]),
                 dn_harness_host_root=REPOSITORY_ROOT / ".github/governance/evidence/g77_256dn_p03_diagnostic_v1/harness",
                 runtime_export_root=Path(overlap["runtime_export_root"]),
             )
@@ -470,10 +475,10 @@ class StaticArchitectureProofTests(unittest.TestCase):
             ".github/governance/evidence/g77_256gd_fresh_operation_context_v1/"
             "binding_operation/runtime_export"
         )
-        context = LAUNCHER.fresh_context.load_context(
-            operation_root / LAUNCHER.fresh_context.GUEST_CONTEXT_FILENAME,
-            repository_root=REPOSITORY_ROOT,
+        context = json.loads(
+            (operation_root / LAUNCHER.fresh_context.GUEST_CONTEXT_FILENAME).read_bytes()
         )
+        self.assertNotIn("guest_adapter_binding", context)
         fixture_path = REPOSITORY_ROOT / (
             ".github/governance/evidence/g77_256gd_fresh_operation_context_v1/bindings/"
             "G77_256GD_EE_CONTEXT_PATH_PROJECTION_FIXTURE_V1.py"

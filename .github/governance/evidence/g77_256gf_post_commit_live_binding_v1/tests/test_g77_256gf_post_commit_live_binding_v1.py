@@ -84,12 +84,20 @@ def live_binding():
 
 
 def commit_corrected_checkpoint(clone: Path, parent: str) -> str:
-    for relative in (GF.LAUNCHER_PATH, BINDING_PATH.relative_to(REPO_ROOT)):
+    corrected_paths = (
+        GF.LAUNCHER_PATH,
+        Path(".github/governance/evidence/g77_256fm_wrong_attempt_preboot_v1/launcher/sapianta_fresh_operation_context_v1.py"),
+        GF.BUILDER_PATH,
+        Path(".github/governance/evidence/g77_256fm_wrong_attempt_preboot_v1/raw/G77_256FM_CLOUD_INIT_USER_DATA_V1.yaml"),
+        Path(".github/governance/evidence/g77_256gh_guest_adapter_path_binding_v1/static/SAPIANTA_WRONG_ATTEMPT_NOCLOUD_SEED_V1.img"),
+        BINDING_PATH.relative_to(REPO_ROOT),
+    )
+    for relative in corrected_paths:
         target = clone / relative
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(REPO_ROOT / relative, target)
     git(clone, "read-tree", parent)
-    for relative in (GF.LAUNCHER_PATH, BINDING_PATH.relative_to(REPO_ROOT)):
+    for relative in corrected_paths:
         blob = git(clone, "hash-object", "-w", relative.as_posix())
         git(
             clone,

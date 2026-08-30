@@ -12,6 +12,38 @@
     "context_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
     "generation_identity": {"pattern": "^G77_256[A-Z0-9]{2,32}_[A-Z0-9_]+$", "type": "string"},
     "guest_context_path": {"const": "/mnt/g77-evidence/SAPIANTA_FRESH_OPERATION_CONTEXT_V1.json"},
+    "guest_adapter_binding": {
+      "additionalProperties": false,
+      "properties": {
+        "adapter_identity": {"pattern": "^G77_256[A-Z0-9]{2,32}_WRONG_ATTEMPT_VECTOR_ADAPTER_V1\\.py$", "type": "string"},
+        "bootstrap_guest_path": {"const": "/mnt/dp-harness/G77_256FM_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py"},
+        "bootstrap_identity": {"const": "G77_256FM_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py"},
+        "bootstrap_projected_path": {"type": "string"},
+        "guest_mount_root": {"const": "/mnt/dp-harness"},
+        "guest_path": {"type": "string"},
+        "mount_tag": {"const": "fm_harness"},
+        "projected_path": {"type": "string"},
+        "projection_root": {"type": "string"},
+        "read_only": {"const": true},
+        "source_path": {"const": ".github/governance/evidence/g77_256fm_wrong_attempt_preboot_v1/harness/G77_256FM_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py"},
+        "source_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"}
+      },
+      "required": [
+        "source_path",
+        "source_sha256",
+        "adapter_identity",
+        "projection_root",
+        "projected_path",
+        "guest_path",
+        "bootstrap_identity",
+        "bootstrap_projected_path",
+        "bootstrap_guest_path",
+        "mount_tag",
+        "guest_mount_root",
+        "read_only"
+      ],
+      "type": "object"
+    },
     "guest_fixture_root": {"type": "string"},
     "guest_output_relative_paths": {
       "items": {"pattern": "^[A-Z0-9_]+\\.(json|jsonl)$", "type": "string"},
@@ -58,6 +90,7 @@
     "runtime_export_root",
     "runtime_manifest_path",
     "guest_context_path",
+    "guest_adapter_binding",
     "guest_output_relative_paths",
     "guest_fixture_root",
     "canonical_argv",

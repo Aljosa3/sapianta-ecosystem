@@ -1,0 +1,130 @@
+{
+  "schema_id": "G77_256GH_STATIC_BINDING_CLOSURE_V1",
+  "artifact_class": "REPOSITORY_STATIC_EVIDENCE__NON_AUTHORITY__NON_OPERATIONAL",
+  "entry_checkpoint": {
+    "head": "406311f7d89bb315b7c02b12c28cccfd8e1d6f6b",
+    "tree": "4e3efde5e845f863d108c946c4f205e1a25ffefe",
+    "remote_head": "406311f7d89bb315b7c02b12c28cccfd8e1d6f6b",
+    "stable_ancestry_anchor": "5c972e9960987ab27420395b54ace693df097e7b",
+    "nested_immutable_authority": "3183bab71f8f30397c0309dd2e6d846d14a11f66"
+  },
+  "gg_authentication": {
+    "terminal_evidence_sha256": "de2fe0de96705064c3fd218e5644d1dac0a7e26be471e98987bedd94797b8bad",
+    "g48_report_sha256": "2cde00dad8fd4fc2cbe7bc5e84c17581263a2058793667b915415a23db60eb3f",
+    "first_failure": "FileNotFoundError: [Errno 2] No such file or directory: '/mnt/dp-harness/G77_256GG_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py'",
+    "first_broken_edge": "GG_DYNAMIC_IDENTITY_NAMESPACE_TO_GUEST_DP_HARNESS_ADAPTER_PATH",
+    "authority_consumed": true,
+    "rerun_allowed": false
+  },
+  "root_cause": {
+    "classifications": [
+      "C_MISSING_HOST_MATERIALIZATION",
+      "D_MISSING_RUNTIME_PROJECTION"
+    ],
+    "deterministic_chain": [
+      "context.identity_namespace_prefix",
+      "prefix + _WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py",
+      "existing FM context-aware wrapper source",
+      "operation-local guest_harness materialization",
+      "fm_harness read-only QEMU 9p export",
+      "/mnt/dp-harness mount",
+      "FC-specialized ER EN_HARNESS_PATH open/hash call"
+    ],
+    "gg_failure_mechanism": "The GG context and FC specialization derived the GG adapter consumer path, but the committed static readiness path exported only the repository FM harness directory and did not materialize or validate the derived GG filename before authority.",
+    "coupled_static_gap": "The committed NoCloud user-data supplied the pre-GD wrapper SHA-256 b7d8f5b3478d7cfff2cadce7e36b3a12c9b4a1ac5054da867668086f84e866d7 instead of the context-aware source SHA-256 f2808a148bc9839f083ea9e59903674fe0dcd2a7587eee342fca44066ee9ad2b."
+  },
+  "owners": {
+    "source_owner": ".github/governance/evidence/g77_256fm_wrong_attempt_preboot_v1/harness/G77_256FM_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py",
+    "binding_owner": ".github/governance/evidence/g77_256fm_wrong_attempt_preboot_v1/launcher/sapianta_fresh_operation_context_v1.py",
+    "projection_owner": ".github/governance/evidence/g77_256fm_wrong_attempt_preboot_v1/launcher/G77_256FM_ONE_SHOT_QEMU_LAUNCHER_V1.py::materialize_operation_state",
+    "guest_consumer_owner": ".github/governance/evidence/g77_256fc_wrong_attempt_operational_v1/harness/G77_256FC_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py::configure -> G77_256ER_P11_OPERATIONAL_HARNESS_V1.py::main",
+    "static_validation_owner": ".github/governance/evidence/g77_256fm_wrong_attempt_preboot_v1/launcher/G77_256FM_ONE_SHOT_QEMU_LAUNCHER_V1.py::authority_free_static_readiness"
+  },
+  "corrected_source_identities": {
+    "launcher_sha256": "f9c619f3b214fff1d030ef709ab3e222ea3ba670c2fa078436fac739555e8077",
+    "fresh_context_sha256": "954e4fdd6b3dfd14723dbee4c74aa3f3dc3d22d92f4a513dc9e87076d34482c8",
+    "adapter_source_sha256": "f2808a148bc9839f083ea9e59903674fe0dcd2a7587eee342fca44066ee9ad2b",
+    "cloud_init_user_data_sha256": "3a4c989de77abec366ec5587b038a7341e71aac916d9cd9c7deba424f4a275ec",
+    "context_schema_sha256": "0ce61b20fc66acb4b08ada77e48aed3ba57deb754f53867049dec6663495eabc",
+    "candidate_builder_sha256": "5f0529226ec366c8c06caf19d7b7d19f89ed0751ed0c0521fe80c11ee7d906da",
+    "gf_live_binding_owner_sha256": "7c70c02f074b3ba34392cfc4f480b28527c5600dc19606e87adc86423c6c138a",
+    "nocloud_seed_sha256": "966f1910bbffe20fa18c4cee56ff61dcbb069348e2929bfda74e029a9dc0ec58"
+  },
+  "generalization": {
+    "synthetic_namespaces": [
+      "G77_256GHSYNTHA",
+      "G77_256GHSYNTHB"
+    ],
+    "positive_result": "2_OF_2_PASS",
+    "negative_classes_fail_closed": [
+      "missing_adapter_source",
+      "wrong_adapter_filename",
+      "wrong_dynamic_prefix",
+      "wrong_projected_filename",
+      "wrong_projected_bytes",
+      "wrong_source_sha",
+      "wrong_guest_path",
+      "stale_generation_alias",
+      "historical_mutable_projection_reuse",
+      "path_traversal_or_namespace_escape",
+      "duplicate_or_ambiguous_adapter",
+      "projection_consumer_path_mismatch",
+      "projection_exact_bytes_mismatch",
+      "context_adapter_identity_mismatch",
+      "qemu_projection_not_read_only"
+    ]
+  },
+  "systematic_review": {
+    "all_deterministic_guest_pre_request_bindings_enumerated": true,
+    "no_known_hidden_pre_request_static_binding_remains": "VERIFIED_WITHIN_EXACT_HASHED_ACTIVE_SOURCE_CLOSURE",
+    "result": "COMPLETE__COUPLED_WRAPPER_SHA_GAP_CORRECTED_WITHIN_SAME_OWNER_SET",
+    "reviewed_bindings": [
+      "NoCloud user-data/meta-data/network-config source-to-seed byte identity",
+      "checkout QEMU export to /mnt/aigol with exact clean detached HEAD/TREE and read-only state",
+      "ER, FC, CHE active checkout source hashes",
+      "operation-local adapter source/projection/bootstrap/derived consumer paths and bytes",
+      "DN harness source/hash/QEMU export to /mnt/g77-harness",
+      "runtime context and continuation manifest projection to /mnt/g77-evidence",
+      "raw schema and cloud-init bootstrap arguments",
+      "fresh output sinks, fixture root, request producer, and immediate pre-P11 handoff identities"
+    ]
+  },
+  "ex_reuse": {
+    "certificate_sha256": "91c477171147c56516c0f473ab887c12173c4bab225f2733c274b32467824b2f",
+    "seal_sha256": "46115a7627264793af5e289abe85565fcaaf8a381b009e185c35ebc3d4b8a543",
+    "reused": 17,
+    "reconstructed": 0
+  },
+  "architecture_counters": {
+    "new_launchers": 0,
+    "new_production_routes": 0,
+    "new_authorization_models": 0,
+    "new_receipt_subsystems": 0,
+    "new_validator_architectures": 0,
+    "parallel_execution_flows": 0,
+    "production_route_delta": 0
+  },
+  "operational_counters": {
+    "human_operational_authorization_count": 0,
+    "governed_launcher_activations": 0,
+    "qemu_execution_count": 0,
+    "vm_boot_count": 0,
+    "wrong_attempt_execution_count": 0,
+    "request_count": 0,
+    "p11_entry_count": 0,
+    "protected_invocation_count": 0,
+    "protected_effect_count": 0,
+    "pre_count": 0,
+    "post_count": 0,
+    "retry_count": 0,
+    "repair_execution_count": 0,
+    "replay_execution_count": 0
+  },
+  "e05_before": "6/18",
+  "e05_after": "6/18",
+  "candidate_semantics_changed": false,
+  "candidate_binding_regeneration_required": true,
+  "checkpoint_is_authority": false,
+  "auto_continuable": false,
+  "human_review_required": true
+}
