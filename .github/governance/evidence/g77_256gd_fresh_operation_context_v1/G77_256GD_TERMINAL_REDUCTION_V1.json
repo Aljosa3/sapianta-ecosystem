@@ -1,0 +1,100 @@
+{
+  "reduction": {
+    "artifact_class": "TERMINAL_REPOSITORY_ONLY_NON_AUTHORITY_NON_OPERATIONAL",
+    "auto_continuable": false,
+    "base_head": "7196cfe3f285ced74e0d353bac609881553d857a",
+    "base_tree": "ac4c1f08737b30f16706f8bddb23a0d8ee62180f",
+    "candidate_state": {
+      "binding_regeneration": "PASS",
+      "candidate_sha256": "8af5ba1cbf9e396aa2f4f981a6f20b821c5fd1c38e091ed1cb3646c76c953b4a",
+      "semantic_rebuild": false,
+      "semantics": "UNCHANGED"
+    },
+    "constitutional_health": {
+      "du": "PASS__UNCHANGED_OWNER",
+      "e05_after": "6/18",
+      "e05_before": "6/18",
+      "eb": "PASS__UNCHANGED_OWNER",
+      "ee": "PASS__UNCHANGED_OWNER",
+      "ex_reconstructed": 0,
+      "ex_regressions": "12/12_PASS",
+      "ex_reused": "17/17",
+      "governance_conformance": "CONFORMANT__20/20__ZERO_WARNINGS__ZERO_VIOLATIONS",
+      "production_route_delta": 0
+    },
+    "execution_counters": {
+      "authorized_operational_attempts": 0,
+      "governed_launcher_activations": 0,
+      "human_operational_authorization_count": 0,
+      "p11_entry_count": 0,
+      "protected_effect_count": 0,
+      "protected_invocation_count": 0,
+      "qemu_execution_count": 0,
+      "repair_execution_count": 0,
+      "replay_execution_count": 0,
+      "request_count": 0,
+      "retry_count": 0,
+      "vm_boot_count": 0,
+      "wrong_attempt_execution_count": 0
+    },
+    "generation_identity": "G77-256GD",
+    "human_review_required": true,
+    "implementation_status": {
+      "authority_free_static_readiness": "VERIFIED",
+      "complete_freshness_closure": "VERIFIED",
+      "context_aware_existing_wrapper": "VERIFIED",
+      "existing_owner_reuse": "VERIFIED",
+      "new_authorization_models": 0,
+      "new_launchers": 0,
+      "new_production_routes": 0,
+      "new_receipt_subsystems": 0,
+      "new_validator_architectures": 0,
+      "sapianta_fresh_operation_context_v1": "IMPLEMENTED_AND_VERIFIED",
+      "token_derivation_39_unique_41_occurrences": "VERIFIED"
+    },
+    "index_state": "EMPTY",
+    "operational_proof_yield": "NOT_MEASURED__NOT_APPLICABLE__ZERO_OPERATIONAL_ATTEMPTS_REQUIRED",
+    "recorded_at_utc": "2026-08-30T12:19:57Z",
+    "report_and_evidence_bindings": {
+      "g48_report": {
+        "path": "docs/governance/G77_256GD_ONE_BOUNDED_IMPLEMENTATION_OF_SAPIANTA_FRESH_OPERATION_CONTEXT_WITH_CONTEXT_AWARE_EXISTING_OWNER_AND_BINDING_REVALIDATION_V1.md",
+        "sha256": "b991bef20a3a0beadae8f58a72a3b1fcbd92240584750d18b4d23716dcea7e35"
+      },
+      "implementation_checkpoint": {
+        "path": ".github/governance/evidence/g77_256gd_fresh_operation_context_v1/G77_256GD_IMPLEMENTATION_AND_BINDING_CHECKPOINT_V1.json",
+        "sha256": "073ac0b9386cdf6c76e95f1d5804d4af2055905b487882b2bfbdfd4a2acfafc8"
+      },
+      "spce_clrec_checkpoint": {
+        "path": ".github/governance/evidence/g77_256gd_fresh_operation_context_v1/G77_256GD_SPCE_CLREC_INTRA_TASK_CONTINUATION_CHECKPOINT_V1.json",
+        "sha256": "07bd2e5449958c8ac3368d2c0442f145b5ba60892a0af67f51c826d7d5f3b060"
+      },
+      "static_validation_reduction": {
+        "path": ".github/governance/evidence/g77_256gd_fresh_operation_context_v1/G77_256GD_STATIC_VALIDATION_REDUCTION_V1.json",
+        "sha256": "07e0f8df7f8f73af808ab0fa409df0debe1628c3f54baa288b142a4966d23413"
+      }
+    },
+    "repository_state": {
+      "commit_created": false,
+      "index_empty": true,
+      "intended_mutations_unstaged": true,
+      "push_performed": false
+    },
+    "schema_id": "G77_256GD_TERMINAL_REDUCTION_V1",
+    "test_and_validation_state": {
+      "canonical_seals": "PASS",
+      "candidate_reproducibility": "PASS",
+      "du": "PASS_ALL_FOUR_GATES",
+      "eb": "PASS_ALL_SEVEN_CHECKS",
+      "ee": "PASS_ALL_NINE_CHECKS",
+      "ex": "12/12_PASS__17_CERTIFIED",
+      "focused_and_governance_tests": "85_PASS",
+      "g48_structure": "PASS__SIX_TOP_LEVEL__SEVEN_CODE_EVIDENCE_SUBSECTIONS__TERMINAL_VERDICT",
+      "git_diff_check": "PASS",
+      "governance_engine": "CONFORMANT__20/20",
+      "json_unique_keys": "PASS"
+    },
+    "verdict": "PASS__G77_256GD_SAPIANTA_FRESH_OPERATION_CONTEXT_V1_IMPLEMENTED_THROUGH_EXISTING_OWNER__CONTEXT_AWARE_EXISTING_WRAPPER__COMPLETE_PREAUTHORIZATION_FRESHNESS_CLOSURE__AUTHORITY_FREE_STATIC_READINESS_VERIFIED__CANDIDATE_BINDINGS_REGENERATED_AND_DU_EB_EE_REVALIDATED__NO_QEMU__NO_OPERATIONAL_AUTHORIZATION__PRODUCTION_ROUTE_DELTA_ZERO__E05_REMAINS_6_OF_18__HUMAN_REVIEW_REQUIRED"
+  },
+  "reduction_inner_sha256": "8e323211589e99f933839ce1af304675f25667118d6911afc74753394683ab92",
+  "schema_id": "G77_256GD_TERMINAL_REDUCTION_ENVELOPE_V1"
+}

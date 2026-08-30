@@ -1,0 +1,131 @@
+{
+  "artifact_type": "SPCE_CLREC_INTRA_TASK_CONTINUATION_CHECKPOINT_V1",
+  "recorded_at_utc": "2026-08-30T12:09:00Z",
+  "task": "G77-256GD",
+  "generation_identity": "G77-256GD",
+  "continuation_classification": "SAME_GENERATION__INTERRUPTED_TASK_CONTINUATION",
+  "resource_reauthentication": {
+    "five_hour_remaining_percent": 96,
+    "seven_day_remaining_percent": 99,
+    "context_remaining": "NOT_MEASURED__PRODUCT_TELEMETRY_UNAVAILABLE",
+    "context_state_assessment": "SUFFICIENT_TO_CONTINUE_FROM_PRESERVED_CHECKPOINT",
+    "rate_limit_reached": false
+  },
+  "base_head": "7196cfe3f285ced74e0d353bac609881553d857a",
+  "base_tree": "ac4c1f08737b30f16706f8bddb23a0d8ee62180f",
+  "base_subject": "G77-256GC derive fresh operation context correction contract",
+  "branch": "g77-256fl-wrong-attempt-preboot-blocker",
+  "remote_head": "7196cfe3f285ced74e0d353bac609881553d857a",
+  "no_new_commit_verified": true,
+  "no_push_verified_by_remote_head": true,
+  "index_state": "EMPTY",
+  "current_worktree_mutation_set": {
+    "created_files": [
+      ".github/governance/evidence/g77_256fm_wrong_attempt_preboot_v1/launcher/sapianta_fresh_operation_context_v1.py",
+      ".github/governance/evidence/g77_256gd_fresh_operation_context_v1/SAPIANTA_FRESH_OPERATION_CONTEXT_V1.schema.json",
+      ".github/governance/evidence/g77_256gd_fresh_operation_context_v1/binding_operation/runtime_export/G77_256GDVALID01_CONTINUATION_MANIFEST_V1.json",
+      ".github/governance/evidence/g77_256gd_fresh_operation_context_v1/binding_operation/runtime_export/SAPIANTA_FRESH_OPERATION_CONTEXT_V1.json",
+      ".github/governance/evidence/g77_256gd_fresh_operation_context_v1/bindings/G77_256GD_CANDIDATE_BOUND_EB_RECEIPT_V1.json",
+      ".github/governance/evidence/g77_256gd_fresh_operation_context_v1/bindings/G77_256GD_EE_CONTEXT_PATH_PROJECTION_FIXTURE_V1.py",
+      ".github/governance/evidence/g77_256gd_fresh_operation_context_v1/bindings/G77_256GD_RUNTIME_CONSUMER_EE_RECEIPT_V1.json",
+      ".github/governance/evidence/g77_256gd_fresh_operation_context_v1/builder/G77_256GD_CANDIDATE_BINDING_REISSUE_V1.py",
+      ".github/governance/evidence/g77_256gd_fresh_operation_context_v1/builder/G77_256GD_EE_CONTEXT_PROJECTION_FIXTURE_BUILDER_V1.py",
+      ".github/governance/evidence/g77_256gd_fresh_operation_context_v1/candidate/G77_256GD_CANONICAL_CONTINUATION_MANIFEST_BINDING_REISSUE_V1.json",
+      ".github/governance/evidence/g77_256gd_fresh_operation_context_v1/runtime/G77_256GD_CANONICAL_CONTINUATION_MANIFEST_RUNTIME_PROJECTION_V1.json",
+      ".github/governance/evidence/g77_256gd_fresh_operation_context_v1/tests/test_sapianta_fresh_operation_context_v1.py"
+    ],
+    "modified_files": [
+      ".github/governance/evidence/g77_256fm_wrong_attempt_preboot_v1/harness/G77_256FM_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py",
+      ".github/governance/evidence/g77_256fm_wrong_attempt_preboot_v1/launcher/G77_256FM_ONE_SHOT_QEMU_LAUNCHER_V1.py",
+      ".github/governance/evidence/g77_256fo_launcher_authority_binding_v1/tests/test_g77_256fo_execution_admission_v1.py",
+      ".github/governance/evidence/g77_256fy_runtime_export_preboot_visibility_v1/tests/test_g77_256fy_preboot_visibility_v1.py",
+      ".github/governance/evidence/g77_256ga_receipt_namespace_durability_v1/tests/test_g77_256ga_receipt_parent_preflight_v1.py"
+    ],
+    "deleted_files": []
+  },
+  "completed_spce_phases": [
+    "SPCE-A_THROUGH_SPCE-L__IMPLEMENTATION_SURFACES_CONSTRUCTED",
+    "SPCE-M__CANDIDATE_BINDING_REISSUE_CONSTRUCTED",
+    "ENTRY_AUTHENTICATION",
+    "NESTED_AUTHORITY_AUTHENTICATION",
+    "GC_ACTIVE_SOURCE_CLOSURE_AUTHENTICATION"
+  ],
+  "partially_completed_spce_phase": "SPCE-N__DU_EB_EE_REVALIDATION__EE_IS_FIRST_UNRESOLVED_FRONTIER",
+  "not_started_spce_phases": [
+    "SPCE-O__COMPLETE_STATIC_POSITIVE_MATRIX_REDUCTION",
+    "SPCE-P__COMPLETE_STATIC_NEGATIVE_MATRIX_REDUCTION",
+    "SPCE-Q__FINAL_AST_AND_CALL_ORDER_PROOF",
+    "SPCE-R__FINAL_HISTORICAL_IMMUTABILITY_REDUCTION",
+    "SPCE-S__FINAL_PRODUCTION_ROUTE_CONTROL_REDUCTION",
+    "SPCE-T__FINAL_OPERATIONAL_PROHIBITION_REDUCTION",
+    "G48_FINAL_EVIDENCE_AND_REPORTING"
+  ],
+  "verified_implementation_facts": [
+    "SAPIANTA_FRESH_OPERATION_CONTEXT_V1_IMPLEMENTATION_EXISTS",
+    "EXISTING_FM_LAUNCHER_IS_CONTEXT_AWARE",
+    "EXISTING_FM_WRAPPER_IS_CONTEXT_AWARE",
+    "AUTHORITY_FREE_READINESS_EXISTS_BEFORE_AUTHORITY_LOAD",
+    "PRE_SOLE_QEMU_POST_ORDERING_IS_PRESERVED_STATICALLY",
+    "NO_FY_FALLBACK_IS_INTENDED_IN_GOVERNED_MAIN",
+    "GA_FY_FO_REGRESSION_CONTRACTS_REQUIRE_CONTEXT",
+    "CANDIDATE_BINDING_REISSUE_EXISTS",
+    "CANDIDATE_SEMANTIC_NORMALIZATION_TEST_PASSED",
+    "UNCHANGED_EE_VALIDATOR_SHA256_IS_5e4b35b3c7e7e23e5b7209c5f56e8a70055eac9a3deef32bc288b210e80f9410",
+    "EE_CONTEXT_PATH_PROJECTION_FIXTURE_IS_CLASSIFIED_TEST_ONLY_NON_EXECUTABLE_NON_AUTHORITY_NON_OPERATIONAL"
+  ],
+  "verified_test_results": [
+    "PRIOR_FOCUSED_GD_GA_FY_FO_RUN__24_PASSED",
+    "PRIOR_DU_REVALIDATION__PASS_ALL_FOUR_GATES",
+    "PRIOR_EB_GENERATION__PASS_ALL_FOUR_GATES",
+    "PRIOR_UNCHANGED_EX_REVALIDATION_AFTER_EE_REVERT__12_OF_12_PASS__17_CERTIFIED"
+  ],
+  "failed_test_results": [
+    "ABANDONED_EE_VALIDATOR_MUTATION_WAS_CORRECTLY_REJECTED_BY_UNCHANGED_EX_AS_COMPONENT_HASH_MISMATCH__EE_RECEIPT_VALIDATOR"
+  ],
+  "abandoned_approaches": [
+    {
+      "approach": "MODIFY_EXISTING_EE_VALIDATOR_TO_READ_CONTEXT_DYNAMICALLY",
+      "functional_result": "EE_FUNCTIONAL_VALIDATION_PASSED",
+      "constitutional_result": "REJECTED_BY_UNCHANGED_EX_DUE_TO_EE_VALIDATOR_BYTE_CHANGE",
+      "resolution": "EE_VALIDATOR_RESTORED_BYTE_EXACT_AND_APPROACH_MUST_NOT_BE_REPEATED",
+      "violated_requirement": "EX_REUSED_17_OF_17__EX_RECONSTRUCTED_0"
+    }
+  ],
+  "current_open_problem": "VERIFY_EE_BINDING_WITH_UNCHANGED_EE_OWNER_AND_TEST_ONLY_NON_EXECUTABLE_NON_AUTHORITY_CONTEXT_PATH_PROJECTION_FIXTURE_WHILE_PRESERVING_EX_17_OF_17",
+  "next_legal_action": "REVALIDATE_EX_DU_EB_AND_THEN_EE_WITH_UNCHANGED_OWNERS__RESOLVE_EE_FIRST_UNRESOLVED_FRONTIER",
+  "constitutional_invariants": [
+    "CERTIFIED_NE_AUTHORIZED",
+    "CERTIFIED_PLUS_NO_VALID_AUTHORIZATION_IMPLIES_NO_PROTECTED_PRODUCTION_EFFECT",
+    "NO_PROTECTED_MACHINE_EFFECT_WITHOUT_VALID_P11_AUTHORITY",
+    "NO_WORKER_BYPASS_AROUND_CONSTITUTIONAL_ENFORCEMENT",
+    "PROVIDER_CAPABILITY_NE_EXECUTION_AUTHORITY",
+    "REQUEST_NE_ENTRY_NE_INVOCATION_NE_EFFECT",
+    "EX_REUSED_17_OF_17",
+    "EX_RECONSTRUCTED_0",
+    "PRODUCTION_ROUTE_DELTA_0",
+    "E05_REMAINS_6_OF_18"
+  ],
+  "prohibited_actions": [
+    "QEMU_OR_VM_BOOT",
+    "HUMAN_OPERATIONAL_AUTHORIZATION_CREATION_OR_CONSUMPTION",
+    "RETRY_REPAIR_AND_RERUN_OR_REPLAY_OF_OPERATIONAL_ATTEMPT",
+    "SECOND_LAUNCHER_OR_PARALLEL_EXECUTION_ROUTE",
+    "SECOND_AUTHORIZATION_MODEL_OR_RECEIPT_SUBSYSTEM",
+    "NEW_VALIDATOR_ARCHITECTURE",
+    "MODIFICATION_OF_EE_VALIDATOR_BYTES",
+    "GIT_ADD_COMMIT_PUSH_RESET_CLEAN_STASH_CHECKOUT_OR_DISCARD_OF_GD_MUTATIONS"
+  ],
+  "ex_state": "REAUTHENTICATION_REQUIRED_AFTER_CHECKPOINT__LAST_RESULT_12_OF_12_PASS__17_CERTIFIED__17_REUSED__0_RECONSTRUCTED",
+  "du_state": "REAUTHENTICATION_REQUIRED_AFTER_CHECKPOINT__LAST_RESULT_PASS",
+  "eb_state": "REAUTHENTICATION_REQUIRED_AFTER_CHECKPOINT__LAST_RESULT_PASS",
+  "ee_state": "ACTIVE_UNRESOLVED_BINDING_FRONTIER__UNCHANGED_OWNER_PLUS_PROJECTION_FIXTURE_MUST_BE_VERIFIED",
+  "candidate_binding_state": "REISSUED_FOR_CONTEXT_AWARE_WRAPPER_HASH__SEMANTIC_NORMALIZATION_PREVIOUSLY_PASS__CURRENT_SHA256_8af5ba1cbf9e396aa2f4f981a6f20b821c5fd1c38e091ed1cb3646c76c953b4a",
+  "e05_state": "6_OF_18__NO_CREDIT_PERMITTED",
+  "qemu_count": 0,
+  "authorization_count": 0,
+  "retry_count": 0,
+  "repair_count": 0,
+  "replay_count": 0,
+  "auto_continuable": false,
+  "human_review_required": true
+}

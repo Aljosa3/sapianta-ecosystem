@@ -1,0 +1,91 @@
+{
+  "checkpoint": {
+    "artifact_class": "REPOSITORY_ONLY_NON_AUTHORITY_NON_OPERATIONAL",
+    "auto_continuable": false,
+    "base_head": "7196cfe3f285ced74e0d353bac609881553d857a",
+    "base_tree": "ac4c1f08737b30f16706f8bddb23a0d8ee62180f",
+    "binding_state": {
+      "candidate_binding_regeneration": "PASS",
+      "candidate_semantics": "UNCHANGED",
+      "du_owner_reused": true,
+      "du_revalidated": "PASS",
+      "eb_owner_reused": true,
+      "eb_revalidated": "PASS",
+      "ee_owner_reused": true,
+      "ee_revalidated": "PASS",
+      "ee_validator_modified": false,
+      "ex_reconstructed": 0,
+      "ex_reused": "17/17"
+    },
+    "bindings": {
+      "candidate_manifest": {
+        "path": ".github/governance/evidence/g77_256gd_fresh_operation_context_v1/candidate/G77_256GD_CANONICAL_CONTINUATION_MANIFEST_BINDING_REISSUE_V1.json",
+        "sha256": "8af5ba1cbf9e396aa2f4f981a6f20b821c5fd1c38e091ed1cb3646c76c953b4a"
+      },
+      "context_implementation": {
+        "path": ".github/governance/evidence/g77_256fm_wrong_attempt_preboot_v1/launcher/sapianta_fresh_operation_context_v1.py",
+        "sha256": "35a335537f9b0014f2278357281f95f2800328f197cebd24e0116615749b0bb4"
+      },
+      "eb_receipt": {
+        "path": ".github/governance/evidence/g77_256gd_fresh_operation_context_v1/bindings/G77_256GD_CANDIDATE_BOUND_EB_RECEIPT_V1.json",
+        "sha256": "4ac5e349eb6224bbabf92b0b981bd04f1d0996ee0ea37ab3fd611d9ceed5efdf"
+      },
+      "ee_projection_fixture": {
+        "classification": "TEST_ONLY_NON_EXECUTABLE_NON_AUTHORITY_NON_OPERATIONAL",
+        "path": ".github/governance/evidence/g77_256gd_fresh_operation_context_v1/bindings/G77_256GD_EE_CONTEXT_PATH_PROJECTION_FIXTURE_V1.py",
+        "sha256": "5e3bf60ecc269605827a1534dd9c1aea8d399f7ac22574427bee46e5cd988e43"
+      },
+      "ee_receipt": {
+        "path": ".github/governance/evidence/g77_256gd_fresh_operation_context_v1/bindings/G77_256GD_RUNTIME_CONSUMER_EE_RECEIPT_V1.json",
+        "sha256": "531305fd22d9a42998790ac623912ef9f379289c0ea6a323580f58ebe9ffc17d"
+      },
+      "ee_validator_unchanged": {
+        "path": ".github/governance/evidence/g77_256ee_runtime_consumer_binding_v1/validator/G77_256EE_RUNTIME_CONSUMER_BINDING_VALIDATOR_V1.py",
+        "sha256": "5e4b35b3c7e7e23e5b7209c5f56e8a70055eac9a3deef32bc288b210e80f9410"
+      },
+      "existing_fm_launcher": {
+        "path": ".github/governance/evidence/g77_256fm_wrong_attempt_preboot_v1/launcher/G77_256FM_ONE_SHOT_QEMU_LAUNCHER_V1.py",
+        "sha256": "22ed2631bf30bb8411ff2b522e6f590587aef4bd16044949aac466dcfff96a04"
+      },
+      "existing_fm_wrapper": {
+        "path": ".github/governance/evidence/g77_256fm_wrong_attempt_preboot_v1/harness/G77_256FM_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py",
+        "sha256": "f2808a148bc9839f083ea9e59903674fe0dcd2a7587eee342fca44066ee9ad2b"
+      }
+    },
+    "constitutional_counters": {
+      "authorization_count": 0,
+      "e05_after": "6/18",
+      "e05_before": "6/18",
+      "entry_count": 0,
+      "invocation_count": 0,
+      "launcher_activation_count": 0,
+      "protected_effect_count": 0,
+      "qemu_count": 0,
+      "repair_count": 0,
+      "replay_count": 0,
+      "request_count": 0,
+      "retry_count": 0,
+      "vm_boot_count": 0
+    },
+    "generation_identity": "G77-256GD",
+    "human_review_required": true,
+    "implementation_state": {
+      "authority_free_static_readiness": "IMPLEMENTED_AND_TESTED",
+      "canonical_context": "IMPLEMENTED_AND_SEALED",
+      "complete_preauthorization_freshness_closure": "IMPLEMENTED_AND_TESTED",
+      "context_aware_39_token_wrapper_specialization": "IMPLEMENTED_AND_TESTED",
+      "context_aware_canonical_argv": "IMPLEMENTED_AND_TESTED",
+      "final_context_and_static_state_reobservation": "IMPLEMENTED_AND_TESTED",
+      "new_authorization_models": 0,
+      "new_launchers": 0,
+      "new_production_routes": 0,
+      "new_receipt_subsystems": 0,
+      "new_validator_architectures": 0,
+      "production_route_delta": 0
+    },
+    "recorded_at_utc": "2026-08-30T12:14:34Z",
+    "schema_id": "G77_256GD_IMPLEMENTATION_AND_BINDING_CHECKPOINT_V1"
+  },
+  "checkpoint_inner_sha256": "fd4041f9176f817bff888906d4d3f37c9da484eea01dea47a9312ea59bda5c14",
+  "schema_id": "G77_256GD_IMPLEMENTATION_AND_BINDING_CHECKPOINT_ENVELOPE_V1"
+}

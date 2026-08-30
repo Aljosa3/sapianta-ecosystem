@@ -19,9 +19,13 @@ from typing import Any
 
 
 sys.dont_write_bytecode = True
-GENERATION_IDENTITY = "G77_256FY_CLASS_A_RUNTIME_EXPORT_PREBOOT_VISIBILITY_COMPOSITION_CORRECTION_V1"
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import sapianta_fresh_operation_context_v1 as fresh_context
+
+
+GENERATION_IDENTITY = "CONTEXT_REQUIRED__NO_HISTORICAL_FY_FALLBACK"
 CONSTITUTIONAL_ANCHOR_HEAD = "5c972e9960987ab27420395b54ace693df097e7b"
-CANDIDATE_SHA256 = "a28d2c6d903ed0abafd6fecdc1979f763de4c79127018655370975d52fc05fb4"
+CANDIDATE_SHA256 = "8af5ba1cbf9e396aa2f4f981a6f20b821c5fd1c38e091ed1cb3646c76c953b4a"
 MATERIALIZATION_SHA256 = "bad42f1361aac5e45a773242fb6a00445282f8d996ad592d15d363019eaa6baf"
 MATERIALIZATION_INNER_SHA256 = "e0452f63fbbf0cc890623b63a273973914852c7e24dad11b5b95f5ed0159a1d5"
 CANONICAL_ARGV_SHA256 = "40a0c1382725a68f33beb0a351e2661cec5c1851041b4fb1058626a1d1da818e"
@@ -39,14 +43,17 @@ EXECUTION_SEAL = f"{RUNTIME_EXPORT}/G77_256FM_GUEST_EXECUTION_SEAL_V1.json"
 TEARDOWN_SEAL = f"{RUNTIME_EXPORT}/G77_256FM_GUEST_TEARDOWN_SEAL_V1.json"
 CANONICALIZER = ".github/governance/evidence/g77_256er_p11_operational_v1/qemu_vector/G77_256ER_CANONICAL_QEMU_ARGV_V1.py"
 CANONICALIZER_SHA256 = "00b2676f1c8360d7c1a3188095520f4592639e174f6b25e198e3036744d948ac"
-AUTHORITY_SCHEMA = "G77_256FY_EXECUTION_TIME_HUMAN_OPERATIONAL_AUTHORIZATION_HANDOFF_V1"
-AUTHORIZATION_SCHEMA = "G77_256FY_FRESH_HUMAN_OPERATIONAL_AUTHORIZATION_V1"
+AUTHORITY_SCHEMA = "SAPIANTA_CONTEXT_BOUND_HUMAN_OPERATIONAL_AUTHORIZATION_HANDOFF_V1"
+AUTHORIZATION_SCHEMA = "SAPIANTA_CONTEXT_BOUND_FRESH_HUMAN_OPERATIONAL_AUTHORIZATION_V1"
 FO_REPOSITORY_ONLY_AUTHORIZATION_SHA256 = "84054b9a8840dd58450e4f0aa5b13e38f07a09a52c27b86c67b36eabcd9833f4"
 FN_SPENT_AUTHORIZATION_SHA256 = "0fb64caf25be6abac9c0c1b8071e52527447163f4b1a72c2b1508dc9f5de9658"
 HEX_40 = re.compile(r"^[0-9a-f]{40}$")
 HEX_64 = re.compile(r"^[0-9a-f]{64}$")
 
-CANDIDATE = f"{FM_ROOT}/raw/G77_256FM_CANONICAL_CONTINUATION_MANIFEST_PRE_MATERIALIZATION_V1.json"
+CANDIDATE = (
+    ".github/governance/evidence/g77_256gd_fresh_operation_context_v1/candidate/"
+    "G77_256GD_CANONICAL_CONTINUATION_MANIFEST_BINDING_REISSUE_V1.json"
+)
 MATERIALIZATION = f"{FY_ROOT}/G77_256FY_RUNTIME_EXPORT_PREBOOT_COMPOSITION_V1.json"
 WRAPPER = f"{FM_ROOT}/harness/G77_256FM_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py"
 CLOUD_INIT = f"{FM_ROOT}/raw/G77_256FM_CLOUD_INIT_USER_DATA_V1.yaml"
@@ -55,6 +62,10 @@ CANONICAL_CHE = "aigol/runtime/canonical_che_evidence_correlation_contract_v1.py
 BASE_IMAGE = "/tmp/g77_256cw.IkqZJN/noble-server-cloudimg-amd64.img"
 OVERLAY = "/tmp/g77_256fy/guest-overlay.qcow2"
 SEED = "/tmp/g77_256fy/nocloud-seed.img"
+CHECKOUT = "/tmp/g77_256fm/checkout"
+CHECKOUT_HEAD = "7dce67ec18696ba0bad73130f3f7a84168f25277"
+CHECKOUT_TREE = "3cb61ec34e9593efb711dce61014dc8fdf0f6dd9"
+QEMU_EXECUTABLE_SHA256 = "8a35ccba41582fc6c38b9df85fc9e35fa1d42f414d2d7d8090ee9b2f5e7c0854"
 
 MOUNT_TAG = "g77_evidence"
 GUEST_MOUNT_ROOT = "/mnt/g77-evidence"
@@ -89,13 +100,14 @@ AUTHORIZATION_FIELDS = {
     "authorization_present",
     "authorization_kind",
     "authorization_source_sha256",
+    "authorized_context_sha256",
+    "authorized_operation_identity",
     "authorized_generation_identity",
     "authorized_vector",
     "authorized_repository_head",
     "authorized_repository_tree",
     "authorized_constitutional_anchor_head",
     "authorized_candidate_sha256",
-    "authorized_materialization_sha256",
     "authorized_canonical_argv_sha256",
     "authorized_wrapper_sha256",
     "authorized_fk_adapter_sha256",
@@ -126,54 +138,51 @@ def sha256_path(path: Path) -> str:
     return digest.hexdigest()
 
 
-def receipt_namespace_paths(repository_root: Path) -> tuple[Path, Path, Path]:
-    """Resolve the one exact receipt parent without following substitutions."""
+def receipt_namespace_paths(
+    repository_root: Path,
+    context: dict[str, Any],
+) -> tuple[Path, Path, Path]:
+    """Resolve only the receipt namespace declared by a validated context."""
 
-    root = repository_root
-    if not root.is_absolute() or root.is_symlink() or not root.is_dir():
-        raise RuntimeError("repository root absent, relative, symlinked, or non-directory")
-    relative_pre = Path(PRE_RECEIPT)
-    relative_post = Path(POST_RECEIPT)
-    expected_parent = Path(FY_ROOT) / "receipts"
-    for relative in (relative_pre, relative_post, expected_parent):
-        if relative.is_absolute() or ".." in relative.parts:
-            raise RuntimeError("receipt namespace path is absolute or traverses its root")
-    if relative_pre.parent != expected_parent or relative_post.parent != expected_parent:
-        raise RuntimeError("receipt files do not share the exact expected parent")
-
-    cursor = root
-    for part in Path(FY_ROOT).parts:
-        cursor = cursor / part
-        if cursor.is_symlink():
-            raise RuntimeError("receipt evidence root contains a symlink substitution")
-    evidence_root = root / FY_ROOT
-    if not evidence_root.is_dir():
-        raise RuntimeError("receipt evidence root absent or non-directory")
-    if evidence_root.resolve() != (root.resolve() / FY_ROOT):
-        raise RuntimeError("receipt evidence root resolves outside its exact identity")
-    return root / expected_parent, root / relative_pre, root / relative_post
+    fresh_context.validate_context(context, repository_root=repository_root)
+    parent = Path(context["receipt_parent"])
+    pre_receipt = Path(context["pre_receipt_path"])
+    post_receipt = Path(context["post_receipt_path"])
+    operation_root = Path(context["operation_evidence_root"])
+    if parent != operation_root / "receipts":
+        raise RuntimeError("context receipt parent is not canonically derived")
+    if pre_receipt.parent != parent or post_receipt.parent != parent:
+        raise RuntimeError("context receipt paths escape their exact parent")
+    if operation_root.is_symlink() or not operation_root.is_dir():
+        raise RuntimeError("context operation evidence root absent or unsafe")
+    if parent.is_symlink() or pre_receipt.is_symlink() or post_receipt.is_symlink():
+        raise RuntimeError("receipt namespace symlink substitution prohibited")
+    return parent, pre_receipt, post_receipt
 
 
-def receipt_consumable_paths(repository_root: Path) -> tuple[Path, ...]:
-    parent, pre_receipt, post_receipt = receipt_namespace_paths(repository_root)
+def receipt_consumable_paths(
+    repository_root: Path,
+    context: dict[str, Any],
+) -> tuple[Path, ...]:
+    parent, pre_receipt, post_receipt = receipt_namespace_paths(repository_root, context)
     del parent
-    return (
-        pre_receipt,
-        post_receipt,
-        repository_root / RAW_EXECUTION,
-        repository_root / EXECUTION_SEAL,
-        repository_root / TEARDOWN_SEAL,
-    )
+    complete = fresh_context.complete_mutable_sink_paths(context)
+    if complete[:2] != (pre_receipt, post_receipt):
+        raise RuntimeError("complete sink set receipt binding mismatch")
+    return complete
 
 
-def validate_receipt_parent_ready(repository_root: Path) -> dict[str, Any]:
+def validate_receipt_parent_ready(
+    repository_root: Path,
+    context: dict[str, Any],
+) -> dict[str, Any]:
     """Read-only proof that the durable receipt parent and namespace are fresh."""
 
-    parent, pre_receipt, post_receipt = receipt_namespace_paths(repository_root)
+    parent, pre_receipt, post_receipt = receipt_namespace_paths(repository_root, context)
     if parent.is_symlink() or not parent.is_dir():
         raise RuntimeError("durable receipt parent absent, symlinked, or non-directory")
-    if parent.resolve() != ((repository_root / FY_ROOT).resolve() / "receipts"):
-        raise RuntimeError("durable receipt parent resolves outside the evidence root")
+    if parent.resolve() != (Path(context["operation_evidence_root"]).resolve() / "receipts"):
+        raise RuntimeError("durable receipt parent resolves outside the context evidence root")
 
     flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0)
     directory = os.open(parent, flags)
@@ -183,7 +192,7 @@ def validate_receipt_parent_ready(repository_root: Path) -> dict[str, Any]:
 
     receipt_files_absent = not pre_receipt.exists() and not post_receipt.exists()
     guest_outputs_absent = not any(
-        path.exists() for path in receipt_consumable_paths(repository_root)[2:]
+        path.exists() for path in receipt_consumable_paths(repository_root, context)[2:]
     )
     parent_empty = next(parent.iterdir(), None) is None
     if not receipt_files_absent:
@@ -201,11 +210,14 @@ def validate_receipt_parent_ready(repository_root: Path) -> dict[str, Any]:
     }
 
 
-def prepare_receipt_parent(repository_root: Path) -> dict[str, Any]:
+def prepare_receipt_parent(
+    repository_root: Path,
+    context: dict[str, Any],
+) -> dict[str, Any]:
     """Materialize and durability-probe only the exact fresh receipt parent."""
 
-    parent, _, _ = receipt_namespace_paths(repository_root)
-    if any(path.exists() for path in receipt_consumable_paths(repository_root)):
+    parent, _, _ = receipt_namespace_paths(repository_root, context)
+    if any(path.exists() for path in receipt_consumable_paths(repository_root, context)):
         raise RuntimeError("consumed receipt or guest evidence namespace cannot be prepared")
     if parent.is_symlink():
         raise RuntimeError("durable receipt parent symlink prohibited")
@@ -231,7 +243,7 @@ def prepare_receipt_parent(repository_root: Path) -> dict[str, Any]:
         os.fsync(directory)
     finally:
         os.close(directory)
-    return validate_receipt_parent_ready(repository_root)
+    return validate_receipt_parent_ready(repository_root, context)
 
 
 def write_atomic(path: Path, value: dict[str, Any]) -> str:
@@ -451,7 +463,7 @@ def prove_visibility_composition(
     }
 
 
-def validate_preboot_visibility(
+def _validate_historical_fy_preboot_visibility(
     repository_root: Path,
     argv: list[str],
     canonical_argv_sha256: str,
@@ -525,8 +537,119 @@ def validate_preboot_visibility(
     return result
 
 
+def validate_preboot_visibility(
+    repository_root: Path,
+    context: dict[str, Any],
+    argv: list[str],
+    canonical_argv_sha256: str,
+) -> dict[str, Any]:
+    """FY visibility semantics applied only to context-declared fresh paths."""
+
+    fresh_context.validate_context(context, repository_root=repository_root)
+    if argv != context["canonical_argv"]:
+        raise RuntimeError("context canonical argv instance mismatch")
+    if canonical_argv_sha256 != context["canonical_argv_sha256"]:
+        raise RuntimeError("context canonical argv digest mismatch")
+    qemu_argument = g77_evidence_virtfs_argument(argv)
+    export_root = Path(context["runtime_export_root"])
+    expected_argument = (
+        f"local,path={export_root},mount_tag={MOUNT_TAG},security_model=none"
+    )
+    if qemu_argument != expected_argument:
+        raise RuntimeError("runtime-export/virtfs context mismatch")
+    if export_root.is_symlink() or not export_root.is_dir():
+        raise RuntimeError("context runtime export absent or unsafe")
+    manifest_path = Path(context["runtime_manifest_path"])
+    if manifest_path.is_symlink() or not manifest_path.is_file():
+        raise RuntimeError("context runtime manifest projection absent or unsafe")
+    candidate_path = repository_root / CANDIDATE
+    if manifest_path.read_bytes() != candidate_path.read_bytes():
+        raise RuntimeError("certified initial manifest projection bytes mismatch")
+    manifest_sha = sha256_path(manifest_path)
+    if manifest_sha != context["candidate_manifest_sha256"]:
+        raise RuntimeError("context candidate binding mismatch")
+    context_projection = export_root / fresh_context.GUEST_CONTEXT_FILENAME
+    if context_projection.is_symlink() or not context_projection.is_file():
+        raise RuntimeError("guest operation context projection absent or unsafe")
+    projected_context = fresh_context.load_context(
+        context_projection,
+        repository_root=repository_root,
+    )
+    if projected_context != context:
+        raise RuntimeError("guest context projection mismatch")
+    return {
+        "result": "PREBOOT_VISIBILITY_COMPOSITION_PASS",
+        "host_export_root": str(export_root),
+        "guest_required_path": context["guest_context_path"],
+        "mapped_host_path": str(context_projection),
+        "manifest_sha256": manifest_sha,
+        "canonical_argv_sha256": canonical_argv_sha256,
+        "qemu_virtfs_argument": qemu_argument,
+        "composition_file_sha256": "CONTEXT_SEALED__NO_HISTORICAL_FY_FALLBACK",
+    }
+
+
 def git(repository_root: Path, *arguments: str) -> str:
     return subprocess.check_output(["git", *arguments], cwd=repository_root, text=True).strip()
+
+
+def context_asset_expectations(context: dict[str, Any]) -> dict[str, str]:
+    hashes = context["wrapper_fc_er_che_schema_hashes"]
+    bindings = context["qemu_executable_base_seed_checkout_bindings"]
+    return {
+        CANDIDATE: context["candidate_manifest_sha256"],
+        WRAPPER: hashes["wrapper"],
+        CLOUD_INIT: hashes["cloud_init"],
+        FK_ADAPTER: hashes["fc_fk_adapter"],
+        CANONICAL_CHE: hashes["canonical_che"],
+        CANONICALIZER: hashes["canonicalizer"],
+        bindings["qemu_executable"]["path"]: bindings["qemu_executable"]["sha256"],
+        bindings["base"]["path"]: bindings["base"]["sha256"],
+        bindings["seed"]["path"]: bindings["seed"]["sha256"],
+    }
+
+
+def validate_immutable_context_bindings(
+    repository_root: Path,
+    context: dict[str, Any],
+) -> None:
+    fresh_context.validate_context(context, repository_root=repository_root)
+    hashes = context["wrapper_fc_er_che_schema_hashes"]
+    expected_hashes = {
+        "wrapper": sha256_path(repository_root / WRAPPER),
+        "fc_fk_adapter": FK_ADAPTER_SHA256,
+        "er_harness": "4a2a84ff83c61bfec013b4bcd20eb16905eeb240869182edd6c0d948444bae89",
+        "canonical_che": "75801995214e81419aab9a02326499c771ec0039658fb49598aa54bd033e13c5",
+        "raw_evidence_schema": "95ca9b753b2e4256b6530652d5a6e2a8220fed68c52f774928e1e39721f4ca67",
+        "canonicalizer": CANONICALIZER_SHA256,
+        "cloud_init": "5593e4491ce10e1efffe6584284d234f9d11bbbc8383acbafd5a83a294eaacd9",
+    }
+    if hashes != expected_hashes:
+        raise RuntimeError("context immutable wrapper/FC/ER/CHE/schema binding mismatch")
+    bindings = context["qemu_executable_base_seed_checkout_bindings"]
+    expected_bindings = {
+        "qemu_executable": {"path": "/usr/bin/qemu-system-x86_64", "sha256": QEMU_EXECUTABLE_SHA256},
+        "base": {"path": BASE_IMAGE, "sha256": EXPECTED_ASSET_SHA256[BASE_IMAGE]},
+        "seed": {"path": SEED, "sha256": EXPECTED_ASSET_SHA256[SEED]},
+        "checkout": {
+            "path": CHECKOUT,
+            "head": CHECKOUT_HEAD,
+            "tree": CHECKOUT_TREE,
+            "detached": True,
+            "clean": True,
+            "read_only_mount": True,
+        },
+    }
+    if bindings != expected_bindings:
+        raise RuntimeError("context immutable QEMU/base/seed/checkout binding mismatch")
+
+
+def observe_context_assets(repository_root: Path, context: dict[str, Any]) -> dict[str, str]:
+    observations: dict[str, str] = {}
+    for path in context_asset_expectations(context):
+        target = Path(path) if Path(path).is_absolute() else repository_root / path
+        observations[path] = sha256_path(target)
+    return observations
 
 
 def authority_sha256(value: dict[str, Any]) -> str:
@@ -546,6 +669,7 @@ def load_authority(path: Path) -> tuple[dict[str, Any], str]:
 
 def validate_execution_admission(
     *,
+    context: dict[str, Any],
     authority: dict[str, Any],
     authority_file_sha256: str,
     supplied_authority_sha256: str,
@@ -559,6 +683,9 @@ def validate_execution_admission(
     receipt_namespace_consumed: bool,
 ) -> dict[str, str]:
     """Pure fail-closed admission; it performs no writes or process execution."""
+
+    if context["repository_head"] != observed_head or context["repository_tree"] != observed_tree:
+        raise RuntimeError("operation context repository binding differs from observed state")
 
     if set(authority) != {"schema_id", "authorization", "authorization_sha256"}:
         raise RuntimeError("execution authority envelope fields malformed or unknown")
@@ -583,13 +710,14 @@ def validate_execution_admission(
     expected_authorization = {
         "authorization_present": True,
         "authorization_kind": "FRESH_HUMAN_OPERATIONAL_AUTHORIZATION",
-        "authorized_generation_identity": GENERATION_IDENTITY,
+        "authorized_context_sha256": context["context_sha256"],
+        "authorized_generation_identity": context["generation_identity"],
+        "authorized_operation_identity": context["operation_identity"],
         "authorized_vector": "WRONG_ATTEMPT",
         "authorized_constitutional_anchor_head": CONSTITUTIONAL_ANCHOR_HEAD,
-        "authorized_candidate_sha256": CANDIDATE_SHA256,
-        "authorized_materialization_sha256": MATERIALIZATION_SHA256,
-        "authorized_canonical_argv_sha256": CANONICAL_ARGV_SHA256,
-        "authorized_wrapper_sha256": ADAPTER_SHA256,
+        "authorized_candidate_sha256": context["candidate_manifest_sha256"],
+        "authorized_canonical_argv_sha256": context["canonical_argv_sha256"],
+        "authorized_wrapper_sha256": context["wrapper_fc_er_che_schema_hashes"]["wrapper"],
         "authorized_fk_adapter_sha256": FK_ADAPTER_SHA256,
         "vm_boot_limit": 1,
         "qemu_system_execution_limit": 1,
@@ -619,12 +747,13 @@ def validate_execution_admission(
         raise RuntimeError("committed constitutional anchor not in repository ancestry")
     if not repository_clean:
         raise RuntimeError("repository state is not clean")
-    if set(observed_asset_sha256) != set(EXPECTED_ASSET_SHA256):
+    expected_assets = context_asset_expectations(context)
+    if set(observed_asset_sha256) != set(expected_assets):
         raise RuntimeError("asset observation set incomplete or unknown")
-    for path, expected_sha in EXPECTED_ASSET_SHA256.items():
+    for path, expected_sha in expected_assets.items():
         if observed_asset_sha256[path] != expected_sha:
             raise RuntimeError(f"exact asset binding mismatch: {path}")
-    if canonical_argv_sha256 != CANONICAL_ARGV_SHA256:
+    if canonical_argv_sha256 != context["canonical_argv_sha256"]:
         raise RuntimeError("canonical QEMU argv binding mismatch")
     if not isinstance(argv, list) or not argv or argv[0] != "/usr/bin/qemu-system-x86_64":
         raise RuntimeError("exact QEMU argv invalid")
@@ -645,6 +774,7 @@ def validate_execution_admission(
 def validate_final_admission(
     *,
     repository_root: Path,
+    context: dict[str, Any],
     authority: dict[str, Any],
     authority_file_sha256: str,
     supplied_authority_sha256: str,
@@ -659,13 +789,23 @@ def validate_final_admission(
 ) -> dict[str, str]:
     """FO final admission extended by the existing FM preboot composition gate."""
 
-    receipt_readiness = validate_receipt_parent_ready(repository_root)
+    static_readiness = authority_free_static_readiness(
+        repository_root=repository_root,
+        context=context,
+        observed_head=observed_head,
+        observed_tree=observed_tree,
+        repository_clean=repository_clean,
+        observed_asset_sha256=observed_asset_sha256,
+    )
+    receipt_readiness = validate_receipt_parent_ready(repository_root, context)
     visibility = validate_preboot_visibility(
         repository_root,
+        context,
         argv,
         canonical_argv_sha256,
     )
     admission = validate_execution_admission(
+        context=context,
         authority=authority,
         authority_file_sha256=authority_file_sha256,
         supplied_authority_sha256=supplied_authority_sha256,
@@ -688,6 +828,7 @@ def validate_final_admission(
         "guest_required_manifest_path": visibility["guest_required_path"],
         "runtime_manifest_sha256": visibility["manifest_sha256"],
         "visibility_composition_sha256": visibility["composition_file_sha256"],
+        "authority_free_static_readiness_sha256": static_readiness["readiness_sha256"],
     })
     return admission
 
@@ -698,6 +839,201 @@ def asset_observations(repository_root: Path) -> dict[str, str]:
         target = Path(path) if Path(path).is_absolute() else repository_root / path
         observations[path] = sha256_path(target)
     return observations
+
+
+def build_operation_context(
+    *,
+    repository_root: Path,
+    repository_head: str,
+    repository_tree: str,
+    generation_identity: str,
+    operation_identity: str,
+    identity_namespace_prefix: str,
+    operation_evidence_root: Path,
+    transient_root: Path,
+) -> dict[str, Any]:
+    """Build and seal one context before any Human authorization can exist."""
+
+    hashes = {
+        "wrapper": sha256_path(repository_root / WRAPPER),
+        "fc_fk_adapter": FK_ADAPTER_SHA256,
+        "er_harness": "4a2a84ff83c61bfec013b4bcd20eb16905eeb240869182edd6c0d948444bae89",
+        "canonical_che": "75801995214e81419aab9a02326499c771ec0039658fb49598aa54bd033e13c5",
+        "raw_evidence_schema": "95ca9b753b2e4256b6530652d5a6e2a8220fed68c52f774928e1e39721f4ca67",
+        "canonicalizer": CANONICALIZER_SHA256,
+        "cloud_init": "5593e4491ce10e1efffe6584284d234f9d11bbbc8383acbafd5a83a294eaacd9",
+    }
+    bindings = {
+        "qemu_executable": {"path": "/usr/bin/qemu-system-x86_64", "sha256": QEMU_EXECUTABLE_SHA256},
+        "base": {"path": BASE_IMAGE, "sha256": EXPECTED_ASSET_SHA256[BASE_IMAGE]},
+        "seed": {"path": SEED, "sha256": EXPECTED_ASSET_SHA256[SEED]},
+        "checkout": {
+            "path": CHECKOUT,
+            "head": CHECKOUT_HEAD,
+            "tree": CHECKOUT_TREE,
+            "detached": True,
+            "clean": True,
+            "read_only_mount": True,
+        },
+    }
+    return fresh_context.build_context(
+        repository_root=repository_root,
+        repository_head=repository_head,
+        repository_tree=repository_tree,
+        generation_identity=generation_identity,
+        operation_identity=operation_identity,
+        identity_namespace_prefix=identity_namespace_prefix,
+        operation_evidence_root=operation_evidence_root,
+        transient_root=transient_root,
+        candidate_manifest_sha256=sha256_path(repository_root / CANDIDATE),
+        wrapper_fc_er_che_schema_hashes=hashes,
+        qemu_executable_base_seed_checkout_bindings=bindings,
+    )
+
+
+def materialize_operation_state(
+    *,
+    repository_root: Path,
+    context: dict[str, Any],
+    context_source_path: Path,
+) -> dict[str, Any]:
+    """Explicit authority-free materialization; never called by governed main()."""
+
+    validate_immutable_context_bindings(repository_root, context)
+    fresh_context.validate_freshness(context)
+    operation_root = Path(context["operation_evidence_root"])
+    transient_root = Path(context["transient_root"])
+    runtime_export = Path(context["runtime_export_root"])
+    for root in (operation_root, transient_root):
+        if root.exists() or root.is_symlink():
+            raise RuntimeError(f"fresh materialization root collision: {root}")
+        if root.parent.is_symlink() or not root.parent.is_dir():
+            raise RuntimeError(f"fresh materialization parent absent or unsafe: {root.parent}")
+        root.mkdir(mode=0o700, parents=False, exist_ok=False)
+    runtime_export.mkdir(mode=0o700, parents=False, exist_ok=False)
+    candidate = repository_root / CANDIDATE
+    runtime_manifest = Path(context["runtime_manifest_path"])
+    runtime_manifest.write_bytes(candidate.read_bytes())
+    context_projection = runtime_export / fresh_context.GUEST_CONTEXT_FILENAME
+    context_projection.write_bytes(context_source_path.read_bytes())
+    overlay = Path(context["overlay_path"])
+    subprocess.run(
+        [
+            "qemu-img", "create", "-f", "qcow2", "-F", "qcow2",
+            "-b", BASE_IMAGE, str(overlay),
+        ],
+        check=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    if overlay.is_symlink() or not overlay.is_file():
+        raise RuntimeError("fresh overlay materialization failed")
+    return {
+        "result": "FRESH_OPERATION_STATE_MATERIALIZED_WITHOUT_QEMU",
+        "operation_evidence_root": str(operation_root),
+        "transient_root": str(transient_root),
+        "runtime_manifest_sha256": sha256_path(runtime_manifest),
+        "context_projection_sha256": sha256_path(context_projection),
+        "overlay_materialized": True,
+        "qemu_execution_count": 0,
+    }
+
+
+def validate_checkout_preboot_readiness(context: dict[str, Any]) -> dict[str, Any]:
+    checkout = context["qemu_executable_base_seed_checkout_bindings"]["checkout"]
+    path = Path(checkout["path"])
+    if path.is_symlink() or not path.is_dir():
+        raise RuntimeError("checkout missing or symlink redirected")
+    if git(path, "rev-parse", "HEAD") != checkout["head"]:
+        raise RuntimeError("checkout wrong HEAD")
+    if git(path, "rev-parse", "HEAD^{tree}") != checkout["tree"]:
+        raise RuntimeError("checkout wrong TREE")
+    if git(path, "status", "--porcelain") != "":
+        raise RuntimeError("checkout dirty")
+    try:
+        git(path, "symbolic-ref", "-q", "HEAD")
+    except subprocess.CalledProcessError:
+        detached = True
+    else:
+        detached = False
+    if detached is not checkout["detached"]:
+        raise RuntimeError("checkout detached-mode mismatch")
+    mount_argument = next(
+        (
+            context["canonical_argv"][index + 1]
+            for index, value in enumerate(context["canonical_argv"][:-1])
+            if value == "-virtfs"
+            and "mount_tag=aigol_checkout" in context["canonical_argv"][index + 1]
+        ),
+        None,
+    )
+    if not checkout["read_only_mount"] or mount_argument is None or "readonly=on" not in mount_argument:
+        raise RuntimeError("checkout read-only certified mount contract missing")
+    return {
+        "checkout_exists": "PASS",
+        "checkout_head_tree": "PASS",
+        "checkout_clean_detached": "PASS",
+        "checkout_read_only_mount": "PASS",
+    }
+
+
+def authority_free_static_readiness(
+    *,
+    repository_root: Path,
+    context: dict[str, Any],
+    observed_head: str,
+    observed_tree: str,
+    repository_clean: bool,
+    observed_asset_sha256: dict[str, str],
+) -> dict[str, Any]:
+    """Complete static determination with zero Human authorization objects."""
+
+    validate_immutable_context_bindings(repository_root, context)
+    if context["repository_head"] != observed_head or context["repository_tree"] != observed_tree:
+        raise RuntimeError("static readiness repository HEAD/TREE mismatch")
+    if not repository_clean:
+        raise RuntimeError("static readiness repository is dirty")
+    if not constitutional_anchor_is_ancestor(repository_root):
+        raise RuntimeError("constitutional anchor is not ancestral")
+    nested = repository_root / "sapianta_system"
+    if (
+        git(nested, "rev-parse", "HEAD") != "3183bab71f8f30397c0309dd2e6d846d14a11f66"
+        or git(nested, "rev-parse", "HEAD^{tree}") != "7c32ec05efc2be43297849bc38ec8766514a523d"
+        or git(nested, "status", "--porcelain") != ""
+    ):
+        raise RuntimeError("nested immutable authority mismatch")
+    expected_assets = context_asset_expectations(context)
+    if observed_asset_sha256 != expected_assets:
+        raise RuntimeError("authority-free immutable asset or candidate binding mismatch")
+    overlay = Path(context["overlay_path"])
+    if overlay.is_symlink() or not overlay.is_file():
+        raise RuntimeError("fresh overlay readiness absent")
+    freshness = fresh_context.validate_freshness(context, overlay_materialized=True)
+    visibility = validate_preboot_visibility(
+        repository_root,
+        context,
+        context["canonical_argv"],
+        context["canonical_argv_sha256"],
+    )
+    checkout = validate_checkout_preboot_readiness(context)
+    reduction = {
+        "result": "STATIC_READINESS_PASS",
+        "phase": "AUTHORITY_FREE_STATIC_READINESS",
+        "context_sha256": context["context_sha256"],
+        "canonical_argv_sha256": context["canonical_argv_sha256"],
+        "human_operational_authorization_count": 0,
+        "qemu_execution_count": 0,
+        "complete_freshness_closure": freshness,
+        "preboot_visibility": visibility,
+        "checkout_readiness": checkout,
+        "one_launcher_route": True,
+        "one_qemu_call_site": True,
+        "automatic_retry_count": 0,
+        "repair_count": 0,
+        "replay_count": 0,
+    }
+    reduction["readiness_sha256"] = hashlib.sha256(canonical_bytes(reduction)).hexdigest()
+    return reduction
 
 
 def constitutional_anchor_is_ancestor(repository_root: Path) -> bool:
@@ -711,19 +1047,22 @@ def constitutional_anchor_is_ancestor(repository_root: Path) -> bool:
     return result.returncode == 0
 
 
-def receipt(*, phase: str, argv: list[str], digest: str, vector_sha256: str,
+def receipt(*, context: dict[str, Any], phase: str, argv: list[str], digest: str, vector_sha256: str,
             executable_sha256: str, started_ns: int, completed_ns: int | None,
             exit_status: int | None, admission: dict[str, str]) -> dict[str, Any]:
     return {
-        "schema_id": f"G77_256FY_B1_{phase}_EXECUTED_QEMU_ARGV_RECEIPT_V1",
-        "generation_identity": GENERATION_IDENTITY,
+        "schema_id": f"SAPIANTA_CONTEXT_BOUND_{phase}_EXECUTED_QEMU_ARGV_RECEIPT_V1",
+        "generation_identity": context["generation_identity"],
+        "operation_identity": context["operation_identity"],
+        "identity_namespace_prefix": context["identity_namespace_prefix"],
+        "context_sha256": context["context_sha256"],
         "authorized_repository_head": admission["authorized_repository_head"],
         "authorized_repository_tree": admission["authorized_repository_tree"],
         "constitutional_anchor_head": admission["constitutional_anchor_head"],
         "execution_authority_file_sha256": admission["execution_authority_file_sha256"],
         "human_authorization_source_sha256": admission["human_authorization_source_sha256"],
-        "candidate_sha256": CANDIDATE_SHA256,
-        "adapter_sha256": ADAPTER_SHA256,
+        "candidate_sha256": context["candidate_manifest_sha256"],
+        "adapter_sha256": context["wrapper_fc_er_che_schema_hashes"]["wrapper"],
         "canonicalizer": {
             "path": CANONICALIZER,
             "sha256": CANONICALIZER_SHA256,
@@ -750,6 +1089,8 @@ def receipt(*, phase: str, argv: list[str], digest: str, vector_sha256: str,
 
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
+    parser.add_argument("--operation-context", required=True, type=Path)
+    parser.add_argument("--operation-context-sha256", required=True)
     parser.add_argument("--execution-authority", required=True, type=Path)
     parser.add_argument("--execution-authority-sha256", required=True)
     return parser.parse_args()
@@ -758,32 +1099,87 @@ def parse_arguments() -> argparse.Namespace:
 def main() -> int:
     arguments = parse_arguments()
     repository_root = Path.cwd().resolve()
-    pre_path = repository_root / PRE_RECEIPT
-    post_path = repository_root / POST_RECEIPT
-    consumable_paths = receipt_consumable_paths(repository_root)
-    argv = json.loads((repository_root / VECTOR).read_text(encoding="utf-8"))
+    context_path = arguments.operation_context.resolve()
+    if not HEX_64.fullmatch(arguments.operation_context_sha256):
+        raise RuntimeError("supplied operation context hash malformed")
+    if sha256_path(context_path) != arguments.operation_context_sha256:
+        raise RuntimeError("operation context file hash mismatch")
+    context = fresh_context.load_context(context_path, repository_root=repository_root)
+    pre_path = Path(context["pre_receipt_path"])
+    post_path = Path(context["post_receipt_path"])
+    consumable_paths = receipt_consumable_paths(repository_root, context)
+    argv = context["canonical_argv"]
     canonicalizer = load_canonicalizer(repository_root)
     digest = canonicalizer.argv_sha256(argv)
-    vector_sha = sha256_path(repository_root / VECTOR)
+    vector_sha = hashlib.sha256(canonical_bytes(argv)).hexdigest()
+    observed_head = git(repository_root, "rev-parse", "HEAD")
+    observed_tree = git(repository_root, "rev-parse", "HEAD^{tree}")
+    repository_clean = git(
+        repository_root,
+        "status",
+        "--porcelain",
+        "--untracked-files=no",
+    ) == ""
+    observed_assets = observe_context_assets(repository_root, context)
+    authority_free_static_readiness(
+        repository_root=repository_root,
+        context=context,
+        observed_head=observed_head,
+        observed_tree=observed_tree,
+        repository_clean=repository_clean,
+        observed_asset_sha256=observed_assets,
+    )
     authority, authority_file_sha = load_authority(arguments.execution_authority.resolve())
+
+    # A later authority handoff cannot bridge stale preauthorization observations.
+    # Reload the sealed context and independently re-observe every mutable static
+    # input immediately before FO final admission and the PRE receipt boundary.
+    if sha256_path(context_path) != arguments.operation_context_sha256:
+        raise RuntimeError("operation context state drift after static readiness")
+    final_context = fresh_context.load_context(
+        context_path, repository_root=repository_root
+    )
+    if final_context != context:
+        raise RuntimeError("operation context semantic drift after static readiness")
+    final_observed_head = git(repository_root, "rev-parse", "HEAD")
+    final_observed_tree = git(repository_root, "rev-parse", "HEAD^{tree}")
+    final_repository_clean = git(
+        repository_root,
+        "status",
+        "--porcelain",
+        "--untracked-files=no",
+    ) == ""
+    final_observed_assets = observe_context_assets(repository_root, final_context)
+    final_argv = final_context["canonical_argv"]
+    final_digest = canonicalizer.argv_sha256(final_argv)
+    if (
+        final_observed_head != observed_head
+        or final_observed_tree != observed_tree
+        or final_repository_clean != repository_clean
+        or final_observed_assets != observed_assets
+        or final_argv != argv
+        or final_digest != digest
+    ):
+        raise RuntimeError("authority-free state drift before final admission")
     admission = validate_final_admission(
         repository_root=repository_root,
+        context=final_context,
         authority=authority,
         authority_file_sha256=authority_file_sha,
         supplied_authority_sha256=arguments.execution_authority_sha256,
-        observed_head=git(repository_root, "rev-parse", "HEAD"),
-        observed_tree=git(repository_root, "rev-parse", "HEAD^{tree}"),
+        observed_head=final_observed_head,
+        observed_tree=final_observed_tree,
         anchor_is_ancestor=constitutional_anchor_is_ancestor(repository_root),
-        repository_clean=git(repository_root, "status", "--porcelain") == "",
-        observed_asset_sha256=asset_observations(repository_root),
-        argv=argv,
-        canonical_argv_sha256=digest,
+        repository_clean=final_repository_clean,
+        observed_asset_sha256=final_observed_assets,
+        argv=final_argv,
+        canonical_argv_sha256=final_digest,
         receipt_namespace_consumed=any(path.exists() for path in consumable_paths),
     )
     executable_sha = sha256_path(Path(argv[0]))
     started = time.time_ns()
     write_atomic(pre_path, receipt(
-        phase="PRE", argv=argv, digest=digest, vector_sha256=vector_sha,
+        context=context, phase="PRE", argv=argv, digest=digest, vector_sha256=vector_sha,
         executable_sha256=executable_sha, started_ns=started,
         completed_ns=None, exit_status=None, admission=admission,
     ))
@@ -794,7 +1190,7 @@ def main() -> int:
     finally:
         completed = time.time_ns()
         write_atomic(post_path, receipt(
-            phase="POST", argv=argv, digest=digest, vector_sha256=vector_sha,
+            context=context, phase="POST", argv=argv, digest=digest, vector_sha256=vector_sha,
             executable_sha256=executable_sha, started_ns=started,
             completed_ns=completed, exit_status=status, admission=admission,
         ))
