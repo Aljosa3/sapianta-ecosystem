@@ -1,0 +1,96 @@
+{
+  "schema_id": "G77_256GG_SPCE_FINAL_FAIL_CLOSED_REDUCTION_ENVELOPE_V1",
+  "reduction": {
+    "schema_id": "G77_256GG_SPCE_FINAL_FAIL_CLOSED_REDUCTION_V1",
+    "recorded_at_utc": "2026-08-30T13:37:18Z",
+    "generation_identity": "G77_256GG_ONE_FRESH_HUMAN_AUTHORIZED_WRONG_ATTEMPT_OPERATIONAL_COMMISSIONING_V1",
+    "operation_identity": "G77_256GG_E05_WRONG_ATTEMPT_DENIAL_BEFORE_ENTRY_001",
+    "entry_head": "84a5f0b34ac400603051b92c923bdc4ef29cd41b",
+    "entry_tree": "60c7044897afcaf7824f5c8b6c96020dbf6b9da0",
+    "human_authority": {
+      "authorization_source_sha256": "a0f46e5beb62288af18c94c0b3b768f7c3c191c118fafc9a13fe298c82f74787",
+      "authorization_file_sha256": "773d2b5d28be9271680c662fbfa71a05aa1366a1bd976b45e14f0bc2c4c0de87",
+      "authorization_inner_sha256": "43e90a630a69b293348c6235c000ae1b8d2c83077931ff08f0760b1b288f2d30",
+      "one_shot": true,
+      "reusable": false,
+      "consumed": true
+    },
+    "execution_binding": {
+      "candidate_sha256": "f55e3fa838fd07432b8a601c0d0467ba01ddfbbdcc0884399d7f461fc46e17d2",
+      "context_sha256": "4e721a1a0e15282152583113eb05b80769f54aecd4d0b68f4b4d0374f1506d41",
+      "canonical_argv_sha256": "12a05354d4b795ee5101879f198c3dfed909df79f06d8bab9b908157751cd6e2",
+      "network": "NONE__EXACTLY_ONE_NIC_NONE",
+      "du": "PASS",
+      "eb": "PASS",
+      "ee": "PASS",
+      "post_authority_final_admission": "ADMIT_TO_BOOT_BOUNDARY_ONLY"
+    },
+    "artifacts": {
+      "pre_receipt_sha256": "0b83a3d1f83538cbaba06e51844759198e42ef3b060fe9adbd6821bebf373fcc",
+      "post_receipt_sha256": "d8629eaf5b313c7c27b3ac1d127e7f99d6f01f08c96e0d05dca2852963a99107",
+      "raw_execution_evidence_sha256": "c6718d6f88bcf36bb8b9b91142acb1e5b183e7f98298e46c0da24af88f69cfcf",
+      "terminal_manifest_sha256": "bce3e8b924876d32d7d519ab260232343d81da0e63beee15100a4b25477461a8",
+      "guest_teardown_seal_sha256": "c6485fd5b365664de8915e9a8b3ba1f08d6221bff839f6a4cf2d1fc6768624df",
+      "serial_console_sha256": "ac4f755bbb57e60066ced53934d179100f2c1b0d5fdfc6a842861cf64f946ec4",
+      "qemu_process_exit_status": 0,
+      "guest_harness_exit_status": 40,
+      "guest_teardown": "COMPLETE"
+    },
+    "first_broken_edge": "GG_DYNAMIC_IDENTITY_NAMESPACE_TO_GUEST_DP_HARNESS_ADAPTER_PATH",
+    "first_failure": "FileNotFoundError: [Errno 2] No such file or directory: '/mnt/dp-harness/G77_256GG_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py'",
+    "operational_reduction": {
+      "wrong_attempt_result": "NOT_EXECUTED__PRE_REQUEST_GUEST_ADAPTER_PATH_FAILURE",
+      "p11_result": "NOT_ENTERED",
+      "canonical_che_result": "NOT_PRODUCED",
+      "fk_terminal_result": "FAIL_CLOSED__REQUIRED_SUCCESS_EVIDENCE_MISSING",
+      "unauthorized_protected_effect": false,
+      "e05_before": "6/18",
+      "e05_after": "6/18",
+      "e05_credit": 0
+    },
+    "counters": {
+      "authorized_operational_attempts": 1,
+      "human_operational_authorization_count": 1,
+      "governed_launcher_activations": 1,
+      "qemu_execution_count": 1,
+      "vm_boot_count": 1,
+      "wrong_attempt_execution_count": 0,
+      "request_count": 0,
+      "p11_entry_count": 0,
+      "protected_invocation_count": 0,
+      "protected_effect_count": 0,
+      "pre_count": 1,
+      "post_count": 1,
+      "retry_count": 0,
+      "repair_execution_count": 0,
+      "replay_execution_count": 0
+    },
+    "architecture": {
+      "gf_generalization_result": "PARTIALLY_VERIFIED",
+      "known_gf_post_commit_binding_gap_status": "CLOSED_AND_OPERATIONALLY_SUPPORTED_THROUGH_FINAL_ADMISSION",
+      "micro_gap_loop_signal": "NEW_GUEST_ADAPTER_PATH_BINDING_GAP_ESCAPED_STATIC_READINESS",
+      "systematic_commissioning_gap_review_required": true,
+      "minimum_future_correction": "BIND_AND_STATICALLY_VERIFY_THE_EXISTING_GUEST_ADAPTER_PATH_AND_IDENTITY_BEFORE_HUMAN_AUTHORITY",
+      "new_launchers": 0,
+      "new_production_routes": 0,
+      "new_authorization_models": 0,
+      "new_receipt_subsystems": 0,
+      "new_validator_architectures": 0,
+      "production_route_delta": 0,
+      "p11_modified": false,
+      "che_modified": false,
+      "fk_modified": false
+    },
+    "terminal": {
+      "auto_continuable": false,
+      "human_review_required": true,
+      "next_legal_action": "HUMAN_REVIEW",
+      "retry_prohibited": true,
+      "repair_and_rerun_prohibited": true,
+      "replay_prohibited": true,
+      "successor_generation_prohibited": true
+    },
+    "verdict": "FAIL_CLOSED__G77_256GG_OPERATIONAL_PROOF_INCOMPLETE__NO_RETRY_REPAIR_REPLAY__E05_REMAINS_6_OF_18__HUMAN_REVIEW_REQUIRED"
+  },
+  "reduction_sha256": "36ffa27ea4eeae9411a3a70f9640d64f336cda2432486f9778bb27d9d20c700e"
+}

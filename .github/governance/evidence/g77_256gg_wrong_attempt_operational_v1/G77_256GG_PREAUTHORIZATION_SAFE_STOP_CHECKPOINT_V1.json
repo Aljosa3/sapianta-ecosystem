@@ -1,0 +1,88 @@
+{
+  "schema_id": "G77_256GG_PREAUTHORIZATION_SAFE_STOP_CHECKPOINT_ENVELOPE_V1",
+  "checkpoint": {
+    "schema_id": "G77_256GG_PREAUTHORIZATION_SAFE_STOP_CHECKPOINT_V1",
+    "recorded_at_utc": "2026-08-30T13:26:20Z",
+    "entry_head": "84a5f0b34ac400603051b92c923bdc4ef29cd41b",
+    "entry_tree": "60c7044897afcaf7824f5c8b6c96020dbf6b9da0",
+    "generation_identity": "G77_256GG_ONE_FRESH_HUMAN_AUTHORIZED_WRONG_ATTEMPT_OPERATIONAL_COMMISSIONING_V1",
+    "operation_identity": "G77_256GG_E05_WRONG_ATTEMPT_DENIAL_BEFORE_ENTRY_001",
+    "ex": {
+      "status": "PASS",
+      "regressions": "12/12 PASS",
+      "certified_components_reused": "17/17",
+      "reconstructed_components": 0
+    },
+    "gf": {
+      "status": "PASS",
+      "certified_template_path": ".github/governance/evidence/g77_256gd_fresh_operation_context_v1/candidate/G77_256GD_CANONICAL_CONTINUATION_MANIFEST_BINDING_REISSUE_V1.json",
+      "certified_template_sha256": "8af5ba1cbf9e396aa2f4f981a6f20b821c5fd1c38e091ed1cb3646c76c953b4a",
+      "certified_template_semantic_sha256": "338ca4167a7f600c74a92a75a690b688bc455fd49ec37cb31b02d735ae9e0833",
+      "candidate_semantics_changed": false,
+      "live_post_commit_applicability": "PASS"
+    },
+    "live_binding": {
+      "candidate_path": ".github/governance/evidence/g77_256gg_wrong_attempt_operational_v1/live_binding/candidate/G77_256GG_CONTINUATION_MANIFEST_V1.json",
+      "candidate_sha256": "f55e3fa838fd07432b8a601c0d0467ba01ddfbbdcc0884399d7f461fc46e17d2",
+      "context_path": ".github/governance/evidence/g77_256gg_wrong_attempt_operational_v1/live_binding/SAPIANTA_FRESH_OPERATION_CONTEXT_V1.json",
+      "context_file_sha256": "7667a6ded4797a053afcfc73b6e56acc0aab84a7e67afc690f430727376948cd",
+      "context_sha256": "4e721a1a0e15282152583113eb05b80769f54aecd4d0b68f4b4d0374f1506d41",
+      "eb_receipt_sha256": "c50f156f30562729de262b821ee6927cc0b0057866a6d43966be45cce467eebc",
+      "ee_receipt_sha256": "d237834889d0c084474ed6ddd98a29d2f38c8992ffb5fbf5f7f34d9a19f1d029",
+      "du_status": "PASS",
+      "eb_status": "PASS",
+      "ee_status": "PASS"
+    },
+    "canonical_argv": {
+      "sha256": "12a05354d4b795ee5101879f198c3dfed909df79f06d8bab9b908157751cd6e2",
+      "exactly_one_nic_none": "PASS",
+      "single_governed_launcher": "PASS",
+      "single_qemu_call_site": "PASS",
+      "provider_dependency": 0,
+      "trusted_access_dependency": 0
+    },
+    "static_readiness": {
+      "all_static_pre_qemu_preconditions": "PASS",
+      "authority_free_static_readiness_sha256": "72e28464642a889f77ea3738a39c9b9d798cab0c613ffb062ab06acdeee976a6",
+      "checkout_readiness": "PASS",
+      "immutable_asset_readiness": "PASS",
+      "freshness_closure": "PASS",
+      "complete_mutable_sink_count": 11,
+      "receipt_files_absent": true,
+      "receipt_parent_ready": true,
+      "receipt_namespace_unused": true,
+      "network_denial": "PASS",
+      "single_route_proof": "PASS",
+      "runtime_visibility": "PREBOOT_VISIBILITY_COMPOSITION_PASS",
+      "overlay_sha256": "6ea4eed169518c646774cfbe2c7b8c00646a9cdead8798f7c94c786c6b6ce8b2",
+      "overlay_qemu_img_check": "PASS",
+      "authority_artifact_absent": true
+    },
+    "counters": {
+      "authorization": 0,
+      "pre": 0,
+      "post": 0,
+      "launcher": 0,
+      "qemu": 0,
+      "vm": 0,
+      "wrong_attempt": 0,
+      "request": 0,
+      "p11_entry": 0,
+      "invocation": 0,
+      "effect": 0,
+      "retry": 0,
+      "repair": 0,
+      "replay": 0
+    },
+    "authority_boundary": {
+      "human_operational_authority_present": false,
+      "prompt_is_authority": false,
+      "certification_is_authority": false,
+      "resource_capacity_is_authority": false,
+      "next_phase_requires_fresh_human_operational_authority": true,
+      "auto_continuable": false,
+      "human_review_required": true
+    }
+  },
+  "checkpoint_sha256": "33fc75d195698cfe56359dc572fe220629494152191e24c7efaa5c3a93e235a0"
+}
