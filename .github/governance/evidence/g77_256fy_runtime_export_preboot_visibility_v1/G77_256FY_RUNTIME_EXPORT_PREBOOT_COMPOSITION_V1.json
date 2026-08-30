@@ -1,0 +1,97 @@
+{
+  "schema_id": "G77_256FY_RUNTIME_EXPORT_PREBOOT_COMPOSITION_ENVELOPE_V1",
+  "checkpoint": {
+    "schema_id": "G77_256FY_RUNTIME_EXPORT_PREBOOT_COMPOSITION_V1",
+    "generation_identity": "G77_256FY_CLASS_A_RUNTIME_EXPORT_PREBOOT_VISIBILITY_COMPOSITION_CORRECTION_V1",
+    "source_authority": {
+      "head": "5b46fce41baede9b20adecf34b9119af2da9cca8",
+      "tree": "bdfc40c8466b923e4edc23e2bbafc387d78b47b5",
+      "branch": "g77-256fl-wrong-attempt-preboot-blocker"
+    },
+    "canonical_manifest": {
+      "source_path": ".github/governance/evidence/g77_256fm_wrong_attempt_preboot_v1/runtime/G77_256FM_CONTINUATION_MANIFEST_V1.json",
+      "source_sha256": "a28d2c6d903ed0abafd6fecdc1979f763de4c79127018655370975d52fc05fb4",
+      "runtime_export_path": ".github/governance/evidence/g77_256fy_runtime_export_preboot_visibility_v1/runtime_export/G77_256FM_CONTINUATION_MANIFEST_V1.json",
+      "runtime_export_sha256": "a28d2c6d903ed0abafd6fecdc1979f763de4c79127018655370975d52fc05fb4",
+      "byte_identity": "PASS"
+    },
+    "visibility_composition": {
+      "mount_tag": "g77_evidence",
+      "host_export_root": "/home/pisarna/work/sapianta-fl/.github/governance/evidence/g77_256fy_runtime_export_preboot_visibility_v1/runtime_export",
+      "harness_relative_filename": "G77_256FM_CONTINUATION_MANIFEST_V1.json",
+      "mapped_host_path": "/home/pisarna/work/sapianta-fl/.github/governance/evidence/g77_256fy_runtime_export_preboot_visibility_v1/runtime_export/G77_256FM_CONTINUATION_MANIFEST_V1.json",
+      "guest_mount_destination": "/mnt/g77-evidence",
+      "guest_required_path": "/mnt/g77-evidence/G77_256FM_CONTINUATION_MANIFEST_V1.json",
+      "qemu_virtfs_argument": "local,path=/home/pisarna/work/sapianta-fl/.github/governance/evidence/g77_256fy_runtime_export_preboot_visibility_v1/runtime_export,mount_tag=g77_evidence,security_model=none",
+      "manifest_sha256": "a28d2c6d903ed0abafd6fecdc1979f763de4c79127018655370975d52fc05fb4"
+    },
+    "qemu_binding": {
+      "path": ".github/governance/evidence/g77_256fy_runtime_export_preboot_visibility_v1/qemu/G77_256FY_QEMU_ARGV_V1.json",
+      "file_sha256": "d4e38fb7c6510cec380a95f66352b272a91b40753b199e6ee2ea9774a4bcf4a3",
+      "canonical_argv_sha256": "40a0c1382725a68f33beb0a351e2661cec5c1851041b4fb1058626a1d1da818e",
+      "network": "NONE",
+      "qemu_execution_count": 0
+    },
+    "guest_contract": {
+      "cloud_init_path": ".github/governance/evidence/g77_256fm_wrong_attempt_preboot_v1/raw/G77_256FM_CLOUD_INIT_USER_DATA_V1.yaml",
+      "cloud_init_sha256": "5593e4491ce10e1efffe6584284d234f9d11bbbc8383acbafd5a83a294eaacd9",
+      "wrapper_path": ".github/governance/evidence/g77_256fm_wrong_attempt_preboot_v1/harness/G77_256FM_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py",
+      "wrapper_sha256": "b7d8f5b3478d7cfff2cadce7e36b3a12c9b4a1ac5054da867668086f84e866d7"
+    },
+    "physical_preparation": {
+      "base_path": "/tmp/g77_256cw.IkqZJN/noble-server-cloudimg-amd64.img",
+      "base_sha256": "6e40c07ae715f744f84af0bec76415cc1987dd115b4b8de437818561f01a3733",
+      "base_rebuilt": false,
+      "overlay_path": "/tmp/g77_256fy/guest-overlay.qcow2",
+      "overlay_sha256": "6ea4eed169518c646774cfbe2c7b8c00646a9cdead8798f7c94c786c6b6ce8b2",
+      "overlay_bytes": 196664,
+      "overlay_qemu_img_check": "PASS__ZERO_ERRORS",
+      "overlay_fresh": true,
+      "seed_path": "/tmp/g77_256fy/nocloud-seed.img",
+      "seed_sha256": "b36a1aac42f687fe3d6b71200b5b65ec93a8a6de59b7dce31d3e6bf2c3b93c2f",
+      "seed_bytes": 376832,
+      "seed_reused_byte_for_byte": true,
+      "seed_rebuild_required": false,
+      "checkout_path": "/tmp/g77_256fm/checkout",
+      "checkout_head": "7dce67ec18696ba0bad73130f3f7a84168f25277",
+      "checkout_tree": "3cb61ec34e9593efb711dce61014dc8fdf0f6dd9",
+      "checkout_mode": "DETACHED_CLEAN_READ_ONLY_REUSE"
+    },
+    "admission": {
+      "owner": "FM_MATERIALIZATION_PREBOOT_VALIDATION_PLUS_FO_FINAL_ADMISSION_COMPOSITION_GATE",
+      "launcher_path": ".github/governance/evidence/g77_256fm_wrong_attempt_preboot_v1/launcher/G77_256FM_ONE_SHOT_QEMU_LAUNCHER_V1.py",
+      "required_result": "PREBOOT_VISIBILITY_COMPOSITION_PASS",
+      "mismatch_can_reach_qemu": false,
+      "human_operational_authorization_present": false,
+      "auto_continuable": false
+    },
+    "reuse": {
+      "ex_reused": 17,
+      "ex_reconstructed": 0,
+      "du_rerun_count": 0,
+      "eb_rerun_count": 0,
+      "ee_rerun_count": 0,
+      "candidate_rebuild": false,
+      "vm_base_rebuild": false,
+      "p11_change": false,
+      "production_route_delta": 0
+    },
+    "execution_counters": {
+      "vm_boot_count": 0,
+      "qemu_execution_count": 0,
+      "wrong_attempt_execution_count": 0,
+      "request_count": 0,
+      "p11_entry_count": 0,
+      "protected_invocation_count": 0,
+      "protected_effect_count": 0,
+      "retry_count": 0,
+      "repair_execution_count": 0,
+      "replay_execution_count": 0
+    },
+    "e05_before": "6_OF_18",
+    "e05_after": "6_OF_18",
+    "checkpoint_is_authority": false,
+    "human_review_required": true
+  },
+  "checkpoint_sha256": "e0452f63fbbf0cc890623b63a273973914852c7e24dad11b5b95f5ed0159a1d5"
+}

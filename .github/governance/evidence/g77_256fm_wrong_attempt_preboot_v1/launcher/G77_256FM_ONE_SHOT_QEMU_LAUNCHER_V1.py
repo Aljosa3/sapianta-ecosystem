@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import hashlib
 import importlib.util
 import json
@@ -18,43 +19,63 @@ from typing import Any
 
 
 sys.dont_write_bytecode = True
-GENERATION_IDENTITY = "G77_256FM_FRESH_FL_FK_BOUND_WRONG_ATTEMPT_CANDIDATE_AND_PREBOOT_PREPARATION_V1"
+GENERATION_IDENTITY = "G77_256FY_CLASS_A_RUNTIME_EXPORT_PREBOOT_VISIBILITY_COMPOSITION_CORRECTION_V1"
 CONSTITUTIONAL_ANCHOR_HEAD = "5c972e9960987ab27420395b54ace693df097e7b"
 CANDIDATE_SHA256 = "a28d2c6d903ed0abafd6fecdc1979f763de4c79127018655370975d52fc05fb4"
-MATERIALIZATION_SHA256 = "ad3b2d7924c0618cfd2dae12bd6a203001c83028249d9b8a42e649382e1c62c7"
-CANONICAL_ARGV_SHA256 = "5f2de525656cf8e107aeb3d094193b3cfacf1d8b8200d86cb0c5762f94bac1d1"
+MATERIALIZATION_SHA256 = "bad42f1361aac5e45a773242fb6a00445282f8d996ad592d15d363019eaa6baf"
+MATERIALIZATION_INNER_SHA256 = "e0452f63fbbf0cc890623b63a273973914852c7e24dad11b5b95f5ed0159a1d5"
+CANONICAL_ARGV_SHA256 = "40a0c1382725a68f33beb0a351e2661cec5c1851041b4fb1058626a1d1da818e"
 ADAPTER_SHA256 = "b7d8f5b3478d7cfff2cadce7e36b3a12c9b4a1ac5054da867668086f84e866d7"
 FK_ADAPTER_SHA256 = "7ae104802f49613ca60836913d2c68269b59728bc35bb677fdb3637aaf4b84c6"
-ROOT = ".github/governance/evidence/g77_256fm_wrong_attempt_preboot_v1"
-VECTOR = f"{ROOT}/raw/G77_256FM_QEMU_ARGV_V1.json"
-PRE_RECEIPT = f"{ROOT}/raw/G77_256FM_B1_PRE_EXECUTED_QEMU_ARGV_RECEIPT_V1.json"
-POST_RECEIPT = f"{ROOT}/raw/G77_256FM_B1_EXECUTED_QEMU_ARGV_RECEIPT_V1.json"
-RAW_EXECUTION = f"{ROOT}/raw/G77_256FM_RAW_EXECUTION_EVIDENCE_V1.jsonl"
-EXECUTION_SEAL = f"{ROOT}/raw/G77_256FM_GUEST_EXECUTION_SEAL_V1.json"
-TEARDOWN_SEAL = f"{ROOT}/raw/G77_256FM_GUEST_TEARDOWN_SEAL_V1.json"
+FM_ROOT = ".github/governance/evidence/g77_256fm_wrong_attempt_preboot_v1"
+FY_ROOT = ".github/governance/evidence/g77_256fy_runtime_export_preboot_visibility_v1"
+RUNTIME_EXPORT = f"{FY_ROOT}/runtime_export"
+RUNTIME_MANIFEST = f"{RUNTIME_EXPORT}/G77_256FM_CONTINUATION_MANIFEST_V1.json"
+VECTOR = f"{FY_ROOT}/qemu/G77_256FY_QEMU_ARGV_V1.json"
+PRE_RECEIPT = f"{FY_ROOT}/receipts/G77_256FY_B1_PRE_EXECUTED_QEMU_ARGV_RECEIPT_V1.json"
+POST_RECEIPT = f"{FY_ROOT}/receipts/G77_256FY_B1_EXECUTED_QEMU_ARGV_RECEIPT_V1.json"
+RAW_EXECUTION = f"{RUNTIME_EXPORT}/G77_256FM_RAW_EXECUTION_EVIDENCE_V1.jsonl"
+EXECUTION_SEAL = f"{RUNTIME_EXPORT}/G77_256FM_GUEST_EXECUTION_SEAL_V1.json"
+TEARDOWN_SEAL = f"{RUNTIME_EXPORT}/G77_256FM_GUEST_TEARDOWN_SEAL_V1.json"
 CANONICALIZER = ".github/governance/evidence/g77_256er_p11_operational_v1/qemu_vector/G77_256ER_CANONICAL_QEMU_ARGV_V1.py"
 CANONICALIZER_SHA256 = "00b2676f1c8360d7c1a3188095520f4592639e174f6b25e198e3036744d948ac"
-AUTHORITY_SCHEMA = "G77_256FM_EXECUTION_TIME_HUMAN_OPERATIONAL_AUTHORIZATION_HANDOFF_V1"
-AUTHORIZATION_SCHEMA = "G77_256FM_FRESH_HUMAN_OPERATIONAL_AUTHORIZATION_V1"
+AUTHORITY_SCHEMA = "G77_256FY_EXECUTION_TIME_HUMAN_OPERATIONAL_AUTHORIZATION_HANDOFF_V1"
+AUTHORIZATION_SCHEMA = "G77_256FY_FRESH_HUMAN_OPERATIONAL_AUTHORIZATION_V1"
 FO_REPOSITORY_ONLY_AUTHORIZATION_SHA256 = "84054b9a8840dd58450e4f0aa5b13e38f07a09a52c27b86c67b36eabcd9833f4"
 FN_SPENT_AUTHORIZATION_SHA256 = "0fb64caf25be6abac9c0c1b8071e52527447163f4b1a72c2b1508dc9f5de9658"
 HEX_40 = re.compile(r"^[0-9a-f]{40}$")
 HEX_64 = re.compile(r"^[0-9a-f]{64}$")
 
-CANDIDATE = f"{ROOT}/raw/G77_256FM_CANONICAL_CONTINUATION_MANIFEST_PRE_MATERIALIZATION_V1.json"
-MATERIALIZATION = f"{ROOT}/G77_256FM_SPCE_PHASE_B_FRESH_MATERIALIZATION_V1.json"
-WRAPPER = f"{ROOT}/harness/G77_256FM_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py"
+CANDIDATE = f"{FM_ROOT}/raw/G77_256FM_CANONICAL_CONTINUATION_MANIFEST_PRE_MATERIALIZATION_V1.json"
+MATERIALIZATION = f"{FY_ROOT}/G77_256FY_RUNTIME_EXPORT_PREBOOT_COMPOSITION_V1.json"
+WRAPPER = f"{FM_ROOT}/harness/G77_256FM_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py"
+CLOUD_INIT = f"{FM_ROOT}/raw/G77_256FM_CLOUD_INIT_USER_DATA_V1.yaml"
 FK_ADAPTER = ".github/governance/evidence/g77_256fc_wrong_attempt_operational_v1/harness/G77_256FC_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py"
 CANONICAL_CHE = "aigol/runtime/canonical_che_evidence_correlation_contract_v1.py"
 BASE_IMAGE = "/tmp/g77_256cw.IkqZJN/noble-server-cloudimg-amd64.img"
-OVERLAY = "/tmp/g77_256fm/guest-overlay.qcow2"
-SEED = "/tmp/g77_256fm/nocloud-seed.img"
+OVERLAY = "/tmp/g77_256fy/guest-overlay.qcow2"
+SEED = "/tmp/g77_256fy/nocloud-seed.img"
+
+MOUNT_TAG = "g77_evidence"
+GUEST_MOUNT_ROOT = "/mnt/g77-evidence"
+HARNESS_RELATIVE_FILENAME = "G77_256FM_CONTINUATION_MANIFEST_V1.json"
+GUEST_REQUIRED_PATH = f"{GUEST_MOUNT_ROOT}/{HARNESS_RELATIVE_FILENAME}"
+HOST_EXPORT_ROOT = (
+    "/home/pisarna/work/sapianta-fl/"
+    ".github/governance/evidence/g77_256fy_runtime_export_preboot_visibility_v1/runtime_export"
+)
+MAPPED_HOST_PATH = f"{HOST_EXPORT_ROOT}/{HARNESS_RELATIVE_FILENAME}"
+QEMU_VIRTFS_ARGUMENT = (
+    f"local,path={HOST_EXPORT_ROOT},mount_tag={MOUNT_TAG},security_model=none"
+)
 
 EXPECTED_ASSET_SHA256 = {
     CANDIDATE: CANDIDATE_SHA256,
-    MATERIALIZATION: "53f97bf5fca9b706b7f2c86888b3fd3d2ab3a2626b9a0468207aeb642ccf490e",
-    VECTOR: "6fe66e009a0a03a2809bdfe8b7ec06162ea01cc01de9ea1f3a4249525f7014a4",
+    MATERIALIZATION: MATERIALIZATION_SHA256,
+    VECTOR: "d4e38fb7c6510cec380a95f66352b272a91b40753b199e6ee2ea9774a4bcf4a3",
+    RUNTIME_MANIFEST: CANDIDATE_SHA256,
     WRAPPER: ADAPTER_SHA256,
+    CLOUD_INIT: "5593e4491ce10e1efffe6584284d234f9d11bbbc8383acbafd5a83a294eaacd9",
     FK_ADAPTER: FK_ADAPTER_SHA256,
     CANONICAL_CHE: "75801995214e81419aab9a02326499c771ec0039658fb49598aa54bd033e13c5",
     CANONICALIZER: CANONICALIZER_SHA256,
@@ -130,6 +151,270 @@ def load_canonicalizer(repository_root: Path) -> ModuleType:
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def load_json_without_duplicate_keys(path: Path) -> tuple[dict[str, Any], bytes]:
+    raw = path.read_bytes()
+
+    def unique_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+        value: dict[str, Any] = {}
+        for key, item in pairs:
+            if key in value:
+                raise RuntimeError("JSON contains duplicate keys")
+            value[key] = item
+        return value
+
+    try:
+        value = json.loads(raw, object_pairs_hook=unique_object)
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise RuntimeError("JSON artifact malformed") from exc
+    if not isinstance(value, dict):
+        raise RuntimeError("JSON artifact root must be an object")
+    return value, raw
+
+
+def wrapper_guest_contract(wrapper_path: Path) -> tuple[str, str]:
+    """Read the existing FM static declarations without importing guest code."""
+
+    tree = ast.parse(wrapper_path.read_text(encoding="utf-8"), filename=str(wrapper_path))
+    raw_roots: list[str] = []
+    relative_names: list[str] = []
+    for node in tree.body:
+        if not isinstance(node, ast.Assign) or len(node.targets) != 1:
+            continue
+        target = node.targets[0]
+        if not isinstance(target, ast.Name):
+            continue
+        if target.id == "RAW_ROOT":
+            call = node.value
+            if (
+                isinstance(call, ast.Call)
+                and isinstance(call.func, ast.Name)
+                and call.func.id == "Path"
+                and len(call.args) == 1
+                and isinstance(call.args[0], ast.Constant)
+                and isinstance(call.args[0].value, str)
+                and not call.keywords
+            ):
+                raw_roots.append(call.args[0].value)
+        if target.id == "CONTINUATION_MANIFEST_PATH":
+            expression = node.value
+            if (
+                isinstance(expression, ast.BinOp)
+                and isinstance(expression.op, ast.Div)
+                and isinstance(expression.left, ast.Name)
+                and expression.left.id == "RAW_ROOT"
+                and isinstance(expression.right, ast.Constant)
+                and isinstance(expression.right.value, str)
+            ):
+                relative_names.append(expression.right.value)
+    if len(raw_roots) != 1 or len(relative_names) != 1:
+        raise RuntimeError("FM wrapper guest manifest contract missing or ambiguous")
+    return raw_roots[0], relative_names[0]
+
+
+def g77_evidence_virtfs_argument(argv: list[str]) -> str:
+    matches: list[str] = []
+    for index, argument in enumerate(argv):
+        if argument != "-virtfs":
+            continue
+        if index + 1 >= len(argv):
+            raise RuntimeError("QEMU -virtfs argument missing")
+        candidate = argv[index + 1]
+        fields = candidate.split(",")
+        if not fields or fields[0] != "local":
+            continue
+        options: dict[str, str] = {}
+        for field in fields[1:]:
+            if "=" not in field:
+                raise RuntimeError("QEMU local -virtfs option malformed")
+            key, value = field.split("=", 1)
+            if key in options:
+                raise RuntimeError("QEMU local -virtfs option ambiguous")
+            options[key] = value
+        if options.get("mount_tag") == MOUNT_TAG:
+            if set(options) != {"path", "mount_tag", "security_model"}:
+                raise RuntimeError("g77_evidence QEMU export options are not exact")
+            matches.append(candidate)
+    if len(matches) != 1:
+        raise RuntimeError("g77_evidence QEMU export missing or ambiguous")
+    return matches[0]
+
+
+def prove_visibility_composition(
+    *,
+    repository_root: Path,
+    checkpoint: dict[str, Any],
+    argv: list[str],
+    canonical_argv_sha256: str,
+) -> dict[str, Any]:
+    """Existing FM preboot owner: prove the host/QEMU/guest manifest relation."""
+
+    manifest = checkpoint.get("canonical_manifest")
+    visibility = checkpoint.get("visibility_composition")
+    qemu_binding = checkpoint.get("qemu_binding")
+    guest_contract = checkpoint.get("guest_contract")
+    if not all(isinstance(item, dict) for item in (
+        manifest, visibility, qemu_binding, guest_contract,
+    )):
+        raise RuntimeError("preboot visibility composition fields missing")
+
+    assert isinstance(manifest, dict)
+    assert isinstance(visibility, dict)
+    assert isinstance(qemu_binding, dict)
+    assert isinstance(guest_contract, dict)
+    if qemu_binding.get("canonical_argv_sha256") != canonical_argv_sha256:
+        raise RuntimeError("composition canonical QEMU argv identity mismatch")
+    qemu_argument = g77_evidence_virtfs_argument(argv)
+    if qemu_argument != visibility.get("qemu_virtfs_argument"):
+        raise RuntimeError("validated runtime root differs from actual QEMU export root")
+
+    export_root_value = visibility.get("host_export_root")
+    relative_filename = visibility.get("harness_relative_filename")
+    guest_mount = visibility.get("guest_mount_destination")
+    if not all(isinstance(item, str) and item for item in (
+        export_root_value, relative_filename, guest_mount,
+    )):
+        raise RuntimeError("visibility path binding malformed")
+    export_root = Path(export_root_value)
+    if not export_root.is_absolute() or export_root.is_symlink() or not export_root.is_dir():
+        raise RuntimeError("runtime export root absent, non-directory, relative, or symlinked")
+    if Path(relative_filename).name != relative_filename:
+        raise RuntimeError("harness-relative manifest filename is not a single path component")
+
+    wrapper_path_value = guest_contract.get("wrapper_path")
+    cloud_init_path_value = guest_contract.get("cloud_init_path")
+    if not isinstance(wrapper_path_value, str) or not isinstance(cloud_init_path_value, str):
+        raise RuntimeError("guest contract paths malformed")
+    wrapper_path = repository_root / wrapper_path_value
+    cloud_init_path = repository_root / cloud_init_path_value
+    if sha256_path(wrapper_path) != guest_contract.get("wrapper_sha256"):
+        raise RuntimeError("FM wrapper identity mismatch in visibility composition")
+    if sha256_path(cloud_init_path) != guest_contract.get("cloud_init_sha256"):
+        raise RuntimeError("FM cloud-init identity mismatch in visibility composition")
+    wrapper_root, wrapper_filename = wrapper_guest_contract(wrapper_path)
+    if wrapper_root != guest_mount or wrapper_filename != relative_filename:
+        raise RuntimeError("FM wrapper expected guest manifest path differs from composition")
+    mount_literal = f"{MOUNT_TAG} {guest_mount}"
+    if cloud_init_path.read_text(encoding="utf-8").count(mount_literal) != 1:
+        raise RuntimeError("cloud-init guest mount destination missing or ambiguous")
+
+    guest_required_path = f"{guest_mount}/{relative_filename}"
+    if visibility.get("guest_required_path") != guest_required_path:
+        raise RuntimeError("guest required manifest path mismatch")
+    mapped_host_path = export_root / relative_filename
+    if visibility.get("mapped_host_path") != str(mapped_host_path):
+        raise RuntimeError("host-to-guest mapped manifest path mismatch")
+    if mapped_host_path.is_symlink() or not mapped_host_path.is_file():
+        raise RuntimeError("required guest manifest host projection absent or unsafe")
+    if mapped_host_path.resolve().parent != export_root.resolve():
+        raise RuntimeError("mapped manifest escapes certified runtime export root")
+
+    source_path_value = manifest.get("source_path")
+    runtime_path_value = manifest.get("runtime_export_path")
+    if not isinstance(source_path_value, str) or not isinstance(runtime_path_value, str):
+        raise RuntimeError("canonical manifest paths malformed")
+    source_path = repository_root / source_path_value
+    runtime_path = repository_root / runtime_path_value
+    if runtime_path.resolve() != mapped_host_path.resolve():
+        raise RuntimeError("materialized runtime projection differs from QEMU-mapped host file")
+    source_sha = sha256_path(source_path)
+    runtime_sha = sha256_path(runtime_path)
+    expected_sha = manifest.get("source_sha256")
+    if (
+        source_sha != expected_sha
+        or runtime_sha != expected_sha
+        or manifest.get("runtime_export_sha256") != expected_sha
+        or visibility.get("manifest_sha256") != expected_sha
+        or manifest.get("byte_identity") != "PASS"
+    ):
+        raise RuntimeError("canonical/runtime-export continuation manifest identity mismatch")
+    if source_path.read_bytes() != runtime_path.read_bytes():
+        raise RuntimeError("canonical/runtime-export continuation manifest bytes differ")
+
+    return {
+        "result": "PREBOOT_VISIBILITY_COMPOSITION_PASS",
+        "host_export_root": str(export_root),
+        "guest_required_path": guest_required_path,
+        "mapped_host_path": str(mapped_host_path),
+        "manifest_sha256": runtime_sha,
+        "canonical_argv_sha256": canonical_argv_sha256,
+        "qemu_virtfs_argument": qemu_argument,
+    }
+
+
+def validate_preboot_visibility(
+    repository_root: Path,
+    argv: list[str],
+    canonical_argv_sha256: str,
+) -> dict[str, Any]:
+    """Authenticate the certified FY checkpoint, then run the FM proof owner."""
+
+    path = repository_root / MATERIALIZATION
+    envelope, raw = load_json_without_duplicate_keys(path)
+    if hashlib.sha256(raw).hexdigest() != MATERIALIZATION_SHA256:
+        raise RuntimeError("FY visibility composition evidence hash mismatch")
+    if set(envelope) != {"schema_id", "checkpoint", "checkpoint_sha256"}:
+        raise RuntimeError("FY visibility composition envelope fields malformed")
+    if envelope["schema_id"] != "G77_256FY_RUNTIME_EXPORT_PREBOOT_COMPOSITION_ENVELOPE_V1":
+        raise RuntimeError("FY visibility composition envelope schema mismatch")
+    checkpoint = envelope.get("checkpoint")
+    if not isinstance(checkpoint, dict):
+        raise RuntimeError("FY visibility composition checkpoint malformed")
+    inner_sha = hashlib.sha256(canonical_bytes(checkpoint)).hexdigest()
+    if inner_sha != MATERIALIZATION_INNER_SHA256 or envelope["checkpoint_sha256"] != inner_sha:
+        raise RuntimeError("FY visibility composition inner seal mismatch")
+
+    source = checkpoint.get("source_authority")
+    manifest = checkpoint.get("canonical_manifest")
+    visibility = checkpoint.get("visibility_composition")
+    qemu_binding = checkpoint.get("qemu_binding")
+    admission = checkpoint.get("admission")
+    if not all(isinstance(item, dict) for item in (
+        source, manifest, visibility, qemu_binding, admission,
+    )):
+        raise RuntimeError("FY certified visibility binding incomplete")
+    assert isinstance(source, dict)
+    assert isinstance(manifest, dict)
+    assert isinstance(visibility, dict)
+    assert isinstance(qemu_binding, dict)
+    assert isinstance(admission, dict)
+    expected_bindings = {
+        "source_head": source.get("head") == "5b46fce41baede9b20adecf34b9119af2da9cca8",
+        "source_tree": source.get("tree") == "bdfc40c8466b923e4edc23e2bbafc387d78b47b5",
+        "manifest_source": manifest.get("source_path") == f"{FM_ROOT}/runtime/{HARNESS_RELATIVE_FILENAME}",
+        "manifest_runtime": manifest.get("runtime_export_path") == RUNTIME_MANIFEST,
+        "manifest_sha": manifest.get("source_sha256") == CANDIDATE_SHA256,
+        "host_export_root": visibility.get("host_export_root") == HOST_EXPORT_ROOT,
+        "relative_filename": visibility.get("harness_relative_filename") == HARNESS_RELATIVE_FILENAME,
+        "mapped_host_path": visibility.get("mapped_host_path") == MAPPED_HOST_PATH,
+        "guest_mount": visibility.get("guest_mount_destination") == GUEST_MOUNT_ROOT,
+        "guest_required_path": visibility.get("guest_required_path") == GUEST_REQUIRED_PATH,
+        "qemu_argument": visibility.get("qemu_virtfs_argument") == QEMU_VIRTFS_ARGUMENT,
+        "vector_path": qemu_binding.get("path") == VECTOR,
+        "vector_file_sha": qemu_binding.get("file_sha256") == EXPECTED_ASSET_SHA256[VECTOR],
+        "canonical_argv_sha": qemu_binding.get("canonical_argv_sha256") == CANONICAL_ARGV_SHA256,
+        "admission_owner": admission.get("owner") == "FM_MATERIALIZATION_PREBOOT_VALIDATION_PLUS_FO_FINAL_ADMISSION_COMPOSITION_GATE",
+        "mismatch_denied": admission.get("mismatch_can_reach_qemu") is False,
+    }
+    failed = sorted(key for key, passed in expected_bindings.items() if not passed)
+    if failed:
+        raise RuntimeError(f"FY certified visibility binding mismatch: {','.join(failed)}")
+    if sha256_path(repository_root / VECTOR) != qemu_binding["file_sha256"]:
+        raise RuntimeError("FY QEMU argv file identity mismatch")
+
+    result = prove_visibility_composition(
+        repository_root=repository_root,
+        checkpoint=checkpoint,
+        argv=argv,
+        canonical_argv_sha256=canonical_argv_sha256,
+    )
+    result.update({
+        "composition_file_sha256": MATERIALIZATION_SHA256,
+        "composition_inner_sha256": MATERIALIZATION_INNER_SHA256,
+        "final_admission_owner": admission["owner"],
+    })
+    return result
 
 
 def git(repository_root: Path, *arguments: str) -> str:
@@ -249,6 +534,51 @@ def validate_execution_admission(
     }
 
 
+def validate_final_admission(
+    *,
+    repository_root: Path,
+    authority: dict[str, Any],
+    authority_file_sha256: str,
+    supplied_authority_sha256: str,
+    observed_head: str,
+    observed_tree: str,
+    anchor_is_ancestor: bool,
+    repository_clean: bool,
+    observed_asset_sha256: dict[str, str],
+    argv: list[str],
+    canonical_argv_sha256: str,
+    receipt_namespace_consumed: bool,
+) -> dict[str, str]:
+    """FO final admission extended by the existing FM preboot composition gate."""
+
+    visibility = validate_preboot_visibility(
+        repository_root,
+        argv,
+        canonical_argv_sha256,
+    )
+    admission = validate_execution_admission(
+        authority=authority,
+        authority_file_sha256=authority_file_sha256,
+        supplied_authority_sha256=supplied_authority_sha256,
+        observed_head=observed_head,
+        observed_tree=observed_tree,
+        anchor_is_ancestor=anchor_is_ancestor,
+        repository_clean=repository_clean,
+        observed_asset_sha256=observed_asset_sha256,
+        argv=argv,
+        canonical_argv_sha256=canonical_argv_sha256,
+        receipt_namespace_consumed=receipt_namespace_consumed,
+    )
+    admission.update({
+        "preboot_visibility_composition": visibility["result"],
+        "runtime_export_root": visibility["host_export_root"],
+        "guest_required_manifest_path": visibility["guest_required_path"],
+        "runtime_manifest_sha256": visibility["manifest_sha256"],
+        "visibility_composition_sha256": visibility["composition_file_sha256"],
+    })
+    return admission
+
+
 def asset_observations(repository_root: Path) -> dict[str, str]:
     observations: dict[str, str] = {}
     for path in EXPECTED_ASSET_SHA256:
@@ -272,7 +602,7 @@ def receipt(*, phase: str, argv: list[str], digest: str, vector_sha256: str,
             executable_sha256: str, started_ns: int, completed_ns: int | None,
             exit_status: int | None, admission: dict[str, str]) -> dict[str, Any]:
     return {
-        "schema_id": f"G77_256FM_B1_{phase}_EXECUTED_QEMU_ARGV_RECEIPT_V1",
+        "schema_id": f"G77_256FY_B1_{phase}_EXECUTED_QEMU_ARGV_RECEIPT_V1",
         "generation_identity": GENERATION_IDENTITY,
         "authorized_repository_head": admission["authorized_repository_head"],
         "authorized_repository_tree": admission["authorized_repository_tree"],
@@ -325,7 +655,8 @@ def main() -> int:
     digest = canonicalizer.argv_sha256(argv)
     vector_sha = sha256_path(repository_root / VECTOR)
     authority, authority_file_sha = load_authority(arguments.execution_authority.resolve())
-    admission = validate_execution_admission(
+    admission = validate_final_admission(
+        repository_root=repository_root,
         authority=authority,
         authority_file_sha256=authority_file_sha,
         supplied_authority_sha256=arguments.execution_authority_sha256,
