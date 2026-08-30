@@ -68,6 +68,10 @@ from aigol.cli.commands.dashboard import (
 from aigol.cli.commands.diagnostics import runtime_diagnostics
 from aigol.cli.commands.dispatch import authorize_dispatch
 from aigol.cli.commands.execution import run_execution_handoff
+from aigol.cli.commands.finalization import (
+    finalize_repository_from_contract_file,
+    render_finalization_result,
+)
 from aigol.cli.commands.governance import validate_governance_continuity
 from aigol.cli.commands.ingress import generate_ingress_artifact
 from aigol.cli.commands.implementation_epoch import (
@@ -2968,6 +2972,10 @@ def build_parser() -> argparse.ArgumentParser:
     governance_validate.add_argument("--artifact-json", default="")
     governance_validate.add_argument("--human-request", default="Validate governed CLI continuity.")
     governance_validate.add_argument("--semantic-intent", default="Deterministic governance validation")
+
+    finalization = subcommands.add_parser("finalize")
+    finalization.add_argument("--contract", required=True)
+    finalization.add_argument("--json", action="store_true")
 
     approval = subcommands.add_parser("approval")
     approval_sub = approval.add_subparsers(dest="approval_command", required=True)
@@ -10266,6 +10274,8 @@ def _acli_next_status_from_canonical_entry(result: dict[str, Any]) -> str:
 def run_command(args: argparse.Namespace) -> dict:
     if args.command == "status":
         return status_summary()
+    if args.command == "finalize":
+        return finalize_repository_from_contract_file(args.contract)
     if args.command == "runtime-status":
         progress = load_runtime_progress(args.runtime_id, replay_root=args.replay_root)
         progress["command"] = "aigol runtime-status"
@@ -10850,6 +10860,11 @@ def render_command_result(result: dict) -> str:
     command = result.get("command", "")
     if command == "aigol status":
         return render_status(result)
+    if command == "aigol finalize":
+        return render_card(
+            "AIGOL GOVERNED REPOSITORY FINALIZATION",
+            render_finalization_result(result),
+        )
     if command == "aigol runtime-status":
         return format_runtime_status(result)
     if command == "aigol runtime-progress":
@@ -11495,6 +11510,8 @@ def main(argv: list[str] | None = None) -> int:
         print(_json(result))
     else:
         print(render_command_result(result))
+    if args.command == "finalize" and result.get("finalization_status") != "GOVERNED_REPOSITORY_FINALIZATION_COMPLETED":
+        return 1
     return 0
 
 

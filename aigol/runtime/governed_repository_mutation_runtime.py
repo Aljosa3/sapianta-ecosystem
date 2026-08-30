@@ -38,6 +38,9 @@ NEEDS_CLARIFICATION = "NEEDS_CLARIFICATION"
 
 WORKFLOW_ID = "GOVERNED_REPOSITORY_MUTATION"
 DEFAULT_VALIDATION_COMMAND = ["git", "diff", "--check"]
+OBSERVED_ADD_TEXT_FILE = "ADD_TEXT_FILE"
+OBSERVED_REPLACE_TEXT_FILE = "REPLACE_TEXT_FILE"
+OBSERVED_DELETE_PATH = "DELETE_PATH"
 
 FORBIDDEN_WORKFLOW_TARGET_PREFIXES = (
     ".git/",
@@ -57,6 +60,100 @@ REPLAY_STEPS = (
     "governed_repository_mutation_validation_recorded",
     "governed_repository_mutation_outcome_recorded",
 )
+
+
+def observe_repository_mutation_envelope(repository_root: str | Path) -> dict[str, Any]:
+    """Return the complete unstaged text mutation envelope for one clean index."""
+
+    root = Path(repository_root).resolve()
+    if not root.exists() or not root.is_dir():
+        raise FailClosedRuntimeError("FAILED_CLOSED_REPOSITORY_ROOT_MISSING")
+    top_level = _git_bytes(root, "rev-parse", "--show-toplevel")
+    try:
+        observed_root = Path(top_level.decode("utf-8").strip()).resolve()
+    except UnicodeDecodeError as exc:
+        raise FailClosedRuntimeError("FAILED_CLOSED_AMBIGUOUS_REPOSITORY_PATH") from exc
+    if observed_root != root:
+        raise FailClosedRuntimeError("FAILED_CLOSED_REPOSITORY_ROOT_MISMATCH")
+
+    index = subprocess.run(
+        ["git", "diff", "--cached", "--quiet"],
+        cwd=root,
+        capture_output=True,
+        shell=False,
+        check=False,
+    )
+    if index.returncode == 1:
+        raise FailClosedRuntimeError("FAILED_CLOSED_NON_EMPTY_INDEX")
+    if index.returncode != 0:
+        raise FailClosedRuntimeError("FAILED_CLOSED_GIT_INDEX_AUTHENTICATION_FAILED")
+
+    raw_status = _git_bytes(
+        root,
+        "status",
+        "--porcelain=v1",
+        "-z",
+        "--untracked-files=all",
+    )
+    if not raw_status:
+        records: list[bytes] = []
+    else:
+        fields = raw_status.split(b"\0")
+        if fields[-1] != b"":
+            raise FailClosedRuntimeError("FAILED_CLOSED_AMBIGUOUS_GIT_STATUS")
+        records = fields[:-1]
+
+    mutations: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for record in records:
+        if len(record) < 4 or record[2:3] != b" ":
+            raise FailClosedRuntimeError("FAILED_CLOSED_AMBIGUOUS_GIT_STATUS")
+        try:
+            status = record[:2].decode("ascii")
+            path = record[3:].decode("utf-8")
+        except UnicodeDecodeError as exc:
+            raise FailClosedRuntimeError("FAILED_CLOSED_AMBIGUOUS_GIT_STATUS") from exc
+        normalized = _normalize_observed_path(path)
+        if normalized in seen:
+            raise FailClosedRuntimeError("FAILED_CLOSED_DUPLICATE_GIT_STATUS_PATH")
+        seen.add(normalized)
+
+        if status == "??":
+            change_type = OBSERVED_ADD_TEXT_FILE
+        elif status == " M":
+            change_type = OBSERVED_REPLACE_TEXT_FILE
+        elif status == " D":
+            change_type = OBSERVED_DELETE_PATH
+        elif status[0] != " ":
+            raise FailClosedRuntimeError("FAILED_CLOSED_NON_EMPTY_INDEX")
+        else:
+            raise FailClosedRuntimeError("FAILED_CLOSED_AMBIGUOUS_GIT_STATUS")
+
+        content_hash = None
+        if change_type != OBSERVED_DELETE_PATH:
+            content_hash = _observed_text_content_hash(root, normalized)
+        mutations.append(
+            {
+                "path": normalized,
+                "change_type": change_type,
+                "content_hash": content_hash,
+                "git_status": status,
+            }
+        )
+
+    mutations.sort(key=lambda item: item["path"])
+    artifact = {
+        "repository_root": str(root),
+        "index_empty": True,
+        "mutations": mutations,
+        "path_set": [item["path"] for item in mutations],
+        "mutation_count": len(mutations),
+        "untracked_paths_included": True,
+        "nul_delimited_status_used": True,
+        "fail_closed": True,
+    }
+    artifact["envelope_hash"] = replay_hash(artifact)
+    return artifact
 
 
 def create_governed_repository_mutation_proposal(
@@ -565,19 +662,15 @@ def _validate_current_repository_baseline(
         for item in allowed
         if isinstance(item, dict)
     }
-    status_lines = [
-        line
-        for line in git_value(
-            "status", "--porcelain", "--untracked-files=all"
-        ).splitlines()
-        if line
-    ]
-    changed_paths = {line[3:].strip() for line in status_lines}
-    if changed_paths != set(allowed_by_path):
+    observed = observe_repository_mutation_envelope(repository_root)
+    observed_by_path = {
+        item["path"]: item["content_hash"]
+        for item in observed["mutations"]
+    }
+    if set(observed_by_path) != set(allowed_by_path):
         raise FailClosedRuntimeError("FAILED_CLOSED_UNAUTHENTICATED_DRIFT")
     for target_path, expected_hash in allowed_by_path.items():
-        path = repository_root / str(target_path)
-        if not path.is_file() or replay_hash(path.read_text(encoding="utf-8")) != expected_hash:
+        if observed_by_path[target_path] != expected_hash:
             raise FailClosedRuntimeError("FAILED_CLOSED_UNAUTHENTICATED_DRIFT")
 
 
@@ -625,6 +718,46 @@ def _normalize_target_path(value: Any) -> str:
     if any(normalized == prefix.rstrip("/") or normalized.startswith(prefix) for prefix in FORBIDDEN_WORKFLOW_TARGET_PREFIXES):
         raise FailClosedRuntimeError("FAIL_CLOSED_SCOPE_VIOLATION")
     return normalized
+
+
+def _normalize_observed_path(value: str) -> str:
+    if not value or "\x00" in value or "\n" in value or "\r" in value:
+        raise FailClosedRuntimeError("FAILED_CLOSED_AMBIGUOUS_REPOSITORY_PATH")
+    path = PurePosixPath(value)
+    if path.is_absolute() or any(part in {"", ".", ".."} for part in path.parts):
+        raise FailClosedRuntimeError("FAILED_CLOSED_AMBIGUOUS_REPOSITORY_PATH")
+    return path.as_posix()
+
+
+def _observed_text_content_hash(root: Path, relative_path: str) -> str:
+    target = root / relative_path
+    resolved = target.resolve()
+    try:
+        resolved.relative_to(root)
+    except ValueError as exc:
+        raise FailClosedRuntimeError("FAILED_CLOSED_REPOSITORY_PATH_ESCAPE") from exc
+    if target.is_symlink() or not resolved.is_file():
+        raise FailClosedRuntimeError("FAILED_CLOSED_OBSERVED_TEXT_FILE_MISSING")
+    try:
+        content = resolved.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as exc:
+        raise FailClosedRuntimeError("FAILED_CLOSED_OBSERVED_TEXT_FILE_UNREADABLE") from exc
+    if "\x00" in content:
+        raise FailClosedRuntimeError("FAILED_CLOSED_BINARY_MUTATION_NOT_AUTHORIZED")
+    return replay_hash(content)
+
+
+def _git_bytes(root: Path, *args: str) -> bytes:
+    completed = subprocess.run(
+        ["git", *args],
+        cwd=root,
+        capture_output=True,
+        shell=False,
+        check=False,
+    )
+    if completed.returncode != 0:
+        raise FailClosedRuntimeError("FAILED_CLOSED_GIT_STATUS_AUTHENTICATION_FAILED")
+    return completed.stdout
 
 
 def _validate_validation_command(command: Any) -> list[str]:
