@@ -138,6 +138,29 @@ def sha256_path(path: Path) -> str:
     return digest.hexdigest()
 
 
+def resolve_candidate_source(
+    repository_root: Path,
+    candidate_source_path: Path | None = None,
+) -> tuple[str, Path]:
+    """Resolve one exact repository-resident candidate without a HEAD alias."""
+
+    root = repository_root.resolve()
+    supplied = Path(CANDIDATE) if candidate_source_path is None else candidate_source_path
+    candidate = supplied if supplied.is_absolute() else root / supplied
+    if candidate.is_symlink() or not candidate.is_file():
+        raise RuntimeError("live candidate binding absent, symlinked, or non-regular")
+    resolved = candidate.resolve()
+    if candidate.absolute() != resolved:
+        raise RuntimeError("live candidate binding cannot use a symlinked path component")
+    try:
+        relative = resolved.relative_to(root).as_posix()
+    except ValueError as exc:
+        raise RuntimeError("live candidate binding must be repository-resident") from exc
+    if resolved != root / relative:
+        raise RuntimeError("live candidate binding path is not canonical")
+    return relative, resolved
+
+
 def receipt_namespace_paths(
     repository_root: Path,
     context: dict[str, Any],
@@ -542,6 +565,8 @@ def validate_preboot_visibility(
     context: dict[str, Any],
     argv: list[str],
     canonical_argv_sha256: str,
+    *,
+    candidate_source_path: Path | None = None,
 ) -> dict[str, Any]:
     """FY visibility semantics applied only to context-declared fresh paths."""
 
@@ -562,7 +587,9 @@ def validate_preboot_visibility(
     manifest_path = Path(context["runtime_manifest_path"])
     if manifest_path.is_symlink() or not manifest_path.is_file():
         raise RuntimeError("context runtime manifest projection absent or unsafe")
-    candidate_path = repository_root / CANDIDATE
+    _, candidate_path = resolve_candidate_source(
+        repository_root, candidate_source_path
+    )
     if manifest_path.read_bytes() != candidate_path.read_bytes():
         raise RuntimeError("certified initial manifest projection bytes mismatch")
     manifest_sha = sha256_path(manifest_path)
@@ -593,11 +620,17 @@ def git(repository_root: Path, *arguments: str) -> str:
     return subprocess.check_output(["git", *arguments], cwd=repository_root, text=True).strip()
 
 
-def context_asset_expectations(context: dict[str, Any]) -> dict[str, str]:
+def context_asset_expectations(
+    context: dict[str, Any],
+    candidate_source_path: Path | None = None,
+) -> dict[str, str]:
     hashes = context["wrapper_fc_er_che_schema_hashes"]
     bindings = context["qemu_executable_base_seed_checkout_bindings"]
+    candidate_key = CANDIDATE if candidate_source_path is None else candidate_source_path.as_posix()
+    if Path(candidate_key).is_absolute() or ".." in Path(candidate_key).parts:
+        raise RuntimeError("candidate asset key must be repository-relative")
     return {
-        CANDIDATE: context["candidate_manifest_sha256"],
+        candidate_key: context["candidate_manifest_sha256"],
         WRAPPER: hashes["wrapper"],
         CLOUD_INIT: hashes["cloud_init"],
         FK_ADAPTER: hashes["fc_fk_adapter"],
@@ -612,8 +645,12 @@ def context_asset_expectations(context: dict[str, Any]) -> dict[str, str]:
 def validate_immutable_context_bindings(
     repository_root: Path,
     context: dict[str, Any],
+    candidate_source_path: Path | None = None,
 ) -> None:
     fresh_context.validate_context(context, repository_root=repository_root)
+    _, candidate = resolve_candidate_source(repository_root, candidate_source_path)
+    if sha256_path(candidate) != context["candidate_manifest_sha256"]:
+        raise RuntimeError("context live candidate binding mismatch")
     hashes = context["wrapper_fc_er_che_schema_hashes"]
     expected_hashes = {
         "wrapper": sha256_path(repository_root / WRAPPER),
@@ -644,9 +681,16 @@ def validate_immutable_context_bindings(
         raise RuntimeError("context immutable QEMU/base/seed/checkout binding mismatch")
 
 
-def observe_context_assets(repository_root: Path, context: dict[str, Any]) -> dict[str, str]:
+def observe_context_assets(
+    repository_root: Path,
+    context: dict[str, Any],
+    candidate_source_path: Path | None = None,
+) -> dict[str, str]:
+    candidate_relative, _ = resolve_candidate_source(
+        repository_root, candidate_source_path
+    )
     observations: dict[str, str] = {}
-    for path in context_asset_expectations(context):
+    for path in context_asset_expectations(context, Path(candidate_relative)):
         target = Path(path) if Path(path).is_absolute() else repository_root / path
         observations[path] = sha256_path(target)
     return observations
@@ -681,6 +725,7 @@ def validate_execution_admission(
     argv: list[str],
     canonical_argv_sha256: str,
     receipt_namespace_consumed: bool,
+    candidate_source_path: Path | None = None,
 ) -> dict[str, str]:
     """Pure fail-closed admission; it performs no writes or process execution."""
 
@@ -747,7 +792,7 @@ def validate_execution_admission(
         raise RuntimeError("committed constitutional anchor not in repository ancestry")
     if not repository_clean:
         raise RuntimeError("repository state is not clean")
-    expected_assets = context_asset_expectations(context)
+    expected_assets = context_asset_expectations(context, candidate_source_path)
     if set(observed_asset_sha256) != set(expected_assets):
         raise RuntimeError("asset observation set incomplete or unknown")
     for path, expected_sha in expected_assets.items():
@@ -786,6 +831,7 @@ def validate_final_admission(
     argv: list[str],
     canonical_argv_sha256: str,
     receipt_namespace_consumed: bool,
+    candidate_source_path: Path | None = None,
 ) -> dict[str, str]:
     """FO final admission extended by the existing FM preboot composition gate."""
 
@@ -796,6 +842,7 @@ def validate_final_admission(
         observed_tree=observed_tree,
         repository_clean=repository_clean,
         observed_asset_sha256=observed_asset_sha256,
+        candidate_source_path=candidate_source_path,
     )
     receipt_readiness = validate_receipt_parent_ready(repository_root, context)
     visibility = validate_preboot_visibility(
@@ -803,6 +850,7 @@ def validate_final_admission(
         context,
         argv,
         canonical_argv_sha256,
+        candidate_source_path=candidate_source_path,
     )
     admission = validate_execution_admission(
         context=context,
@@ -817,6 +865,7 @@ def validate_final_admission(
         argv=argv,
         canonical_argv_sha256=canonical_argv_sha256,
         receipt_namespace_consumed=receipt_namespace_consumed,
+        candidate_source_path=candidate_source_path,
     )
     admission.update({
         "receipt_parent": receipt_readiness["receipt_parent"],
@@ -851,6 +900,7 @@ def build_operation_context(
     identity_namespace_prefix: str,
     operation_evidence_root: Path,
     transient_root: Path,
+    candidate_source_path: Path | None = None,
 ) -> dict[str, Any]:
     """Build and seal one context before any Human authorization can exist."""
 
@@ -876,6 +926,7 @@ def build_operation_context(
             "read_only_mount": True,
         },
     }
+    _, candidate = resolve_candidate_source(repository_root, candidate_source_path)
     return fresh_context.build_context(
         repository_root=repository_root,
         repository_head=repository_head,
@@ -885,7 +936,7 @@ def build_operation_context(
         identity_namespace_prefix=identity_namespace_prefix,
         operation_evidence_root=operation_evidence_root,
         transient_root=transient_root,
-        candidate_manifest_sha256=sha256_path(repository_root / CANDIDATE),
+        candidate_manifest_sha256=sha256_path(candidate),
         wrapper_fc_er_che_schema_hashes=hashes,
         qemu_executable_base_seed_checkout_bindings=bindings,
     )
@@ -896,10 +947,13 @@ def materialize_operation_state(
     repository_root: Path,
     context: dict[str, Any],
     context_source_path: Path,
+    candidate_source_path: Path | None = None,
 ) -> dict[str, Any]:
     """Explicit authority-free materialization; never called by governed main()."""
 
-    validate_immutable_context_bindings(repository_root, context)
+    validate_immutable_context_bindings(
+        repository_root, context, candidate_source_path
+    )
     fresh_context.validate_freshness(context)
     operation_root = Path(context["operation_evidence_root"])
     transient_root = Path(context["transient_root"])
@@ -911,7 +965,7 @@ def materialize_operation_state(
             raise RuntimeError(f"fresh materialization parent absent or unsafe: {root.parent}")
         root.mkdir(mode=0o700, parents=False, exist_ok=False)
     runtime_export.mkdir(mode=0o700, parents=False, exist_ok=False)
-    candidate = repository_root / CANDIDATE
+    _, candidate = resolve_candidate_source(repository_root, candidate_source_path)
     runtime_manifest = Path(context["runtime_manifest_path"])
     runtime_manifest.write_bytes(candidate.read_bytes())
     context_projection = runtime_export / fresh_context.GUEST_CONTEXT_FILENAME
@@ -985,10 +1039,13 @@ def authority_free_static_readiness(
     observed_tree: str,
     repository_clean: bool,
     observed_asset_sha256: dict[str, str],
+    candidate_source_path: Path | None = None,
 ) -> dict[str, Any]:
     """Complete static determination with zero Human authorization objects."""
 
-    validate_immutable_context_bindings(repository_root, context)
+    validate_immutable_context_bindings(
+        repository_root, context, candidate_source_path
+    )
     if context["repository_head"] != observed_head or context["repository_tree"] != observed_tree:
         raise RuntimeError("static readiness repository HEAD/TREE mismatch")
     if not repository_clean:
@@ -1002,7 +1059,10 @@ def authority_free_static_readiness(
         or git(nested, "status", "--porcelain") != ""
     ):
         raise RuntimeError("nested immutable authority mismatch")
-    expected_assets = context_asset_expectations(context)
+    candidate_relative, _ = resolve_candidate_source(
+        repository_root, candidate_source_path
+    )
+    expected_assets = context_asset_expectations(context, Path(candidate_relative))
     if observed_asset_sha256 != expected_assets:
         raise RuntimeError("authority-free immutable asset or candidate binding mismatch")
     overlay = Path(context["overlay_path"])
@@ -1014,6 +1074,7 @@ def authority_free_static_readiness(
         context,
         context["canonical_argv"],
         context["canonical_argv_sha256"],
+        candidate_source_path=Path(candidate_relative),
     )
     checkout = validate_checkout_preboot_readiness(context)
     reduction = {
@@ -1091,6 +1152,7 @@ def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--operation-context", required=True, type=Path)
     parser.add_argument("--operation-context-sha256", required=True)
+    parser.add_argument("--live-candidate-binding", required=True, type=Path)
     parser.add_argument("--execution-authority", required=True, type=Path)
     parser.add_argument("--execution-authority-sha256", required=True)
     return parser.parse_args()
@@ -1099,6 +1161,10 @@ def parse_arguments() -> argparse.Namespace:
 def main() -> int:
     arguments = parse_arguments()
     repository_root = Path.cwd().resolve()
+    candidate_relative, _ = resolve_candidate_source(
+        repository_root, arguments.live_candidate_binding
+    )
+    candidate_source_path = Path(candidate_relative)
     context_path = arguments.operation_context.resolve()
     if not HEX_64.fullmatch(arguments.operation_context_sha256):
         raise RuntimeError("supplied operation context hash malformed")
@@ -1120,7 +1186,9 @@ def main() -> int:
         "--porcelain",
         "--untracked-files=no",
     ) == ""
-    observed_assets = observe_context_assets(repository_root, context)
+    observed_assets = observe_context_assets(
+        repository_root, context, candidate_source_path
+    )
     authority_free_static_readiness(
         repository_root=repository_root,
         context=context,
@@ -1128,6 +1196,7 @@ def main() -> int:
         observed_tree=observed_tree,
         repository_clean=repository_clean,
         observed_asset_sha256=observed_assets,
+        candidate_source_path=candidate_source_path,
     )
     authority, authority_file_sha = load_authority(arguments.execution_authority.resolve())
 
@@ -1149,7 +1218,9 @@ def main() -> int:
         "--porcelain",
         "--untracked-files=no",
     ) == ""
-    final_observed_assets = observe_context_assets(repository_root, final_context)
+    final_observed_assets = observe_context_assets(
+        repository_root, final_context, candidate_source_path
+    )
     final_argv = final_context["canonical_argv"]
     final_digest = canonicalizer.argv_sha256(final_argv)
     if (
@@ -1175,6 +1246,7 @@ def main() -> int:
         argv=final_argv,
         canonical_argv_sha256=final_digest,
         receipt_namespace_consumed=any(path.exists() for path in consumable_paths),
+        candidate_source_path=candidate_source_path,
     )
     executable_sha = sha256_path(Path(argv[0]))
     started = time.time_ns()
