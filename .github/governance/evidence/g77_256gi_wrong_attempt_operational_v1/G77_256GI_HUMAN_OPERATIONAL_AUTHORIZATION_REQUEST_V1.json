@@ -1,0 +1,90 @@
+{
+  "schema_id": "G77_256GI_HUMAN_OPERATIONAL_AUTHORIZATION_REQUEST_ENVELOPE_V1",
+  "request": {
+    "schema_id": "G77_256GI_HUMAN_OPERATIONAL_AUTHORIZATION_REQUEST_V1",
+    "request_class": "NON_AUTHORITY__ONE_EXPLICIT_HUMAN_DECISION_REQUIRED",
+    "generation_identity": "G77_256GI_ONE_FRESH_HUMAN_AUTHORIZED_WRONG_ATTEMPT_OPERATIONAL_COMMISSIONING_V1",
+    "operation_identity": "G77_256GI_E05_WRONG_ATTEMPT_DENIAL_BEFORE_ENTRY_001",
+    "repository": {
+      "head": "9377631735bc85b52200502acef3635afdd56461",
+      "tree": "b431269014a4c1ebff5db54da3f7a7238250aaaa",
+      "stable_ancestry_anchor": "5c972e9960987ab27420395b54ace693df097e7b"
+    },
+    "live_binding": {
+      "candidate_sha256": "9f4b22db844bbdc504255ac0673a71229c58038f59ad84d346faf24522d6602d",
+      "context_sha256": "24ad31f682c5b04308f1ecac0a9ed779a590da37bf44b92c0c63f16ea4215951",
+      "context_file_sha256": "c7f25720bab92cc30f7719da91b9bbe8213609912bfbb23c890cb0867e819dec",
+      "canonical_argv_sha256": "0123f595902bbd6e87001ffd99b02de095c974450b745f760c0d3b80ac6f30dd",
+      "du": "PASS",
+      "eb": "PASS",
+      "ee": "PASS"
+    },
+    "execution_assets": {
+      "qemu_executable_sha256": "8a35ccba41582fc6c38b9df85fc9e35fa1d42f414d2d7d8090ee9b2f5e7c0854",
+      "base_path": "/tmp/g77_256cw.IkqZJN/noble-server-cloudimg-amd64.img",
+      "base_sha256": "6e40c07ae715f744f84af0bec76415cc1987dd115b4b8de437818561f01a3733",
+      "overlay_path": "/tmp/g77_256gi_wrong_attempt_operational_v1/guest-overlay.qcow2",
+      "overlay_sha256": "6ea4eed169518c646774cfbe2c7b8c00646a9cdead8798f7c94c786c6b6ce8b2",
+      "seed_path": "/home/pisarna/work/sapianta-fl/.github/governance/evidence/g77_256gh_guest_adapter_path_binding_v1/static/SAPIANTA_WRONG_ATTEMPT_NOCLOUD_SEED_V1.img",
+      "seed_sha256": "966f1910bbffe20fa18c4cee56ff61dcbb069348e2929bfda74e029a9dc0ec58",
+      "checkout_path": "/tmp/g77_256fm/checkout",
+      "checkout_head": "7dce67ec18696ba0bad73130f3f7a84168f25277",
+      "checkout_tree": "3cb61ec34e9593efb711dce61014dc8fdf0f6dd9",
+      "checkout_detached_clean_read_only": true,
+      "network": "NONE__EXACTLY_ONE_NIC_NONE"
+    },
+    "gh_corrected_adapter_binding": {
+      "adapter_identity": "G77_256GI_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py",
+      "source_sha256": "f2808a148bc9839f083ea9e59903674fe0dcd2a7587eee342fca44066ee9ad2b",
+      "projected_sha256": "f2808a148bc9839f083ea9e59903674fe0dcd2a7587eee342fca44066ee9ad2b",
+      "guest_consumer_path": "/mnt/dp-harness/G77_256GI_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py",
+      "static_result": "PREAUTHORITY_GUEST_ADAPTER_BINDING_PASS"
+    },
+    "preauthorization": {
+      "checkpoint_sha256": "f441fb2766ec5dec02750d9afa2aca125c70d7913dc28e865e55b7d9c2e9b48c",
+      "resource_recheck_sha256": "62ed84373b092def175eae8ddba38a8f0ac82577ea2e9fdfc5769a66c048e546",
+      "static_readiness_sha256": "cde09c284afb1754f102605e2309fad9a3396d0e1672e4f067af70b8ec08e405",
+      "complete_static_readiness": "PASS",
+      "adapter_static_proof": "PASS",
+      "systematic_deterministic_pre_request_closure": "PASS",
+      "receipt_files_absent": true,
+      "receipt_parent_ready": true,
+      "receipt_namespace_unused": true,
+      "all_operational_counters_zero": true
+    },
+    "requested_authority_semantics": {
+      "authorization_kind": "FRESH_HUMAN_OPERATIONAL_AUTHORIZATION",
+      "one_shot": true,
+      "reusable": false,
+      "transferable": false,
+      "operation_specific": true,
+      "generation_specific": true,
+      "head_bound": true,
+      "tree_bound": true,
+      "candidate_bound": true,
+      "context_bound": true,
+      "argv_bound": true,
+      "governed_launcher_activation_limit": 1,
+      "qemu_system_execution_limit": 1,
+      "vm_boot_limit": 1,
+      "wrong_attempt_operational_attempt_limit": 1,
+      "retry_limit": 0,
+      "repair_limit": 0,
+      "replay_limit": 0,
+      "network_authorized": false,
+      "provider_authorized": false,
+      "trusted_access_authorized": false,
+      "successor_generation_authorized": false,
+      "second_attempt_authorized": false
+    },
+    "request_is_authority": false,
+    "checkpoint_is_authority": false,
+    "resource_capacity_is_authority": false,
+    "human_operational_authorization_count": 0,
+    "qemu_execution_count": 0,
+    "vm_boot_count": 0,
+    "auto_continuable": false,
+    "human_review_required": true
+  },
+  "request_sha256": "5915dab7f8b51da37770e6663adcc593e1367d498263117f38bac2e58cff972a"
+}

@@ -1,0 +1,33 @@
+{
+  "authorization": {
+    "authorization_kind": "FRESH_HUMAN_OPERATIONAL_AUTHORIZATION",
+    "authorization_present": true,
+    "authorization_reusable": false,
+    "authorization_source_sha256": "68a10ea9f8dd5918e2dd263052cd512714a8137fa3f6e42c4df1c372f00fda49",
+    "authorized_candidate_sha256": "9f4b22db844bbdc504255ac0673a71229c58038f59ad84d346faf24522d6602d",
+    "authorized_canonical_argv_sha256": "0123f595902bbd6e87001ffd99b02de095c974450b745f760c0d3b80ac6f30dd",
+    "authorized_constitutional_anchor_head": "5c972e9960987ab27420395b54ace693df097e7b",
+    "authorized_context_sha256": "24ad31f682c5b04308f1ecac0a9ed779a590da37bf44b92c0c63f16ea4215951",
+    "authorized_fk_adapter_sha256": "7ae104802f49613ca60836913d2c68269b59728bc35bb677fdb3637aaf4b84c6",
+    "authorized_generation_identity": "G77_256GI_ONE_FRESH_HUMAN_AUTHORIZED_WRONG_ATTEMPT_OPERATIONAL_COMMISSIONING_V1",
+    "authorized_operation_identity": "G77_256GI_E05_WRONG_ATTEMPT_DENIAL_BEFORE_ENTRY_001",
+    "authorized_repository_head": "9377631735bc85b52200502acef3635afdd56461",
+    "authorized_repository_tree": "b431269014a4c1ebff5db54da3f7a7238250aaaa",
+    "authorized_vector": "WRONG_ATTEMPT",
+    "authorized_wrapper_sha256": "f2808a148bc9839f083ea9e59903674fe0dcd2a7587eee342fca44066ee9ad2b",
+    "auto_continuable": false,
+    "network_authorized": false,
+    "provider_authorized": false,
+    "qemu_system_execution_limit": 1,
+    "receipt_namespace_must_be_unconsumed": true,
+    "repair_limit": 0,
+    "replay_limit": 0,
+    "retry_limit": 0,
+    "schema_id": "SAPIANTA_CONTEXT_BOUND_FRESH_HUMAN_OPERATIONAL_AUTHORIZATION_V1",
+    "trusted_access_authorized": false,
+    "vm_boot_limit": 1,
+    "wrong_attempt_operational_attempt_limit": 1
+  },
+  "authorization_sha256": "492f388bf8069daa933cb40a58aaa1fe7d608ecd2d3ffe26d5368a484f5cee74",
+  "schema_id": "SAPIANTA_CONTEXT_BOUND_HUMAN_OPERATIONAL_AUTHORIZATION_HANDOFF_V1"
+}

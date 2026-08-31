@@ -1,0 +1,10 @@
+I explicitly grant exactly ONE fresh, one-shot, non-reusable, non-transferable Human operational authorization for generation `G77_256GI_ONE_FRESH_HUMAN_AUTHORIZED_WRONG_ATTEMPT_OPERATIONAL_COMMISSIONING_V1` and operation `G77_256GI_E05_WRONG_ATTEMPT_DENIAL_BEFORE_ENTRY_001`, bound to authorization request SHA-256 `5915dab7f8b51da37770e6663adcc593e1367d498263117f38bac2e58cff972a` and checkpoint SHA-256 `f441fb2766ec5dec02750d9afa2aca125c70d7913dc28e865e55b7d9c2e9b48c`, including the exact HEAD, TREE, candidate, context, argv, assets, checkout, GH adapter binding, and static-readiness identities contained therein.
+I authorize at most one governed launcher activation, one QEMU execution, one VM boot, and one WRONG\_ATTEMPT, with exactly `-nic none`, zero retry, zero repair, zero replay, no provider or Trusted Access execution, no second attempt, and no successor-generation authority.
+This authorization applies only to the exact sealed G77-256GI operation identified above.
+At the first terminal `PASS` or `FAIL_CLOSED`, STOP.
+Do not repair and rerun.\
+Do not request replacement authority.\
+Do not start G77-256GJ.\
+Do not commit or push.
+`AUTO_CONTINUABLE = NO`\
+`HUMAN_REVIEW_REQUIRED = YES`
