@@ -1,0 +1,177 @@
+{
+  "schema_id": "G77_256GL_ROOT_CAUSE_EQUIVALENCE_AND_REUSE_PROOF_ENVELOPE_V1",
+  "proof": {
+    "schema_id": "G77_256GL_ROOT_CAUSE_EQUIVALENCE_AND_REUSE_PROOF_V1",
+    "recorded_at_utc": "2026-08-31T05:42:47Z",
+    "entry": {
+      "branch": "g77-256fl-wrong-attempt-preboot-blocker",
+      "head": "7ae62a954fba7233aed47ce63026eff433c6024e",
+      "tree": "fa10eff6830372d906f5885a30347ed6b0966731",
+      "subject": "G77-256GK fail closed on omitted receipt-parent preparation",
+      "remote_head": "7ae62a954fba7233aed47ce63026eff433c6024e",
+      "local_remote_equal": true,
+      "stable_ancestry_anchor": "5c972e9960987ab27420395b54ace693df097e7b",
+      "tracked_worktree_clean_before_mutation": true,
+      "index_empty_before_mutation": true
+    },
+    "nested_immutable_authority": {
+      "head": "3183bab71f8f30397c0309dd2e6d846d14a11f66",
+      "tree": "7c32ec05efc2be43297849bc38ec8766514a523d",
+      "tag": "sapianta-system-nested-authority-3183bab-v1",
+      "detached": true,
+      "clean": true,
+      "pinned": true
+    },
+    "resource_gate": {
+      "five_hour_used_percent": 5,
+      "five_hour_remaining_percent": 95,
+      "seven_day_used_percent": 1,
+      "seven_day_remaining_percent": 99,
+      "result": "PASS",
+      "resource_capacity_is_execution_authority": false,
+      "account_window_telemetry_is_token_or_billing_telemetry": false
+    },
+    "gk_terminal_reauthentication": {
+      "result": "VERIFIED",
+      "terminal_evidence_path": ".github/governance/evidence/g77_256gk_wrong_attempt_operational_v1/G77_256GK_SPCE_FINAL_FAIL_CLOSED_REDUCTION_V1.json",
+      "terminal_evidence_file_sha256": "bb17c5bd97e9453586aae7612e6d0213f6e4b20c27633d65211b5cb233011727",
+      "terminal_evidence_inner_sha256": "59cf7456f66ca9822447ab1dc20cd566bc16e07abadc7c0a9ec999f6c08f9b28",
+      "verdict": "FAIL_CLOSED__G77_256GK_POST_AUTHORITY_PRE_LAUNCHER_FINAL_ADMISSION_FAILED__DURABLE_RECEIPT_PARENT_ABSENT__EXISTING_GA_OWNER_NOT_INVOKED_BEFORE_SEAL__AUTHORITY_CONSUMED_AND_NON_REUSABLE__NO_PRE__NO_QEMU__NO_P11_ENTRY__NO_RETRY_REPAIR_REPLAY__E05_REMAINS_6_OF_18__HUMAN_REVIEW_REQUIRED",
+      "sealed_receipt_parent_ready_claim": true,
+      "final_admission_observed_receipt_parent_exists": false,
+      "human_authority_disposition": "CONSUMED__TERMINAL__NON_REUSABLE__NON_TRANSFERABLE",
+      "first_broken_edge": "GK_SEALED_RECEIPT_PARENT_READY_CLAIM_TO_FO_VALIDATE_RECEIPT_PARENT_READY",
+      "systematic_post_gj_commissioning_gap": true
+    },
+    "root_cause_contract": {
+      "root_cause_class": "EXISTING_OWNER_INVOCATION_AND_PREAUTHORIZATION_EVIDENCE_BINDING_OMISSION",
+      "source_owner": "GD_FRESH_OPERATION_CONTEXT_RECEIPT_NAMESPACE_DERIVATION_THROUGH_FM_OWNER",
+      "preparation_owner": "EXISTING_FM_PREPARE_RECEIPT_PARENT_CERTIFIED_BY_GA",
+      "validation_owner": "EXISTING_FM_VALIDATE_RECEIPT_PARENT_READY_CERTIFIED_BY_GA",
+      "preauthorization_orchestration_owner": "G77_256GL_PREPARE_AND_OBSERVE_RECEIPT_PARENT",
+      "checkpoint_binding_owner": "G77_256GL_REDUCE_PREAUTHORIZATION_CHECKPOINT",
+      "final_admission_owner": "UNCHANGED_FO_VALIDATE_FINAL_ADMISSION_TO_FM_VALIDATE_RECEIPT_PARENT_READY",
+      "first_broken_edge": "GK_SEALED_RECEIPT_PARENT_READY_CLAIM_TO_FO_VALIDATE_RECEIPT_PARENT_READY",
+      "minimum_safe_correction_owner_set": [
+        "G77_256GL_PREAUTHORIZATION_ORCHESTRATION",
+        "EXISTING_FM_PREPARE_RECEIPT_PARENT",
+        "EXISTING_FM_VALIDATE_RECEIPT_PARENT_READY",
+        "G77_256GL_CHECKPOINT_EVIDENCE_REDUCTION",
+        "UNCHANGED_FO_RECEIPT_PARENT_OBSERVATION"
+      ],
+      "ga_defect_proven": false,
+      "existing_owner_invocation_omission_proven": true
+    },
+    "constitutional_invariant": {
+      "preauthorization_receipt_parent_ready_claim_iff": [
+        "EXISTING_OWNER_PREPARED_STATE",
+        "EXISTING_OWNER_VALIDATED_STATE",
+        "OBSERVED_DURABLE_FILESYSTEM_STATE"
+      ],
+      "checkpoint_accepts_free_standing_ready_boolean": false,
+      "claim_bound_to": [
+        "generation_identity",
+        "operation_identity",
+        "context_sha256",
+        "receipt_parent",
+        "directory_object_identity",
+        "existing_owner_observation",
+        "canonical_observation_sha256"
+      ]
+    },
+    "equivalence": {
+      "preauth_final_admission_equivalence": "VERIFIED_WITHIN_EXACT_REVIEWED_RECEIPT_PARENT_BOUNDARY",
+      "preauthorization_owner": "G77_256GL_PREPARE_AND_OBSERVE_RECEIPT_PARENT",
+      "final_admission_observation": "EXISTING_FM_VALIDATE_RECEIPT_PARENT_READY_CALLED_UNCHANGED",
+      "immutable_same_state_contract": "CONTEXT_IDENTITY_AND_DIRECTORY_OBJECT_IDENTITY_AND_CANONICAL_OBSERVATION_EQUAL",
+      "repeated_observation": "IDENTICAL",
+      "tests_are_sole_basis_for_verified_status": false,
+      "implementation_and_evidence_binding_establish_equivalence": true
+    },
+    "same_class_review": {
+      "scope": "PREAUTHORIZATION_TO_CHECKPOINT_TO_POST_AUTHORITY_FINAL_ADMISSION",
+      "classification": "NO_ADDITIONAL_INSTANCE_FOUND_WITHIN_REVIEWED_BOUNDARY",
+      "reviewed_claim_classes": [
+        "REPOSITORY_AND_NESTED_GIT_IDENTITY",
+        "RESOURCE_OBSERVATION",
+        "GJ_AUTHORITY_CANONICALIZATION",
+        "EX_COMMON_SUBSTRATE",
+        "DU_EB_EE_LIVE_BINDING",
+        "MATERIALIZED_OVERLAY_AND_RUNTIME_EXPORT",
+        "IMMUTABLE_ASSET_HASHES_AND_CHECKOUT",
+        "GH_GUEST_ADAPTER_AND_PREBOOT_VISIBILITY",
+        "FRESH_MUTABLE_SINK_ABSENCE",
+        "RECEIPT_PARENT_READINESS"
+      ],
+      "isolated_false_positive": "RECEIPT_PARENT_READINESS",
+      "systematic_commissioning_architecture_review_required": false
+    },
+    "candidate_impact": {
+      "candidate_semantics_changed": false,
+      "candidate_binding_regeneration_required": false,
+      "reason": "GL adds repository-only preauthorization orchestration evidence and does not modify the candidate or any DU_EB_EE bound source identity",
+      "du_applicability": "REUSED_UNCHANGED__NO_REGENERATION",
+      "eb_applicability": "REUSED_UNCHANGED__NO_REGENERATION",
+      "ee_applicability": "REUSED_UNCHANGED__NO_REGENERATION"
+    },
+    "reuse": {
+      "ex_reused": "17/17",
+      "ex_reconstructed": 0,
+      "ga_reused": true,
+      "fm_reused": true,
+      "gj_reused": true,
+      "gh_reused": true,
+      "gf_reused": true,
+      "gd_reused": true,
+      "fy_reused": true,
+      "fo_reused": true,
+      "du_reused": true,
+      "eb_reused": true,
+      "ee_reused": true,
+      "p11_reused": true,
+      "che_reused": true,
+      "fk_reused": true,
+      "new_reusable_capability": "ONE_REPOSITORY_ONLY_PREAUTHORIZATION_OBSERVATION_BINDER",
+      "existing_capability_unreachable": false,
+      "parallel_flow_created": false
+    },
+    "architecture_counters": {
+      "new_launchers": 0,
+      "new_production_routes": 0,
+      "new_authorization_models": 0,
+      "new_receipt_subsystems": 0,
+      "new_validator_architectures": 0,
+      "parallel_execution_flows": 0,
+      "production_route_delta": 0,
+      "p11_modified": false,
+      "che_modified": false,
+      "fk_modified": false
+    },
+    "operational_counters": {
+      "human_constitutional_authorization_count": 0,
+      "pre_count": 0,
+      "post_count": 0,
+      "governed_launcher_activations": 0,
+      "qemu_execution_count": 0,
+      "vm_boot_count": 0,
+      "wrong_attempt_execution_count": 0,
+      "request_count": 0,
+      "p11_entry_count": 0,
+      "protected_invocation_count": 0,
+      "protected_effect_count": 0,
+      "retry_count": 0,
+      "repair_execution_count": 0,
+      "replay_execution_count": 0
+    },
+    "e05": {
+      "before": "6/18",
+      "after": "6/18",
+      "credit_awarded": 0,
+      "repository_validation_is_operational_evidence": false
+    },
+    "formalize_reuse_bind_verify_compliance": "VERIFIED",
+    "auto_continuable": false,
+    "human_review_required": true
+  },
+  "proof_sha256": "a1e45d03efa1d39edd7247ce92225e4937264e4b97cf43f506b6f65ced6cd678"
+}
