@@ -1,0 +1,44 @@
+{
+  "schema_id": "G77_256GJ_SPCE_ENTRY_CHECKPOINT_ENVELOPE_V1",
+  "checkpoint": {
+    "schema_id": "G77_256GJ_SPCE_ENTRY_CHECKPOINT_V1",
+    "recorded_at_utc": "2026-08-31T04:13:57Z",
+    "generation_identity": "G77_256GJ_ONE_BOUNDED_REPOSITORY_ONLY_AUTHORITY_HANDOFF_CANONICALIZATION_CORRECTION_V1",
+    "branch": "g77-256fl-wrong-attempt-preboot-blocker",
+    "required_head": "cffe15bcfaec049cdd259bc8df6316c87299a4bb",
+    "local_head": "cffe15bcfaec049cdd259bc8df6316c87299a4bb",
+    "remote_head": "cffe15bcfaec049cdd259bc8df6316c87299a4bb",
+    "resolved_tree": "1aec72c2df7bfe1ae25efd7a393f02ed0ecba264",
+    "current_tree": "1aec72c2df7bfe1ae25efd7a393f02ed0ecba264",
+    "resolved_subject": "G77-256GI fail closed on noncanonical authority handoff",
+    "current_subject": "G77-256GI fail closed on noncanonical authority handoff",
+    "worktree_clean": true,
+    "index_empty": true,
+    "stable_ancestry_anchor": "5c972e9960987ab27420395b54ace693df097e7b",
+    "stable_ancestry_present": true,
+    "nested_immutable_authority": {
+      "head": "3183bab71f8f30397c0309dd2e6d846d14a11f66",
+      "tree": "7c32ec05efc2be43297849bc38ec8766514a523d",
+      "tag": "sapianta-system-nested-authority-3183bab-v1",
+      "detached": true,
+      "clean": true,
+      "pinned": true
+    },
+    "resource_observation": {
+      "window_duration_minutes": 300,
+      "used_percent": 6,
+      "remaining_percent": 94,
+      "required_remaining_percent_exclusive": 60,
+      "result": "PASS",
+      "resource_capacity_is_execution_authority": false,
+      "account_window_telemetry_is_token_telemetry": false
+    },
+    "repository_only": true,
+    "human_constitutional_authorization_count": 0,
+    "qemu_execution_count": 0,
+    "e05_before": "6/18",
+    "e05_after": "6/18",
+    "checkpoint_is_authority": false
+  },
+  "checkpoint_sha256": "964d66cc8b783d67f1a51cab474b090ff9b3fca79659ba9b7f4abe16e7d0d68d"
+}

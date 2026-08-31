@@ -900,6 +900,203 @@ def authority_sha256(value: dict[str, Any]) -> str:
     return hashlib.sha256(canonical_bytes(value)).hexdigest()
 
 
+def build_authority_handoff(authorization: dict[str, Any]) -> dict[str, Any]:
+    """Build the one canonical envelope shape without granting authority."""
+
+    if not isinstance(authorization, dict) or set(authorization) != AUTHORIZATION_FIELDS:
+        raise RuntimeError("required execution authority field malformed, missing, or unknown")
+    envelope = {
+        "schema_id": AUTHORITY_SCHEMA,
+        "authorization": authorization,
+        "authorization_sha256": authority_sha256(authorization),
+    }
+    validate_authority_handoff_envelope_shape(envelope)
+    return envelope
+
+
+def validate_authority_handoff_envelope_shape(value: dict[str, Any]) -> None:
+    """Validate exact envelope/schema/inner-seal structure, not Human semantics."""
+
+    if set(value) != {"schema_id", "authorization", "authorization_sha256"}:
+        raise RuntimeError("execution authority envelope fields malformed or unknown")
+    if value.get("schema_id") != AUTHORITY_SCHEMA:
+        raise RuntimeError("execution authority envelope schema mismatch")
+    authorization = value.get("authorization")
+    if not isinstance(authorization, dict) or set(authorization) != AUTHORIZATION_FIELDS:
+        raise RuntimeError("required execution authority field malformed, missing, or unknown")
+    if value.get("authorization_sha256") != authority_sha256(authorization):
+        raise RuntimeError("execution authority inner seal mismatch")
+
+
+def parse_authority_handoff_bytes(raw: bytes) -> dict[str, Any]:
+    """Accept exactly unique-key canonical compact JSON plus one LF."""
+
+    def unique_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+        value: dict[str, Any] = {}
+        for key, item in pairs:
+            if key in value:
+                raise RuntimeError("execution authority handoff contains duplicate JSON keys")
+            value[key] = item
+        return value
+
+    try:
+        value = json.loads(raw, object_pairs_hook=unique_object)
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise RuntimeError("execution authority handoff malformed") from exc
+    if not isinstance(value, dict) or raw != canonical_bytes(value):
+        raise RuntimeError("execution authority handoff is not unique-key canonical JSON")
+    validate_authority_handoff_envelope_shape(value)
+    return value
+
+
+def canonical_authority_handoff_bytes(
+    authorization: dict[str, Any],
+) -> bytes:
+    """Serialize one authority object exactly as the strict loader requires."""
+
+    envelope = build_authority_handoff(authorization)
+    payload = canonical_bytes(envelope)
+    if parse_authority_handoff_bytes(payload) != envelope:
+        raise RuntimeError("authority handoff producer/loader semantic mismatch")
+    return payload
+
+
+def write_authority_handoff(
+    path: Path,
+    authorization: dict[str, Any],
+) -> dict[str, Any]:
+    """Persist one envelope through the existing canonical atomic writer."""
+
+    envelope = build_authority_handoff(authorization)
+    expected = canonical_authority_handoff_bytes(authorization)
+    file_sha256 = write_atomic(path, envelope)
+    loaded, loaded_sha256 = load_authority(path)
+    if path.read_bytes() != expected or loaded != envelope or loaded_sha256 != file_sha256:
+        raise RuntimeError("authority handoff persistence/loader equivalence mismatch")
+    return {
+        "authority_file_sha256": file_sha256,
+        "authority_inner_sha256": envelope["authorization_sha256"],
+        "canonical_byte_count": len(expected),
+    }
+
+
+def preauthority_serialization_fixture(
+    context: dict[str, Any],
+    *,
+    request_sha256: str = "a" * 64,
+    checkpoint_sha256: str = "b" * 64,
+) -> dict[str, Any]:
+    """Create deterministic test-only semantics that can never be authority."""
+
+    if not HEX_64.fullmatch(request_sha256) or not HEX_64.fullmatch(checkpoint_sha256):
+        raise RuntimeError("preauthority request/checkpoint fixture binding malformed")
+    fixture_source = {
+        "fixture_classification": "TEST_ONLY__NON_AUTHORITY__NON_OPERATIONAL",
+        "request_sha256": request_sha256,
+        "checkpoint_sha256": checkpoint_sha256,
+        "context_sha256": context["context_sha256"],
+        "generation_identity": context["generation_identity"],
+        "operation_identity": context["operation_identity"],
+        "repository_head": context["repository_head"],
+        "repository_tree": context["repository_tree"],
+        "candidate_sha256": context["candidate_manifest_sha256"],
+        "canonical_argv_sha256": context["canonical_argv_sha256"],
+    }
+    return {
+        "schema_id": AUTHORIZATION_SCHEMA,
+        "authorization_present": False,
+        "authorization_kind": "TEST_ONLY_NON_AUTHORITY_SERIALIZATION_FIXTURE",
+        "authorization_source_sha256": hashlib.sha256(
+            canonical_bytes(fixture_source)
+        ).hexdigest(),
+        "authorized_context_sha256": context["context_sha256"],
+        "authorized_operation_identity": context["operation_identity"],
+        "authorized_generation_identity": context["generation_identity"],
+        "authorized_vector": "WRONG_ATTEMPT",
+        "authorized_repository_head": context["repository_head"],
+        "authorized_repository_tree": context["repository_tree"],
+        "authorized_constitutional_anchor_head": CONSTITUTIONAL_ANCHOR_HEAD,
+        "authorized_candidate_sha256": context["candidate_manifest_sha256"],
+        "authorized_canonical_argv_sha256": context["canonical_argv_sha256"],
+        "authorized_wrapper_sha256": context["wrapper_fc_er_che_schema_hashes"]["wrapper"],
+        "authorized_fk_adapter_sha256": FK_ADAPTER_SHA256,
+        "vm_boot_limit": 1,
+        "qemu_system_execution_limit": 1,
+        "wrong_attempt_operational_attempt_limit": 1,
+        "retry_limit": 0,
+        "repair_limit": 0,
+        "replay_limit": 0,
+        "receipt_namespace_must_be_unconsumed": True,
+        "network_authorized": False,
+        "provider_authorized": False,
+        "trusted_access_authorized": False,
+        "authorization_reusable": False,
+        "auto_continuable": False,
+    }
+
+
+def validate_preauthority_serialization_fixture(
+    context: dict[str, Any],
+    authorization: dict[str, Any],
+    *,
+    request_sha256: str = "a" * 64,
+    checkpoint_sha256: str = "b" * 64,
+) -> None:
+    """Reject any test-only semantic binding drift before Human authority."""
+
+    expected = preauthority_serialization_fixture(
+        context,
+        request_sha256=request_sha256,
+        checkpoint_sha256=checkpoint_sha256,
+    )
+    if authorization != expected:
+        raise RuntimeError("preauthority authority serialization fixture binding mismatch")
+
+
+def prove_authority_handoff_canonicalization(
+    context: dict[str, Any],
+) -> dict[str, Any]:
+    """Prove producer/loader byte equivalence without creating authority."""
+
+    authorization = preauthority_serialization_fixture(context)
+    validate_preauthority_serialization_fixture(context, authorization)
+    envelope = build_authority_handoff(authorization)
+    first = canonical_authority_handoff_bytes(authorization)
+    second = canonical_authority_handoff_bytes(authorization)
+    parsed = parse_authority_handoff_bytes(first)
+    if first != second or parsed != envelope:
+        raise RuntimeError("preauthority authority handoff proof is nondeterministic")
+    pretty = (json.dumps(envelope, sort_keys=True, indent=2) + "\n").encode()
+    try:
+        parse_authority_handoff_bytes(pretty)
+    except RuntimeError:
+        pretty_rejected = True
+    else:
+        pretty_rejected = False
+    if not pretty_rejected:
+        raise RuntimeError("pretty authority envelope unexpectedly accepted")
+    return {
+        "result": "PREAUTHORITY_CANONICAL_AUTHORITY_HANDOFF_PROOF_PASS",
+        "fixture_classification": "TEST_ONLY__NON_AUTHORITY__NON_OPERATIONAL",
+        "canonical_authority_handoff_serializer_identity": "VERIFIED",
+        "canonical_authority_envelope_schema": "VERIFIED",
+        "canonical_authority_handoff_template": "VERIFIED",
+        "canonicalization_algorithm": "SORTED_COMPACT_JSON_PLUS_LF",
+        "unique_key_json_requirement": "VERIFIED",
+        "canonical_compact_json_plus_lf_requirement": "VERIFIED",
+        "loader_producer_canonicalization_equivalence": "VERIFIED",
+        "no_pretty_print_reencoding_path": "VERIFIED",
+        "no_second_serializer_path": "VERIFIED",
+        "producer_output_sha256": hashlib.sha256(first).hexdigest(),
+        "loader_expectation_sha256": hashlib.sha256(canonical_bytes(parsed)).hexdigest(),
+        "semantic_envelope_sha256": hashlib.sha256(canonical_bytes(envelope)).hexdigest(),
+        "deterministic_repeat_sha256": hashlib.sha256(second).hexdigest(),
+        "canonical_byte_count": len(first),
+        "human_operational_authorization_count": 0,
+        "qemu_execution_count": 0,
+    }
+
+
 def load_authority(path: Path) -> tuple[dict[str, Any], str]:
     raw = path.read_bytes()
     try:
@@ -1288,6 +1485,7 @@ def authority_free_static_readiness(
     )
     checkout = validate_checkout_preboot_readiness(context)
     adapter = prove_guest_adapter_binding(repository_root, context)
+    authority_handoff = prove_authority_handoff_canonicalization(context)
     reduction = {
         "result": "STATIC_READINESS_PASS",
         "phase": "AUTHORITY_FREE_STATIC_READINESS",
@@ -1298,6 +1496,7 @@ def authority_free_static_readiness(
         "complete_freshness_closure": freshness,
         "preboot_visibility": visibility,
         "guest_adapter_binding": adapter,
+        "authority_handoff_canonicalization": authority_handoff,
         "checkout_readiness": checkout,
         "one_launcher_route": True,
         "one_qemu_call_site": True,
