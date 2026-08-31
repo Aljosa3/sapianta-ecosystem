@@ -1,0 +1,16 @@
+I, the Human constitutional authority, issue one fresh, explicit, one-shot, non-reusable, non-transferable operational authorization for GENERATION\_ID G77\_256GM\_ONE\_FRESH\_HUMAN\_AUTHORIZED\_WRONG\_ATTEMPT\_OPERATIONAL\_COMMISSIONING\_V1 and OPERATION\_ID G77\_256GM\_E05\_WRONG\_ATTEMPT\_DENIAL\_BEFORE\_ENTRY\_001.
+
+This authorization is bound exclusively to:
+HEAD 67071c8e15eac6f96b48e9a5293d80c300747b14
+TREE 1495465243ea54b1bd06d1d1c415f100dfbdf4bc
+CANDIDATE\_SHA256 b92797c2e0d83d95f60e71b4c758759a0ab0adb9feab3126438e2614798d987e
+CONTEXT\_SHA256 bf2c147426a0244150a8eeb71ebebb23b963aa497e6d605229491efe6f952056
+CANONICAL\_ARGV\_SHA256 5533f3825de28ad98f689a035cd24cbba6b3856ca093f30a679a8797f0f076e4
+CHECKPOINT\_SHA256 a9b3c557c280e89e19abc0dc8687ac08f7e07bde771e1b1ead13aeccdfcea9e5
+AUTHORIZATION\_REQUEST\_SHA256 d781ff310a7bd2e0d75c37bc0bff04670e0ccbef32d7aaeee55590107fba0854
+
+I authorize at most one governed launcher activation, one QEMU execution, one VM boot, and one WRONG\_ATTEMPT operation attempt through the existing governed route.
+
+Network, retry, repair, replay, replacement authority, a second attempt, authority transfer, authority reuse, and any successor generation are explicitly prohibited.
+
+This authorization grants no provider authority, Trusted Access authority, production effect authority, retry authority, repair authority, replay authority, or authorization for any other generation, operation, repository state, candidate, context, argv, checkpoint, or authorization request.
