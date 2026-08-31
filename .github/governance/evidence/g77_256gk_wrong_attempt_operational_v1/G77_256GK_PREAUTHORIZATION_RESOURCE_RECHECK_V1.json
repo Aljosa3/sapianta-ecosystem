@@ -1,0 +1,45 @@
+{
+  "schema_id": "G77_256GK_PREAUTHORIZATION_RESOURCE_RECHECK_ENVELOPE_V1",
+  "recheck": {
+    "schema_id": "G77_256GK_PREAUTHORIZATION_RESOURCE_RECHECK_V1",
+    "observed_at_utc": "2026-08-31T04:56:21Z",
+    "preauthorization_checkpoint_path": ".github/governance/evidence/g77_256gk_wrong_attempt_operational_v1/G77_256GK_PREAUTHORIZATION_SAFE_STOP_CHECKPOINT_V1.json",
+    "preauthorization_checkpoint_file_sha256": "5f31279ad00d1eca2a1d14aef0cbc68731a2f294a0ac55fd454a4b232c663850",
+    "preauthorization_checkpoint_inner_sha256": "a81080d0600f7c5ad443ccf4c8311caabeb401531fb5a6b66937c0c88aff5942",
+    "primary_window": {
+      "duration_minutes": 300,
+      "used_percent": 25,
+      "remaining_percent": 75,
+      "required_remaining_percent_exclusive": 40,
+      "result": "PASS__SAME_SESSION_CONTINUATION_PERMITTED"
+    },
+    "secondary_window": {
+      "duration_minutes": 10080,
+      "used_percent": 4,
+      "remaining_percent": 96
+    },
+    "resource_capacity_is_execution_authority": false,
+    "provider_permission_is_human_constitutional_authority": false,
+    "account_window_telemetry_is_token_or_billing_telemetry": false,
+    "provider_permission_confirmation_count": 3,
+    "human_constitutional_authorization_count": 0,
+    "human_terminal_review_count": 0,
+    "governed_launcher_activations": 0,
+    "qemu_execution_count": 0,
+    "vm_boot_count": 0,
+    "pre_count": 0,
+    "post_count": 0,
+    "wrong_attempt_execution_count": 0,
+    "request_count": 0,
+    "p11_entry_count": 0,
+    "protected_invocation_count": 0,
+    "protected_effect_count": 0,
+    "retry_count": 0,
+    "repair_execution_count": 0,
+    "replay_execution_count": 0,
+    "next_legal_phase": "REQUEST_EXACTLY_ONE_EXPLICIT_HUMAN_CONSTITUTIONAL_OPERATIONAL_AUTHORIZATION",
+    "auto_continuable": false,
+    "checkpoint_is_authority": false
+  },
+  "recheck_sha256": "137897cdbb2daf2d553ed47eb6ffd985a2d810d55e34638f4eb1aa2d64e79d8f"
+}

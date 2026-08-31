@@ -1,0 +1,11 @@
+I explicitly authorize exactly one fresh, one-shot, non-reusable, non-transferable governed WRONG\_ATTEMPT operation for generation G77\_256GK\_ONE\_FRESH\_HUMAN\_AUTHORIZED\_WRONG\_ATTEMPT\_OPERATIONAL\_COMMISSIONING\_V1 and operation G77\_256GK\_E05\_WRONG\_ATTEMPT\_DENIAL\_BEFORE\_ENTRY\_001, bound to HEAD f39057ff97f362e91856dda904d4b3d84607234e, TREE 26048da86a058be689e631151d7848e7b8829e91, candidate 28facc35ea2228bfec2668761c8bf9db84d585baf0552f024a7251764b383569, context 4718854de45318ee093db029dc32a0b9dc8d8cbdd6016cc724fd499d87f39e15, canonical argv 0e5eb36257e1bcde2fa3dce97ba89299dce8b7bd14a439476758d9e56f3f9fa8, checkpoint a81080d0600f7c5ad443ccf4c8311caabeb401531fb5a6b66937c0c88aff5942, and request e6105aabf9a1c2ec6af7fd8d99d3e25205d65f3e0f90eb7c1337ee6e9d1a8d8e. I authorize at most one launcher activation, one QEMU execution, one VM boot, and one operation attempt, with no network, retry, repair, replay, replacement authority, successor generation, or second attempt.
+
+At the first terminal PASS or FAIL\_CLOSED, STOP.
+
+Do not repair and rerun.
+Do not request replacement authority.
+Do not start G77-256GL.
+Do not commit or push.
+
+AUTO\_CONTINUABLE = NO
+HUMAN\_REVIEW\_REQUIRED = YES
