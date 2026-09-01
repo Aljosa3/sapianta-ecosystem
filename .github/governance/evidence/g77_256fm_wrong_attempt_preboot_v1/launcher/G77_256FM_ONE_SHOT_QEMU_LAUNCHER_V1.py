@@ -13,6 +13,7 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+import tempfile
 import time
 from types import ModuleType
 from typing import Any
@@ -1363,6 +1364,14 @@ def materialize_operation_state(
             raise RuntimeError(f"fresh materialization root collision: {root}")
         if root.parent.is_symlink() or not root.parent.is_dir():
             raise RuntimeError(f"fresh materialization parent absent or unsafe: {root.parent}")
+    checkout_binding = context["qemu_executable_base_seed_checkout_bindings"]["checkout"]
+    checkout_materialization = materialize_guest_self_contained_checkout(
+        source_repository=repository_root,
+        checkout_path=Path(checkout_binding["path"]),
+        expected_head=checkout_binding["head"],
+        expected_tree=checkout_binding["tree"],
+    )
+    for root in (operation_root, transient_root):
         root.mkdir(mode=0o700, parents=False, exist_ok=False)
     runtime_export.mkdir(mode=0o700, parents=False, exist_ok=False)
     adapter_binding = context["guest_adapter_binding"]
@@ -1398,9 +1407,153 @@ def materialize_operation_state(
         "adapter_projection_sha256": sha256_path(
             Path(adapter_binding["projected_path"])
         ),
+        "checkout_materialization": checkout_materialization,
         "overlay_materialized": True,
         "qemu_execution_count": 0,
     }
+
+
+def _materialized_checkout_observation(
+    checkout: Path, expected_head: str, expected_tree: str
+) -> dict[str, Any]:
+    """Reobserve one direct, detached, object-localized checkout."""
+
+    gitdir, representation = _git_directory_from_presentation_root(checkout)
+    if representation != "DIRECTORY":
+        raise RuntimeError("materialized checkout must use a direct Git directory")
+    common_dir = _git_common_directory(checkout, gitdir)
+    if common_dir != gitdir:
+        raise RuntimeError("materialized checkout common-dir must be local and direct")
+    _reject_git_metadata_symlink_escape(checkout, gitdir, common_dir)
+    object_directories = _reachable_object_directories(checkout, common_dir / "objects")
+    if object_directories != (common_dir / "objects",):
+        raise RuntimeError("materialized checkout must use one local object database")
+    observed_head = _er_consumer_git(checkout, "rev-parse", "HEAD")
+    observed_tree = _er_consumer_git(checkout, "rev-parse", "HEAD^{tree}")
+    if observed_head != expected_head:
+        raise RuntimeError("materialized checkout resolved wrong HEAD")
+    if observed_tree != expected_tree:
+        raise RuntimeError("materialized checkout resolved wrong TREE")
+    if _er_consumer_git(checkout, "cat-file", "-t", observed_head) != "commit":
+        raise RuntimeError("materialized checkout commit object is unreachable")
+    if _er_consumer_git(checkout, "cat-file", "-t", observed_tree) != "tree":
+        raise RuntimeError("materialized checkout tree object is unreachable")
+    if _er_consumer_git(checkout, "status", "--porcelain"):
+        raise RuntimeError("materialized checkout is stale or dirty")
+    try:
+        _er_consumer_git(checkout, "symbolic-ref", "-q", "HEAD")
+    except RuntimeError:
+        detached = True
+    else:
+        detached = False
+    if not detached:
+        raise RuntimeError("materialized checkout HEAD is not detached")
+    return {
+        "result": "GUEST_SELF_CONTAINED_CHECKOUT_MATERIALIZATION_PASS",
+        "checkout_path": str(checkout),
+        "expected_head": expected_head,
+        "observed_head": observed_head,
+        "expected_tree": expected_tree,
+        "observed_tree": observed_tree,
+        "git_representation": "DIRECT_GIT_DIRECTORY",
+        "common_dir": str(common_dir),
+        "object_database": str(object_directories[0]),
+        "external_git_metadata_dependency": False,
+        "external_object_database_dependency": False,
+        "detached": True,
+        "clean": True,
+    }
+
+
+def materialize_guest_self_contained_checkout(
+    *,
+    source_repository: Path,
+    checkout_path: Path,
+    expected_head: str,
+    expected_tree: str,
+) -> dict[str, Any]:
+    """Atomically create the existing FM checkout with no borrowed Git state."""
+
+    source = source_repository.resolve(strict=True)
+    if source_repository.absolute() != source or not source.is_dir():
+        raise RuntimeError("checkout source repository is not canonical")
+    if not HEX_40.fullmatch(expected_head) or not HEX_40.fullmatch(expected_tree):
+        raise RuntimeError("checkout expected HEAD/TREE malformed")
+    if checkout_path != checkout_path.absolute():
+        raise RuntimeError("checkout destination must be absolute")
+    parent = checkout_path.parent.resolve(strict=True)
+    if checkout_path.parent.absolute() != parent or not parent.is_dir():
+        raise RuntimeError("checkout destination parent is not canonical")
+    destination = parent / checkout_path.name
+    if destination.exists() or destination.is_symlink():
+        raise RuntimeError("fresh checkout destination collision")
+
+    environment = os.environ.copy()
+    for name in tuple(environment):
+        if name.startswith("GIT_"):
+            environment.pop(name)
+    environment["GIT_CONFIG_NOSYSTEM"] = "1"
+    environment["GIT_CONFIG_GLOBAL"] = os.devnull
+
+    source_head = subprocess.run(
+        ["git", "rev-parse", f"{expected_head}^{{commit}}"],
+        cwd=source,
+        check=True,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        timeout=60,
+        env=environment,
+    ).stdout.strip()
+    source_tree = subprocess.run(
+        ["git", "rev-parse", f"{expected_head}^{{tree}}"],
+        cwd=source,
+        check=True,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        timeout=60,
+        env=environment,
+    ).stdout.strip()
+    if source_head != expected_head or source_tree != expected_tree:
+        raise RuntimeError("checkout source does not resolve exact expected HEAD/TREE")
+
+    with tempfile.TemporaryDirectory(
+        dir=parent, prefix=f".{destination.name}.g77_256gq_"
+    ) as temporary:
+        staged = Path(temporary) / "checkout"
+        subprocess.run(
+            [
+                "git",
+                "clone",
+                "--quiet",
+                "--no-local",
+                "--no-checkout",
+                "--",
+                str(source),
+                str(staged),
+            ],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+            timeout=300,
+            env=environment,
+        )
+        subprocess.run(
+            ["git", "checkout", "--quiet", "--detach", expected_head],
+            cwd=staged,
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+            timeout=300,
+            env=environment,
+        )
+        _materialized_checkout_observation(staged, expected_head, expected_tree)
+        os.replace(staged, destination)
+
+    return _materialized_checkout_observation(
+        destination, expected_head, expected_tree
+    )
 
 
 def _inside(root: Path, candidate: Path) -> bool:

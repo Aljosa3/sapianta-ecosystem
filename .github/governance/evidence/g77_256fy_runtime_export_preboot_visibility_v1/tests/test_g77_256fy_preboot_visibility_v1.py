@@ -8,6 +8,7 @@ import importlib.util
 from pathlib import Path
 import tempfile
 import unittest
+from unittest import mock
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[5]
@@ -36,11 +37,16 @@ def context_for(root: Path) -> tuple[dict, Path]:
     )
     path = root / "context.json"
     path.write_bytes(LAUNCHER.canonical_bytes(context))
-    LAUNCHER.materialize_operation_state(
-        repository_root=REPOSITORY_ROOT,
-        context=context,
-        context_source_path=path,
-    )
+    with mock.patch.object(
+        LAUNCHER,
+        "materialize_guest_self_contained_checkout",
+        return_value={"result": "TEST_ONLY_GQ_MATERIALIZATION_PASS"},
+    ):
+        LAUNCHER.materialize_operation_state(
+            repository_root=REPOSITORY_ROOT,
+            context=context,
+            context_source_path=path,
+        )
     return context, path
 
 

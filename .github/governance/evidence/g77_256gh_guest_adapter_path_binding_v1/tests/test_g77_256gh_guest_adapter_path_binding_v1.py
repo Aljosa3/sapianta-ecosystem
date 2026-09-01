@@ -53,11 +53,16 @@ def build_and_materialize(root: Path, prefix: str) -> dict:
     )
     context_path = root / "context.json"
     context_path.write_bytes(LAUNCHER.canonical_bytes(context))
-    materialization = LAUNCHER.materialize_operation_state(
-        repository_root=REPOSITORY_ROOT,
-        context=context,
-        context_source_path=context_path,
-    )
+    with mock.patch.object(
+        LAUNCHER,
+        "materialize_guest_self_contained_checkout",
+        return_value={"result": "TEST_ONLY_GQ_MATERIALIZATION_PASS"},
+    ):
+        materialization = LAUNCHER.materialize_operation_state(
+            repository_root=REPOSITORY_ROOT,
+            context=context,
+            context_source_path=context_path,
+        )
     assert materialization["qemu_execution_count"] == 0
     return context
 

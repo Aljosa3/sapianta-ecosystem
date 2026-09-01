@@ -149,32 +149,19 @@ class FreshContextPositiveTests(unittest.TestCase):
             index = loaded["canonical_argv"].index("-nic")
             self.assertEqual(loaded["canonical_argv"][index + 1], "none")
 
-    def test_historical_shared_checkout_is_rejected_by_authority_free_readiness(self):
+    def test_historical_shared_checkout_collision_is_rejected_before_materialization(self):
         with tempfile.TemporaryDirectory(prefix="g77_256gd_static_") as temporary:
             root = Path(temporary)
             context = context_for(root)
             path = write_context(root, context)
-            materialized = LAUNCHER.materialize_operation_state(
-                repository_root=REPOSITORY_ROOT,
-                context=context,
-                context_source_path=path,
-            )
-            self.assertEqual(materialized["qemu_execution_count"], 0)
-            prepared = LAUNCHER.prepare_receipt_parent(REPOSITORY_ROOT, context)
-            self.assertTrue(prepared["receipt_namespace_unused"])
-            with self.assertRaisesRegex(
-                RuntimeError, "object alternate escapes presentation root"
-            ):
-                LAUNCHER.authority_free_static_readiness(
+            with self.assertRaisesRegex(RuntimeError, "checkout destination collision"):
+                LAUNCHER.materialize_operation_state(
                     repository_root=REPOSITORY_ROOT,
                     context=context,
-                    observed_head=context["repository_head"],
-                    observed_tree=context["repository_tree"],
-                    repository_clean=True,
-                    observed_asset_sha256=LAUNCHER.observe_context_assets(
-                        REPOSITORY_ROOT, context
-                    ),
+                    context_source_path=path,
                 )
+            self.assertFalse(Path(context["operation_evidence_root"]).exists())
+            self.assertFalse(Path(context["transient_root"]).exists())
 
     def test_test_only_non_authority_fixture_binds_context(self):
         with tempfile.TemporaryDirectory(prefix="g77_256gd_authority_") as temporary:
@@ -314,11 +301,16 @@ class FreshContextNegativeTests(unittest.TestCase):
                 root = Path(temporary)
                 context = context_for(root)
                 path = write_context(root, context)
-                LAUNCHER.materialize_operation_state(
-                    repository_root=REPOSITORY_ROOT,
-                    context=context,
-                    context_source_path=path,
-                )
+                with mock.patch.object(
+                    LAUNCHER,
+                    "materialize_guest_self_contained_checkout",
+                    return_value={"result": "TEST_ONLY_GQ_MATERIALIZATION_PASS"},
+                ):
+                    LAUNCHER.materialize_operation_state(
+                        repository_root=REPOSITORY_ROOT,
+                        context=context,
+                        context_source_path=path,
+                    )
                 LAUNCHER.prepare_receipt_parent(REPOSITORY_ROOT, context)
                 sinks = LAUNCHER.fresh_context.complete_mutable_sink_paths(context)
                 target = sinks[index]

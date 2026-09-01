@@ -1,0 +1,225 @@
+{
+  "reduction": {
+    "schema_id": "G77_256GQ_SPCE_FINAL_REPOSITORY_ONLY_REDUCTION_V1",
+    "recorded_at_utc": "2026-09-01T06:05:12Z",
+    "entry": {
+      "repository": "/home/pisarna/work/sapianta-fl",
+      "branch": "g77-256fl-wrong-attempt-preboot-blocker",
+      "head": "1357c5194fefadfdbcb4fb633f5d2bdf9aec3945",
+      "tree": "7107d884cad6cb9c67ba3dd81f7d885b4c01b824",
+      "subject": "G77-256GP close guest checkout tree preauthorization gap",
+      "remote_head": "1357c5194fefadfdbcb4fb633f5d2bdf9aec3945",
+      "local_remote_equal": true,
+      "stable_ancestry_anchor": "5c972e9960987ab27420395b54ace693df097e7b",
+      "index_empty_before_mutation": true,
+      "worktree_clean_before_mutation": true,
+      "layer_0_freeze": "PASS",
+      "account_resource_percentages": "NOT_MEASURED",
+      "context_remaining_percentage": "NOT_MEASURED"
+    },
+    "nested_immutable_authority": {
+      "origin": "git@github.com:Aljosa3/sapianta-core.git",
+      "ref": "refs/tags/sapianta-system-nested-authority-3183bab-v1",
+      "head": "3183bab71f8f30397c0309dd2e6d846d14a11f66",
+      "tree": "7c32ec05efc2be43297849bc38ec8766514a523d",
+      "clean": true,
+      "detached": true,
+      "pinned": true
+    },
+    "gp_reauthentication": {
+      "report_path": "docs/governance/G77_256GP_ONE_BOUNDED_REPOSITORY_ONLY_GUEST_CHECKOUT_TREE_PRECONDITION_CORRECTION_V1.md",
+      "terminal_reduction_path": ".github/governance/evidence/g77_256gp_guest_checkout_tree_precondition_v1/G77_256GP_SPCE_FINAL_REPOSITORY_ONLY_REDUCTION_V1.json",
+      "terminal_reduction_inner_sha256": "f8948b4ecc0a07b865d06d404e830ba216b8aa4fd841e54cae18883561d3269b",
+      "root_cause_class": "GIT_OBJECT_DATABASE_ALTERNATE_ESCAPES_READ_ONLY_PRESENTATION_ROOT__HOST_TREE_FALSE_POSITIVE",
+      "preauth_guest_checkout_tree_equivalence": "VERIFIED_WITHIN_EXACT_REVIEWED_BOUNDARY",
+      "candidate_binding_regeneration_required": true,
+      "candidate_capability": "NOT_PROVEN",
+      "e05": "6/18"
+    },
+    "materialization": {
+      "owner": "EXISTING_FM_MATERIALIZE_OPERATION_STATE",
+      "technique": "ATOMIC_NO_LOCAL_CLONE__DIRECT_GIT_DIRECTORY__DETACHED_HEAD__OBJECT_LOCALIZED",
+      "source": "EXACT_CANONICAL_REPOSITORY_ROOT",
+      "presentation_source": "/tmp/g77_256fm/checkout",
+      "guest_destination": "/mnt/aigol",
+      "expected_head": "7dce67ec18696ba0bad73130f3f7a84168f25277",
+      "expected_tree": "3cb61ec34e9593efb711dce61014dc8fdf0f6dd9",
+      "destination_collision_policy": "FAIL_CLOSED__NO_OVERWRITE_OR_REUSE",
+      "environment_policy": "ALL_CALLER_GIT_ENVIRONMENT_REMOVED__SYSTEM_AND_GLOBAL_CONFIG_DISABLED",
+      "staging_policy": "SAME_PARENT_TEMPORARY_DIRECTORY__VERIFY_BEFORE_ATOMIC_RENAME",
+      "qemu_execution_required": false
+    },
+    "self_contained_checkout_proof": {
+      "classification": "VERIFIED",
+      "result": "VERIFIED_WITHIN_REPOSITORY_ONLY_MATERIALIZATION_AND_EXACT_GP_PREAUTHORIZATION_BOUNDARY",
+      "self_contained_presented_checkout": true,
+      "expected_head_resolves": true,
+      "expected_tree_resolves": true,
+      "tree_equals_expected_committed_tree": true,
+      "required_commit_object_reachable": true,
+      "required_tree_object_reachable": true,
+      "no_external_git_metadata_dependency": true,
+      "no_external_object_database_dependency": true,
+      "exact_presentation_root_bound": true,
+      "exact_guest_destination_bound": true,
+      "gp_preauthorization_owner_accepts": true,
+      "unchanged_er_consumer_semantics": true,
+      "full_qemu_transport_behavior": "NOT_PROVEN"
+    },
+    "proof_boundary": {
+      "included": [
+        "FM_AUTHORITY_FREE_MATERIALIZATION",
+        "ATOMIC_DESTINATION_CREATION",
+        "DIRECT_GITDIR_AND_COMMON_DIR_LOCALITY",
+        "ONE_LOCAL_OBJECT_DATABASE",
+        "DETACHED_HEAD_AND_CLEAN_WORKTREE",
+        "EXPECTED_COMMIT_AND_TREE_OBJECT_REACHABILITY",
+        "EXACT_FM_FY_QEMU_VIRTFS_SOURCE_BINDING",
+        "EXACT_GUEST_DESTINATION_CONTRACT",
+        "GP_CORRECTED_PREAUTHORIZATION",
+        "UNCHANGED_ER_HEAD_AND_HEAD_TREE_CONSUMER"
+      ],
+      "excluded": [
+        "QEMU_EXECUTION",
+        "VM_TRANSPORT_OBSERVATION",
+        "WRONG_ATTEMPT_EXECUTION",
+        "REQUEST_OR_P11_ENTRY",
+        "PROTECTED_INVOCATION_OR_EFFECT",
+        "CANDIDATE_OPERATIONAL_CAPABILITY",
+        "POST_COMMIT_LIVE_BINDING"
+      ]
+    },
+    "post_commit_live_binding": {
+      "certified_template_not_live_execution_binding": true,
+      "candidate_semantics_changed": false,
+      "candidate_identity_binding": "VERIFIED",
+      "candidate_binding_regeneration_required": true,
+      "post_commit_live_binding_required": true,
+      "status": "REQUIRED_NOT_PERFORMED__ACTUAL_GQ_COMMITTED_HEAD_TREE_DO_NOT_EXIST",
+      "prepared_mechanism": ".github/governance/evidence/g77_256gf_post_commit_live_binding_v1/binding/G77_256GF_POST_COMMIT_LIVE_EXECUTION_BINDING_V1.py",
+      "future_hash_fabricated": false,
+      "pre_commit_self_reference_introduced": false
+    },
+    "same_class_review": {
+      "same_class_review_complete": true,
+      "boundary": "MATERIALIZATION_TO_FM_FY_PRESENTATION_TO_GP_READINESS_TO_ER_CONSUMER",
+      "second_independent_instance_found": false,
+      "systematic_architecture_review_required": false,
+      "result": "NO_WEAKER_PRODUCER_PRESENTATION_PROPERTY_FOUND_WITHIN_EXACT_REVIEWED_BOUNDARY"
+    },
+    "architecture_counters": {
+      "new_launchers": 0,
+      "new_production_routes": 0,
+      "new_authorization_models": 0,
+      "new_receipt_subsystems": 0,
+      "new_validator_architectures": 0,
+      "parallel_execution_flows": 0,
+      "production_route_delta": 0
+    },
+    "operational_counters": {
+      "human_operational_authorization_count": 0,
+      "governed_launcher_activations": 0,
+      "qemu_execution_count": 0,
+      "vm_boot_count": 0,
+      "operation_attempt_count": 0,
+      "wrong_attempt_execution_count": 0,
+      "request_count": 0,
+      "p11_entry_count": 0,
+      "protected_invocation_count": 0,
+      "protected_effect_count": 0,
+      "retry_count": 0,
+      "repair_execution_count": 0,
+      "replay_execution_count": 0
+    },
+    "authority": {
+      "gq_human_operational_authority": "NONE",
+      "historical_go_authority": "CONSUMED_TERMINAL_NON_REUSABLE_NON_TRANSFERABLE",
+      "provider_capability_is_execution_authority": false
+    },
+    "ex": {
+      "reused": "17/17",
+      "reconstructed": 0,
+      "validator_regression_pass": 12,
+      "validator_regression_fail": 0,
+      "operational_effect": 0,
+      "credit_effect": 0
+    },
+    "e05": {
+      "before": "6/18",
+      "credit_awarded": 0,
+      "after": "6/18"
+    },
+    "candidate": {
+      "identity_binding": "VERIFIED",
+      "capability": "NOT_PROVEN",
+      "semantics_changed": false,
+      "binding_regeneration_required": true
+    },
+    "validation": {
+      "gq_and_gp_focused": "16/16_PASS",
+      "gd_fy_gh_gq_gp_combined": "41/41_PASS",
+      "ga_gf_gj_gl_gn_fo_owner_stack": "76/76_PASS",
+      "p11_che_fk_regression": "81/81_PASS",
+      "ex_common_substrate": "12/12_PASS__17_CERTIFIED",
+      "governance_conformance_tests": "9/9_PASS",
+      "governance_conformance_engine": "20/20_PASS__CONFORMANT__ZERO_WARNINGS_ZERO_VIOLATIONS",
+      "layer_0_freeze": "PASS",
+      "qemu": "NOT_EXECUTED"
+    },
+    "code_evidence": {
+      "fm_launcher_sha256": "879f7995285ab1dd573adc5fb6307935939c9344c59136f9844089cdb126f6c5",
+      "gq_test_sha256": "c682848c0e1038048d5584e30bf334216822f121f90d17640cf29c1b54038bad",
+      "gd_test_sha256": "b12cfe68df76ec8e80ed93391b86b18289b1c2b47c43a9497c026b18e53f636a",
+      "fy_test_sha256": "4e1abfd8ed1fc7879fb0432c3fc470e357ec128b7abea713ddb83dd55187754f",
+      "gh_test_sha256": "750fb42ecdd7983b9ab942b36d8eb635c85d823c6da07d29cee97dc81d9ab2f7"
+    },
+    "required_metrics": {
+      "project_progress_estimate": {"classification": "ESTIMATED", "result": "MINIMUM_EXISTING_OWNER_SELF_CONTAINED_CHECKOUT_MATERIALIZATION_IMPLEMENTED_AND_VERIFIED"},
+      "constitutional_health_evidence": {"classification": "VERIFIED", "result": "BORROWED_GIT_STATE_CANNOT_ENTER_THE_PRESENTED_CHECKOUT_AND_GP_REOBSERVES_BEFORE_AUTHORITY"},
+      "shadow_automation_status": {"classification": "VERIFIED", "result": "REPOSITORY_ONLY_MATERIALIZATION_PROOF__ZERO_OPERATIONAL_AUTOMATION"},
+      "constitutional_frontier_distance": {"classification": "NOT_MEASURED", "result": "NO_CANONICAL_SCALAR__E05_REMAINS_6_OF_18"},
+      "wrong_attempt_local_frontier_distance": {"classification": "ESTIMATED", "result": "POST_COMMIT_LIVE_BINDING_AND_SEPARATE_HUMAN_REVIEW_REMAIN_BEFORE_ANY_OPERATION"},
+      "governance_efficiency": {"classification": "ESTIMATED", "result": "ONE_EXISTING_FM_OWNER_EXTENSION__ZERO_ROUTE_DELTA"},
+      "operational_proof_yield": {"classification": "VERIFIED", "result": "ZERO_OPERATIONAL_PROOF__ZERO_E05_CREDIT"},
+      "cognition_assisted_handoff": {"classification": "VERIFIED", "result": "OWNER_PROPERTY_PROOF_BOUNDARY_BINDING_STATUS_AND_VALIDATION_REDUCED"},
+      "aigol_codex_work_share": {"classification": "NOT_MEASURED", "result": "NO_INSTRUMENTED_WORK_SHARE"},
+      "overengineering_risk": {"classification": "ESTIMATED", "result": "LOW__NO_NEW_ROUTE_ARCHITECTURE_OR_AUTHORIZATION_MODEL"},
+      "cognition_provenance": {"classification": "VERIFIED", "result": "REPOSITORY_CODEX_HUMAN_AND_PROVIDER_PROVENANCE_SEPARATED"},
+      "candidate_capability": {"classification": "NOT_PROVEN", "result": "NO_OPERATION_REQUEST_P11_ENTRY_INVOCATION_OR_EFFECT"},
+      "shadow_design_target": {"classification": "VERIFIED", "result": "GUEST_SELF_CONTAINED_CHECKOUT_MATERIALIZED_BEFORE_EXISTING_PRESENTATION"},
+      "constitutional_continuation_progress": {"classification": "ESTIMATED", "result": "GP_MATERIALIZATION_HANDOFF_IMPLEMENTED__POST_COMMIT_BINDING_REMAINS"},
+      "prompt_context_reuse_ratio": {"classification": "NOT_MEASURED", "result": "NO_CONTEXT_RATIO_INSTRUMENT"},
+      "token_benchmark": {"classification": "NOT_MEASURED", "result": "NO_TOKEN_TELEMETRY"},
+      "llm_cost_reduction_ratio": {"classification": "NOT_MEASURED", "result": "NO_COMPARABLE_BILLABLE_BASELINE"},
+      "human_intervention_efficiency": {"classification": "NOT_APPLICABLE", "result": "ZERO_HUMAN_OPERATIONAL_AUTHORIZATIONS"},
+      "preauth_guest_checkout_tree_equivalence": {"classification": "VERIFIED", "result": "VERIFIED_WITHIN_EXACT_REVIEWED_BOUNDARY"},
+      "self_contained_checkout_proof": {"classification": "VERIFIED", "result": "DIRECT_DETACHED_OBJECT_LOCALIZED_CHECKOUT_ACCEPTED_BY_GP"},
+      "post_commit_live_binding_status": {"classification": "VERIFIED", "result": "REQUIRED_NOT_PERFORMED"},
+      "same_class_review_status": {"classification": "VERIFIED", "result": "COMPLETE__NO_SECOND_INDEPENDENT_INSTANCE_FOUND"},
+      "formalize_reuse_bind_verify_compliance": {"classification": "VERIFIED", "result": "EXISTING_FM_FY_GP_ER_OWNER_CHAIN_REUSED_WITHOUT_PARALLEL_FLOW"}
+    },
+    "reuse_impact": {
+      "existing_certified_capabilities_reused": ["EX", "FM", "FY", "GP", "GF", "GD", "GH", "GJ", "GL", "GN", "ER", "FO", "P11", "CHE", "FK"],
+      "new_capabilities": ["GUEST_SELF_CONTAINED_CHECKOUT_MATERIALIZATION_PROPERTY_INSIDE_EXISTING_FM_OWNER"],
+      "fresh_evidence_is_new_production_capability": false,
+      "existing_capability_became_unreachable": false,
+      "parallel_flow_created": false,
+      "production_route_count_change": 0
+    },
+    "cognition_provenance": {
+      "repository_and_sealed_deterministic_evidence": "AUTHORITATIVE_FACT_SOURCE",
+      "previous_codex_cognition": "NONAUTHORITATIVE",
+      "current_codex_cognition": "IMPLEMENTATION_SELECTION_BOUNDARY_REVIEW_AND_REDUCTION_ONLY",
+      "human_authority": "NO_GQ_OPERATIONAL_AUTHORITY__GO_HISTORICAL_AUTHORITY_TERMINAL",
+      "provider_permission": "INFRASTRUCTURE_PERMISSION_ONLY__NONAUTHORITY"
+    },
+    "terminal": {
+      "verdict": "PASS__G77_256GQ_GUEST_SELF_CONTAINED_CHECKOUT_MATERIALIZATION_BOUND_TO_EXISTING_FM_FY_GP_ER_ROUTE__POST_COMMIT_LIVE_BINDING_REQUIRED__EX_17_OF_17_REUSED__NO_OPERATIONAL_AUTHORITY__NO_QEMU__PRODUCTION_ROUTE_DELTA_ZERO__E05_REMAINS_6_OF_18__HUMAN_REVIEW_REQUIRED",
+      "auto_continuable": false,
+      "human_review_required": true,
+      "next_legal_action": "HUMAN_REVIEW_OF_UNSTAGED_GQ_MUTATIONS__THEN_SEPARATELY_COMMIT_AND_REGENERATE_LIVE_BINDING_IF_APPROVED"
+    }
+  },
+  "reduction_sha256": "2c46a847854b566d33a679ed8bfd0b3897c3dec2c586f0b3c17bb7b14e1c62a4",
+  "schema_id": "G77_256GQ_SPCE_FINAL_REPOSITORY_ONLY_REDUCTION_ENVELOPE_V1"
+}
