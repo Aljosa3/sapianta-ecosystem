@@ -1,0 +1,303 @@
+{
+  "reduction": {
+    "schema_id": "G77_256GR_SPCE_FINAL_REPOSITORY_ONLY_REDUCTION_V1",
+    "recorded_at_utc": "2026-09-01T06:21:31Z",
+    "entry": {
+      "repository": "/home/pisarna/work/sapianta-fl",
+      "branch": "g77-256fl-wrong-attempt-preboot-blocker",
+      "head": "99d8e889ae36d75af9f64e3db977aa452d83dd1e",
+      "tree": "7278822cf1883b125e0789c10fa668d40a43c1c3",
+      "subject": "G77-256GQ materialize guest self-contained checkout",
+      "remote_head": "99d8e889ae36d75af9f64e3db977aa452d83dd1e",
+      "local_remote_equal": true,
+      "worktree_clean_before_mutation": true,
+      "index_empty_before_mutation": true,
+      "stable_ancestry_anchor": "5c972e9960987ab27420395b54ace693df097e7b",
+      "stable_ancestry_verified": true,
+      "layer_0_freeze": "PASS"
+    },
+    "nested_immutable_authority": {
+      "origin": "git@github.com:Aljosa3/sapianta-core.git",
+      "ref": "refs/tags/sapianta-system-nested-authority-3183bab-v1",
+      "head": "3183bab71f8f30397c0309dd2e6d846d14a11f66",
+      "tree": "7c32ec05efc2be43297849bc38ec8766514a523d",
+      "remote_ref_equal": true,
+      "clean": true,
+      "detached": true,
+      "pinned": true
+    },
+    "authenticated_evidence": {
+      "gq_reduction_path": ".github/governance/evidence/g77_256gq_guest_self_contained_checkout_v1/G77_256GQ_SPCE_FINAL_REPOSITORY_ONLY_REDUCTION_V1.json",
+      "gq_reduction_inner_sha256": "2c46a847854b566d33a679ed8bfd0b3897c3dec2c586f0b3c17bb7b14e1c62a4",
+      "gp_reduction_path": ".github/governance/evidence/g77_256gp_guest_checkout_tree_precondition_v1/G77_256GP_SPCE_FINAL_REPOSITORY_ONLY_REDUCTION_V1.json",
+      "gp_reduction_inner_sha256": "f8948b4ecc0a07b865d06d404e830ba216b8aa4fd841e54cae18883561d3269b",
+      "duplicate_key_rejection": "PASS",
+      "canonical_inner_sha256_recomputation": "PASS",
+      "preauth_guest_checkout_tree_equivalence": "VERIFIED_WITHIN_EXACT_REVIEWED_BOUNDARY",
+      "self_contained_checkout_proof": "VERIFIED_WITHIN_REPOSITORY_ONLY_MATERIALIZATION_AND_EXACT_GP_PREAUTHORIZATION_BOUNDARY",
+      "qemu_9p_runtime_transport": "NOT_PROVEN"
+    },
+    "existing_owners": {
+      "formalization": [
+        "GQ",
+        "GP"
+      ],
+      "live_binding_and_context": [
+        "GF",
+        "GD",
+        "DU",
+        "EB",
+        "EE"
+      ],
+      "presentation_and_materialization": [
+        "FM",
+        "FY",
+        "GH"
+      ],
+      "authority_and_admission_prerequisites": [
+        "GJ",
+        "GL",
+        "GN",
+        "FO"
+      ],
+      "guest_and_terminal_consumers": [
+        "ER",
+        "P11",
+        "CHE",
+        "FK"
+      ],
+      "common_certified_substrate": "EX"
+    },
+    "live_binding_delta": {
+      "status_before": "REQUIRED_NOT_PERFORMED",
+      "previous_latest_live_binding_head": "e2933f3ce86e722b0f1241142267541df6807bc3",
+      "previous_latest_live_binding_tree": "ec879d8809d373809f412de526cad76bf18de3c6",
+      "previous_latest_candidate_sha256": "8792a2b179f24d7ff00d8bb5ea15a3be3015c2f996d14a91e79130fade2492dc",
+      "previous_latest_context_sha256": "8415e893ea01e568aa31bb40b4976c39036d0bf41ae99e15c13b0d83813ada4d",
+      "required_live_binding_head": "99d8e889ae36d75af9f64e3db977aa452d83dd1e",
+      "required_live_binding_tree": "7278822cf1883b125e0789c10fa668d40a43c1c3",
+      "status_after": "VERIFIED_CURRENT_FOR_EXACT_COMMITTED_GQ_IDENTITY",
+      "candidate_path": ".github/governance/evidence/g77_256gr_post_commit_live_binding_readiness_v1/live_binding/candidate/G77_256GR_CONTINUATION_MANIFEST_V1.json",
+      "candidate_sha256": "b8aad0f19530ffc38040450d29121cf5df11e3d5d5a2296dd87e2333ddd621f8",
+      "candidate_manifest_inner_sha256": "4601e25d10c590c94b6d2957bf232e7073913dce4ef9034c577e7deaeea1f0ee",
+      "context_path": ".github/governance/evidence/g77_256gr_post_commit_live_binding_readiness_v1/live_binding/SAPIANTA_FRESH_OPERATION_CONTEXT_V1.json",
+      "context_file_sha256": "2951b1e6fd2070a7d77efc480e7b8481ee0f07afe387d2fc1bde04f1b02fb1d7",
+      "context_sha256": "2f9a0829b1dec6fa276212c68bb25ffcdffc84060e55d08a87907a9f03ea0ccb",
+      "canonical_argv_sha256": "0ff8346e6a356042ccd88926f2bd290c569dd33a5bb42bca6c06a59f94c516da",
+      "eb_receipt_file_sha256": "4b5f88e95e0cfcbbdba4c63400ee0bba7a8b1ec71e782187a141952997fe20bb",
+      "eb_receipt_inner_sha256": "25de847ecdaeb91ed79c91a70f779efca3673c1731c68ec03568ef8c78e93669",
+      "ee_receipt_file_sha256": "c017eb5f2d7750650789ad0e3c24ea8920d6322347bd4871f96fbe46eff48d2d",
+      "ee_receipt_inner_sha256": "cf11134142d62ec313260536458500dff90b21317de4e370c44583a1fb9c55a2",
+      "du": "PASS",
+      "eb": "PASS",
+      "ee": "PASS",
+      "candidate_semantics_changed": false,
+      "stale_pregq_identity_absent_from_readiness_critical_binding_files": true,
+      "future_commit_identity_fabricated": false,
+      "no_future_commit_hash_self_reference": true
+    },
+    "preoperational_readiness": {
+      "property": "EXACT_COMMITTED_GQ_IDENTITY_BOUND AND POST_COMMIT_LIVE_BINDINGS_CURRENT AND SELF_CONTAINED_CHECKOUT_PROPERTY_PRESERVED AND GP_PREAUTHORIZATION_PROPERTY_PRESERVED AND REQUIRED_CONTEXT_BINDINGS_CURRENT AND REQUIRED_DU_EB_EE_BINDINGS_CURRENT AND REQUIRED_RECEIPT_PARENT_PRECONDITION_SATISFIABLE AND HUMAN_PRESENTATION_DERIVABLE_FROM_SEALED_REQUEST AND NO_KNOWN_REPOSITORY_PREAUTHORIZATION_BLOCKER AND ZERO_OPERATIONAL_AUTHORITY AND ZERO_QEMU",
+      "exact_committed_gq_identity_bound": "VERIFIED",
+      "post_commit_live_bindings_current": "VERIFIED",
+      "self_contained_checkout_property_preserved": "VERIFIED_WITHIN_GQ_DECLARED_BOUNDARY",
+      "gp_preauthorization_property_preserved": "VERIFIED_WITHIN_EXACT_REVIEWED_BOUNDARY",
+      "required_context_bindings_current": "VERIFIED",
+      "required_du_eb_ee_bindings_current": "VERIFIED",
+      "required_receipt_parent_precondition_satisfiable": "VERIFIED_BY_EXISTING_GL_FM_OWNER_REGRESSION_WITH_FRESH_OPERATION_ROOT_REMAINING_ABSENT_IN_GR",
+      "human_presentation_derivable_from_sealed_request": "VERIFIED_BY_EXISTING_GN_GJ_OWNER_REGRESSION__NO_GR_REQUEST_OR_PRESENTATION_CREATED",
+      "no_known_repository_preauthorization_blocker": "VERIFIED_FOR_EXACT_GQ_CHECKPOINT_AND_REVIEWED_BOUNDARY",
+      "zero_operational_authority": "VERIFIED",
+      "zero_qemu": "VERIFIED",
+      "status": "VERIFIED",
+      "preoperational_readiness_is_operational_capability": false,
+      "preoperational_readiness_is_e05_credit": false,
+      "candidate_capability": "NOT_PROVEN",
+      "post_gr_commit_lifecycle": "A_SEPARATE_OPERATIONAL_GENERATION_MUST_REINSTANTIATE_GF_GD_AGAINST_ITS_THEN_CURRENT_COMMITTED_HEAD_TREE_BEFORE_REQUESTING_FRESH_HUMAN_AUTHORITY"
+    },
+    "same_class_review": {
+      "boundary": "POST_COMMIT_CANDIDATE_IDENTITY_TO_FRESH_CONTEXT_TO_GF_GD_BINDINGS_TO_FM_FY_PRESENTATION_TO_GP_READINESS_TO_ER_CONSUMER_PREREQUISITES",
+      "same_class_review_complete": true,
+      "second_independent_instance_found": false,
+      "systematic_architecture_review_required": false,
+      "single_live_binding_instantiator_definition": true,
+      "status": "COMPLETE__NO_SECOND_INDEPENDENT_IMPLEMENTATION_FOUND"
+    },
+    "validation": {
+      "gr_focused": "3/3_PASS",
+      "gq_gp_focused": "16/16_PASS",
+      "gd_fy_gh_gr_combined": "28/28_PASS",
+      "ga_gf_gj_gl_gn_fo_owner_stack": "76/76_PASS",
+      "p11_che_fk_regression": "89/89_PASS",
+      "ex_common_substrate": "12/12_PASS__17_CERTIFIED",
+      "governance_conformance_tests": "9/9_PASS",
+      "governance_conformance_engine": "20/20_PASS__CONFORMANT__ZERO_WARNINGS__ZERO_VIOLATIONS",
+      "layer_0_freeze": "PASS",
+      "qemu": "PROHIBITED__NOT_EXECUTED"
+    },
+    "architecture_counters": {
+      "new_launchers": 0,
+      "new_production_routes": 0,
+      "new_authorization_models": 0,
+      "new_receipt_subsystems": 0,
+      "new_validator_architectures": 0,
+      "parallel_execution_flows": 0,
+      "production_route_delta": 0
+    },
+    "operational_counters": {
+      "human_operational_authorization_count": 0,
+      "governed_launcher_activation_count": 0,
+      "qemu_execution_count": 0,
+      "vm_boot_count": 0,
+      "operation_attempt_count": 0,
+      "wrong_attempt_execution_count": 0,
+      "request_count": 0,
+      "p11_entry_count": 0,
+      "protected_invocation_count": 0,
+      "protected_effect_count": 0,
+      "retry_count": 0,
+      "repair_execution_count": 0,
+      "replay_execution_count": 0
+    },
+    "authority": {
+      "current_human_operational_authority": "NONE",
+      "historical_go_authority": "CONSUMED__TERMINAL__NON_REUSABLE__NON_TRANSFERABLE",
+      "provider_capability_is_execution_authority": false,
+      "certified_is_authorized": false
+    },
+    "ex": {
+      "reused": "17/17",
+      "reconstructed": 0,
+      "regressions": "12/12_PASS",
+      "operational_effect": 0,
+      "credit_effect": 0
+    },
+    "e05": {
+      "before": "6/18",
+      "credit_awarded": 0,
+      "after": "6/18"
+    },
+    "resource_telemetry": {
+      "account_capacity_percent": "NOT_MEASURED",
+      "context_remaining_percent": "NOT_MEASURED",
+      "resource_telemetry": "NOT_MEASURED"
+    },
+    "required_metrics": {
+      "project_progress_estimate": {
+        "classification": "ESTIMATED",
+        "result": "EXACT_GQ_POST_COMMIT_BINDING_AND_REVIEWED_REPOSITORY_PREAUTHORIZATION_FRONTIER_CLOSED"
+      },
+      "constitutional_health_evidence": {
+        "classification": "VERIFIED",
+        "result": "EX_12_OF_12__GOVERNANCE_20_OF_20_CONFORMANT__LAYER_0_FREEZE_PASS__AFFECTED_REGRESSIONS_PASS"
+      },
+      "shadow_automation_status": {
+        "classification": "VERIFIED",
+        "result": "REPOSITORY_ONLY_BINDING_AND_VALIDATION__ZERO_OPERATIONAL_AUTOMATION"
+      },
+      "constitutional_frontier_distance": {
+        "classification": "NOT_MEASURED",
+        "result": "NO_CANONICAL_SCALAR__E05_REMAINS_6_OF_18"
+      },
+      "wrong_attempt_local_frontier_distance": {
+        "classification": "ESTIMATED",
+        "result": "HUMAN_REVIEW_AND_COMMIT_IF_APPROVED__THEN_ONE_SEPARATE_FRESH_OPERATIONAL_GENERATION"
+      },
+      "governance_efficiency": {
+        "classification": "ESTIMATED",
+        "result": "EXISTING_GF_GD_FM_AND_DOWNSTREAM_OWNERS_REUSED_WITH_ZERO_ROUTE_GROWTH"
+      },
+      "operational_proof_yield": {
+        "classification": "VERIFIED",
+        "result": "ZERO_OPERATIONAL_PROOF__ZERO_E05_CREDIT"
+      },
+      "cognition_assisted_handoff": {
+        "classification": "VERIFIED",
+        "result": "ENTRY_DELTA_PROPERTY_BOUNDARY_VALIDATION_AND_NEXT_LEGAL_ACTION_EXPLICIT"
+      },
+      "aigol_codex_work_share": {
+        "classification": "NOT_MEASURED",
+        "result": "NO_INSTRUMENTED_WORK_SHARE_MEASURE"
+      },
+      "overengineering_risk": {
+        "classification": "ESTIMATED",
+        "result": "LOW__NO_PRODUCTION_LOGIC_OR_ROUTE_ADDED"
+      },
+      "cognition_provenance": {
+        "classification": "VERIFIED",
+        "result": "REPOSITORY_FACTS_CURRENT_CODEX_CLASSIFICATION_AND_ABSENT_HUMAN_AUTHORITY_SEPARATED"
+      },
+      "candidate_capability": {
+        "classification": "NOT_PROVEN",
+        "result": "NO_QEMU_VM_REQUEST_P11_INVOCATION_OR_EFFECT"
+      },
+      "shadow_design_target": {
+        "classification": "VERIFIED",
+        "result": "COMMIT_THEN_BIND_THEN_SEPARATE_HUMAN_AUTHORITY"
+      },
+      "constitutional_continuation_progress": {
+        "classification": "ESTIMATED",
+        "result": "GQ_POST_COMMIT_REPOSITORY_PREAUTHORIZATION_READINESS_VERIFIED__OPERATIONAL_FRONTIER_UNCHANGED"
+      },
+      "prompt_context_reuse_ratio": {
+        "classification": "NOT_MEASURED",
+        "result": "NO_INSTRUMENTED_RATIO"
+      },
+      "token_benchmark": {
+        "classification": "NOT_MEASURED",
+        "result": "NO_TOKEN_TELEMETRY"
+      },
+      "llm_cost_reduction_ratio_lcrr": {
+        "classification": "NOT_MEASURED",
+        "result": "NO_COMPARABLE_BILLABLE_MEASUREMENTS"
+      },
+      "human_intervention_efficiency": {
+        "classification": "NOT_APPLICABLE",
+        "result": "ZERO_HUMAN_OPERATIONAL_AUTHORIZATIONS"
+      },
+      "preauth_guest_checkout_tree_equivalence": {
+        "classification": "VERIFIED",
+        "result": "VERIFIED_WITHIN_EXACT_REVIEWED_BOUNDARY"
+      },
+      "self_contained_checkout_proof": {
+        "classification": "VERIFIED",
+        "result": "VERIFIED_WITHIN_REPOSITORY_ONLY_MATERIALIZATION_AND_EXACT_GP_PREAUTHORIZATION_BOUNDARY"
+      },
+      "post_commit_live_binding_status": {
+        "classification": "VERIFIED",
+        "result": "CURRENT_FOR_EXACT_COMMITTED_GQ_HEAD_TREE"
+      },
+      "preoperational_readiness_status": {
+        "classification": "VERIFIED",
+        "result": "NO_KNOWN_REPOSITORY_PREAUTHORIZATION_BLOCKER_WITHIN_EXACT_REVIEWED_BOUNDARY"
+      },
+      "same_class_review_status": {
+        "classification": "VERIFIED",
+        "result": "COMPLETE__NO_SECOND_INDEPENDENT_IMPLEMENTATION_FOUND"
+      },
+      "formalize_reuse_bind_verify_compliance": {
+        "classification": "VERIFIED",
+        "result": "GQ_GP_PROPERTY_FORMALIZED__EXISTING_GF_GD_CHAIN_REUSED__EXACT_GQ_IDENTITY_BOUND__AFFECTED_OWNERS_VERIFIED"
+      }
+    },
+    "reuse_impact": {
+      "existing_certified_capabilities_reused": "EX_17_OF_17_AND_EXISTING_FM_FY_GP_GQ_GF_GD_GH_GJ_GL_GN_ER_FO_P11_CHE_FK_DU_EB_EE_OWNERS",
+      "new_capabilities": "NONE__ONLY_ONE_NEW_CHECKPOINT_SPECIFIC_LIVE_BINDING_EVIDENCE_SET_AND_FOCUSED_PROOF",
+      "existing_capability_unreachable": false,
+      "parallel_flow_created": false,
+      "production_path_count_change": 0,
+      "new_evidence_is_new_production_capability": false
+    },
+    "terminal": {
+      "verdict": "PASS__G77_256GR_EXACT_GQ_POST_COMMIT_LIVE_BINDING_AND_PREOPERATIONAL_READINESS_VERIFIED__EXISTING_GF_GD_PATH_REUSED__EX_17_OF_17_REUSED__NO_OPERATIONAL_AUTHORITY__NO_QEMU__NO_E05_CREDIT__PRODUCTION_ROUTE_DELTA_ZERO__HUMAN_REVIEW_REQUIRED",
+      "preoperational_readiness_status": "VERIFIED",
+      "candidate_capability": "NOT_PROVEN",
+      "auto_continuable": false,
+      "human_review_required": true,
+      "next_legal_action": "HUMAN_REVIEW_OF_GR_MUTATIONS__COMMIT_IF_APPROVED__THEN_SEPARATE_FRESH_OPERATIONAL_COMMISSIONING_GENERATION",
+      "operational_continuation_executed": false
+    }
+  },
+  "reduction_sha256": "9f1c9d04e693a57cf494ee3bd30bd6a040a2a5b13e0fd624d3cd15e5b9debbc3",
+  "schema_id": "G77_256GR_SPCE_FINAL_REPOSITORY_ONLY_REDUCTION_ENVELOPE_V1"
+}
