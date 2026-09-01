@@ -1,0 +1,131 @@
+{
+  "schema_id": "G77_256GV_SPCE_TERMINAL_REDUCTION_ENVELOPE_V1",
+  "reduction": {
+    "artifact_bindings": {
+      "final_execution_seal": {
+        "file_sha256": "e239bc230186b38d73414b28060858978014dbf9c84446e222190a1b4f50a681",
+        "inner_sha256": "7ec305dc2a41b1fd64cb6c6fa4acbd42574c85bb40952cbee510ba5f6296bee4",
+        "path": ".github/governance/evidence/g77_256gv_wrong_attempt_operational_v1/G77_256GV_SPCE_FINAL_EXECUTION_SEAL_V1.json"
+      },
+      "focused_validator": {
+        "file_sha256": "d838f263adaef4c412d3c7ba21ec42a399e109f8287d7e7521d4964d174da96a",
+        "path": ".github/governance/evidence/g77_256gv_wrong_attempt_operational_v1/tests/test_g77_256gv_terminal_evidence_reduction_v1.py"
+      },
+      "g48_report": {
+        "file_sha256": "ed69ad27ae95c7b2562689e71acb355ee99db30d8b2544e2b62f4dccacefb97d",
+        "path": "docs/governance/G77_256GV_SPCE_CLREC_FRESH_WORKER_TERMINAL_EVIDENCE_FINALIZATION_V1.md",
+        "top_level_heading_count": 6
+      }
+    },
+    "authority": {
+      "auto_continuable": false,
+      "consumed": true,
+      "new_authority_created_by_continuation": 0,
+      "non_reusable": true,
+      "non_transferable": true,
+      "survives": false
+    },
+    "ccwim": {
+      "authenticated_repository_continuation": true,
+      "cross_worker_constitutional_drift": false,
+      "intra_task_cross_worker_continuation": true,
+      "previous_worker_conversation_required": false,
+      "uncommitted_delta_recovery": true
+    },
+    "e05": {
+      "after": "7/18",
+      "before": "6/18",
+      "credit_awarded": 1,
+      "evidence_result": "PASS__INDEPENDENT_P11_CHE_FK_REDUCTION",
+      "remaining": 11,
+      "wrong_attempt_state": "SATISFIED"
+    },
+    "exact_next_legal_action": "HUMAN_REVIEW_OF_GV_OPERATIONAL_CREDIT_AND_STALE_HOST_CHECKPOINT_INNER_SEALS__NO_REEXECUTION__NO_NEW_AUTHORITY__OPTIONAL_COMMIT_ONLY_IF_HUMAN_ACCEPTS_EXPLICIT_TERMINAL_LIMITATION",
+    "ex": {
+      "reconstructed": 0,
+      "regressions": "12/12 PASS",
+      "reused": "17/17"
+    },
+    "first_broken_edge": "HOST_PRE_TEARDOWN_AND_HOST_TEARDOWN_CHECKPOINT_EMBEDDED_CANONICAL_INNER_SEAL_RECOMPUTATION",
+    "generation_identity": "G77_256GV_ONE_FRESH_HUMAN_AUTHORIZED_WRONG_ATTEMPT_OPERATIONAL_COMMISSIONING_V1",
+    "historical_operation_counters": {
+      "governed_launcher_activations": 1,
+      "human_operational_authorizations": 1,
+      "operation_attempts": 1,
+      "p11_entries": 0,
+      "post": 1,
+      "pre": 1,
+      "protected_effects": 0,
+      "protected_invocations": 0,
+      "qemu_invocations": 1,
+      "repairs": 0,
+      "replays": 0,
+      "requests": 1,
+      "retries": 0,
+      "vm_boots": 1,
+      "wrong_attempts": 1
+    },
+    "host_checkpoint_integrity": {
+      "host_pre_teardown": {
+        "calculated_inner_sha256": "a0fea946eb22412283af6f1d22574c251ec74ddddc8cf08f82996d5b01f047e9",
+        "recorded_inner_sha256": "8ead3ad53c1470e33e492e32c4bc21df0edc17f7dabf5f2fe3ddc2a5c0be17da",
+        "result": "FAIL"
+      },
+      "host_teardown": {
+        "calculated_inner_sha256": "4d03aa48afbe22d84a6db8f37ca2e654eed7c81fda8747d3039f3df7862f094c",
+        "recorded_inner_sha256": "aaaae6b5fb795548b6793fc20dbf74e40190a9c5da8cb80a2cdd36485a1ddca8",
+        "result": "FAIL"
+      },
+      "repair_performed": false
+    },
+    "operation_already_completed_before_continuation": true,
+    "operation_identity": "G77_256GV_E05_WRONG_ATTEMPT_DENIAL_BEFORE_ENTRY_001",
+    "production_route_delta": 0,
+    "repository": {
+      "branch": "g77-256fl-wrong-attempt-preboot-blocker",
+      "head": "9dc91fc93cb0d5131ecf2350211b106c60bcead5",
+      "index_empty": true,
+      "tracked_diff_empty": true,
+      "tree": "c01929747475bd3def8a140ec126f170d5432927",
+      "gv_namespace_file_count": 36,
+      "g48_report_file_count": 1
+    },
+    "schema_id": "G77_256GV_SPCE_TERMINAL_REDUCTION_V1",
+    "teardown": {
+      "base_image_byte_identity": "VERIFIED",
+      "current_transient_root_absence": "VERIFIED",
+      "guest_teardown": "VERIFIED__COMPLETE",
+      "historical_host_checkpoint_inner_seals": "NOT_PROVEN",
+      "recreated": false,
+      "repeated": false
+    },
+    "validation": {
+      "authority_presentation_regressions": "PASS__57_OF_57",
+      "canonical_che_and_fk_regressions": "PASS__25_OF_25",
+      "du_candidate": "PASS__4_OF_4",
+      "du_terminal": "PASS__4_OF_4",
+      "ex": "PASS__12_OF_12",
+      "focused_gv": "PASS__6_OF_6",
+      "g48_structure": "PASS__EXACT_SIX_TOP_LEVEL_HEADINGS",
+      "governance_conformance": "PASS__20_OF_20__CONFORMANT__ZERO_WARNINGS",
+      "governance_tests": "PASS__9_OF_9",
+      "layer_0_freeze": "PASS"
+    },
+    "verdict": "FAIL_CLOSED__G77_256GV_WRONG_ATTEMPT_OPERATIONAL_PROOF_SUPPORTS_E05_7_OF_18__HOST_PRE_TEARDOWN_AND_TEARDOWN_INNER_SEALS_NOT_AUTHENTICATED__ZERO_CONTINUATION_OPERATIONAL_EXECUTION__NO_REEXECUTION__HUMAN_REVIEW_REQUIRED",
+    "worker_operational_counters": {
+      "new_human_authority": 0,
+      "operation_attempt": 0,
+      "pre": 0,
+      "protected_effect": 0,
+      "protected_invocation": 0,
+      "qemu": 0,
+      "repair": 0,
+      "replay": 0,
+      "request": 0,
+      "retry": 0,
+      "vm_boot": 0,
+      "wrong_attempt_reexecution": 0
+    }
+  },
+  "reduction_sha256": "d7d04a9ec42f4935133361ff5d9ca335439a3997e93ce6c459f039b8e0c9fc63"
+}

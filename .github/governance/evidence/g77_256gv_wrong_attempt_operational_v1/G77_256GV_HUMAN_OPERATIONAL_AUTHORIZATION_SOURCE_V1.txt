@@ -1,0 +1,21 @@
+I GRANT exactly one fresh, explicit, one-shot, non-reusable,
+non-transferable G77-256GV Human constitutional operational authorization
+for the complete authoritative Human-facing authorization presentation.
+
+SEALED\_AUTHORIZATION\_REQUEST\_SHA256 =
+2828a2a5182c77d2571e301a08fa1643a9bfd34196d023670d83b3e3eb1e7af1
+
+GN\_PRESENTATION\_SHA256 =
+1f5aa11869862e303b7d93dead8fb32981c54e943070fc7909979abd51fc482c
+
+GENERATION\_ID =
+G77\_256GV\_ONE\_FRESH\_HUMAN\_AUTHORIZED\_WRONG\_ATTEMPT\_OPERATIONAL\_COMMISSIONING\_V1
+
+OPERATION\_ID =
+G77\_256GV\_E05\_WRONG\_ATTEMPT\_DENIAL\_BEFORE\_ENTRY\_001
+
+I authorize no replacement authority, second attempt, retry, repair,
+replay, successor generation, or network capability. Any binding or
+constitutional admission failure SHALL fail closed.
+
+GRANT.
