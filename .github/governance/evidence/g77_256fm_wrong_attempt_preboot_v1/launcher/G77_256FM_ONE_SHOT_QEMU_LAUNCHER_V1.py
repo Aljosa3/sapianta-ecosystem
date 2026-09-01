@@ -84,6 +84,9 @@ SEED = (
 CHECKOUT = "/tmp/g77_256fm/checkout"
 CHECKOUT_HEAD = "7dce67ec18696ba0bad73130f3f7a84168f25277"
 CHECKOUT_TREE = "3cb61ec34e9593efb711dce61014dc8fdf0f6dd9"
+GUEST_CHECKOUT_DESTINATION = "/mnt/aigol"
+GUEST_CHECKOUT_MOUNT_TAG = "aigol_checkout"
+ER_HARNESS_SHA256 = "4a2a84ff83c61bfec013b4bcd20eb16905eeb240869182edd6c0d948444bae89"
 QEMU_EXECUTABLE_SHA256 = "8a35ccba41582fc6c38b9df85fc9e35fa1d42f414d2d7d8090ee9b2f5e7c0854"
 
 MOUNT_TAG = "g77_evidence"
@@ -1400,6 +1403,262 @@ def materialize_operation_state(
     }
 
 
+def _inside(root: Path, candidate: Path) -> bool:
+    try:
+        candidate.relative_to(root)
+    except ValueError:
+        return False
+    return True
+
+
+def _canonical_internal_path(root: Path, candidate: Path, label: str) -> Path:
+    try:
+        resolved = candidate.resolve(strict=True)
+    except (FileNotFoundError, RuntimeError) as exc:
+        raise RuntimeError(f"checkout {label} is unreachable") from exc
+    if not _inside(root, resolved):
+        raise RuntimeError(f"checkout {label} escapes presentation root")
+    if candidate.absolute() != resolved:
+        raise RuntimeError(f"checkout {label} uses symlink indirection")
+    return resolved
+
+
+def _git_directory_from_presentation_root(root: Path) -> tuple[Path, str]:
+    marker = root / ".git"
+    if marker.is_symlink() or not marker.exists():
+        raise RuntimeError("checkout .git missing or symlinked")
+    if marker.is_dir():
+        return _canonical_internal_path(root, marker, "gitdir"), "DIRECTORY"
+    if not marker.is_file():
+        raise RuntimeError("checkout .git is neither a directory nor a gitfile")
+    try:
+        text = marker.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as exc:
+        raise RuntimeError("checkout gitfile is unreadable or malformed") from exc
+    lines = text.splitlines()
+    if len(lines) != 1 or not lines[0].startswith("gitdir: "):
+        raise RuntimeError("checkout gitfile is malformed")
+    supplied = Path(lines[0][len("gitdir: "):])
+    target = supplied if supplied.is_absolute() else marker.parent / supplied
+    return _canonical_internal_path(root, target, "gitdir"), "GITFILE"
+
+
+def _git_common_directory(root: Path, gitdir: Path) -> Path:
+    marker = gitdir / "commondir"
+    if not marker.exists():
+        return gitdir
+    if marker.is_symlink() or not marker.is_file():
+        raise RuntimeError("checkout common-dir marker is unsafe")
+    try:
+        lines = marker.read_text(encoding="utf-8").splitlines()
+    except (OSError, UnicodeDecodeError) as exc:
+        raise RuntimeError("checkout common-dir marker is unreadable") from exc
+    if len(lines) != 1 or not lines[0]:
+        raise RuntimeError("checkout common-dir marker is malformed")
+    supplied = Path(lines[0])
+    target = supplied if supplied.is_absolute() else gitdir / supplied
+    return _canonical_internal_path(root, target, "common-dir")
+
+
+def _reachable_object_directories(root: Path, primary: Path) -> tuple[Path, ...]:
+    observed: list[Path] = []
+
+    def observe(target: Path) -> None:
+        object_directory = _canonical_internal_path(root, target, "object database")
+        if object_directory in observed:
+            return
+        if not object_directory.is_dir() or not os.access(
+            object_directory, os.R_OK | os.X_OK
+        ):
+            raise RuntimeError("checkout object database is unreadable")
+        observed.append(object_directory)
+        info = object_directory / "info"
+        http_alternates = info / "http-alternates"
+        if http_alternates.exists():
+            raise RuntimeError("checkout HTTP object alternates are not guest-local")
+        alternates = info / "alternates"
+        if not alternates.exists():
+            return
+        if alternates.is_symlink() or not alternates.is_file():
+            raise RuntimeError("checkout object alternates metadata is unsafe")
+        try:
+            lines = alternates.read_text(encoding="utf-8").splitlines()
+        except (OSError, UnicodeDecodeError) as exc:
+            raise RuntimeError("checkout object alternates metadata is unreadable") from exc
+        if not lines or any(not line or "\x00" in line for line in lines):
+            raise RuntimeError("checkout object alternates metadata is malformed")
+        for line in lines:
+            supplied = Path(line)
+            target = supplied if supplied.is_absolute() else object_directory / supplied
+            resolved = target.resolve(strict=False)
+            if not _inside(root, resolved):
+                raise RuntimeError(
+                    "checkout object alternate escapes presentation root"
+                )
+            observe(target)
+
+    observe(primary)
+    return tuple(observed)
+
+
+def _reject_git_metadata_symlink_escape(
+    root: Path, gitdir: Path, common_dir: Path
+) -> None:
+    for metadata_root in dict.fromkeys((gitdir, common_dir)):
+        for directory, names, files in os.walk(metadata_root, followlinks=False):
+            parent = Path(directory)
+            for name in (*names, *files):
+                path = parent / name
+                if path.is_symlink():
+                    raise RuntimeError("checkout Git metadata symlink prohibited")
+                if not _inside(root, path.resolve(strict=True)):
+                    raise RuntimeError("checkout Git metadata escapes presentation root")
+
+
+def _er_consumer_git(checkout: Path, *arguments: str) -> str:
+    environment = os.environ.copy()
+    for name in (
+        "GIT_DIR",
+        "GIT_WORK_TREE",
+        "GIT_COMMON_DIR",
+        "GIT_OBJECT_DIRECTORY",
+        "GIT_ALTERNATE_OBJECT_DIRECTORIES",
+        "GIT_INDEX_FILE",
+    ):
+        environment.pop(name, None)
+    environment["GIT_CONFIG_NOSYSTEM"] = "1"
+    environment["GIT_CONFIG_GLOBAL"] = os.devnull
+    try:
+        result = subprocess.run(
+            ["git", "-c", f"safe.directory={checkout}", *arguments],
+            cwd=checkout,
+            check=True,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=60,
+            env=environment,
+        )
+    except subprocess.CalledProcessError as exc:
+        detail = exc.stderr.strip() or f"exit status {exc.returncode}"
+        raise RuntimeError(f"ER guest Git consumer rejected checkout: {detail}") from exc
+    return result.stdout.strip()
+
+
+def _validate_guest_destination_sources(
+    cloud_init_source: str, er_source: str
+) -> None:
+    mount = (
+        "mount -t 9p -o trans=virtio,version=9p2000.L,ro "
+        f"{GUEST_CHECKOUT_MOUNT_TAG} {GUEST_CHECKOUT_DESTINATION}"
+    )
+    if cloud_init_source.count(mount) != 1:
+        raise RuntimeError("checkout guest destination mount binding mismatch")
+    required_er_fragments = (
+        f'CHECKOUT = Path("{GUEST_CHECKOUT_DESTINATION}")',
+        '["git", "-c", f"safe.directory={CHECKOUT}", *args]',
+        'cwd=CHECKOUT,',
+        '"observed_head": run_git("rev-parse", "HEAD")',
+        '"observed_tree": run_git("rev-parse", "HEAD^{tree}")',
+    )
+    if any(er_source.count(fragment) != 1 for fragment in required_er_fragments):
+        raise RuntimeError("ER checkout consumer semantics binding mismatch")
+
+
+def _guest_destination_contract() -> dict[str, str]:
+    repository_root = Path(__file__).resolve().parents[5]
+    cloud_init = repository_root / CLOUD_INIT
+    er_harness = repository_root / ER_HARNESS_RELATIVE
+    if sha256_path(cloud_init) != CLOUD_INIT_SHA256:
+        raise RuntimeError("checkout cloud-init mount source identity mismatch")
+    if sha256_path(er_harness) != ER_HARNESS_SHA256:
+        raise RuntimeError("ER checkout consumer source identity mismatch")
+    cloud_source = cloud_init.read_text(encoding="utf-8")
+    er_source = er_harness.read_text(encoding="utf-8")
+    _validate_guest_destination_sources(cloud_source, er_source)
+    return {
+        "cloud_init_sha256": CLOUD_INIT_SHA256,
+        "er_harness_sha256": ER_HARNESS_SHA256,
+        "mount_tag": GUEST_CHECKOUT_MOUNT_TAG,
+        "guest_destination": GUEST_CHECKOUT_DESTINATION,
+    }
+
+
+def prove_guest_checkout_tree_precondition(
+    context: dict[str, Any],
+) -> dict[str, Any]:
+    """Prove ER's Git HEAD/tree precondition using only the exported root."""
+
+    forbidden_overrides = {
+        "guest_checkout_ready",
+        "preauth_guest_checkout_tree_authentication",
+        "guest_checkout_destination",
+    }
+    if forbidden_overrides & context.keys():
+        raise RuntimeError("caller-supplied guest checkout readiness override prohibited")
+    destination_contract = _guest_destination_contract()
+    checkout = context["qemu_executable_base_seed_checkout_bindings"]["checkout"]
+    root = Path(checkout["path"])
+    if root.absolute() != root.resolve(strict=True):
+        raise RuntimeError("checkout presentation root is not canonical")
+    expected_argument = (
+        f"local,path={root},mount_tag={GUEST_CHECKOUT_MOUNT_TAG},"
+        "security_model=none,readonly=on"
+    )
+    arguments = [
+        context["canonical_argv"][index + 1]
+        for index, value in enumerate(context["canonical_argv"][:-1])
+        if value == "-virtfs"
+        and f"mount_tag={GUEST_CHECKOUT_MOUNT_TAG}" in context["canonical_argv"][index + 1]
+    ]
+    if arguments != [expected_argument]:
+        raise RuntimeError("checkout presentation binding mismatch")
+
+    gitdir, git_representation = _git_directory_from_presentation_root(root)
+    common_dir = _git_common_directory(root, gitdir)
+    _reject_git_metadata_symlink_escape(root, gitdir, common_dir)
+    head_path = gitdir / "HEAD"
+    if head_path.is_symlink() or not head_path.is_file() or not os.access(
+        head_path, os.R_OK
+    ):
+        raise RuntimeError("checkout HEAD is missing or unreadable")
+    object_directories = _reachable_object_directories(root, common_dir / "objects")
+
+    observed_head = _er_consumer_git(root, "rev-parse", "HEAD")
+    observed_tree = _er_consumer_git(root, "rev-parse", "HEAD^{tree}")
+    if observed_head != checkout["head"]:
+        raise RuntimeError("checkout ER consumer resolved wrong HEAD")
+    if observed_tree != checkout["tree"]:
+        raise RuntimeError("checkout ER consumer resolved wrong TREE")
+    if _er_consumer_git(root, "cat-file", "-t", observed_tree) != "tree":
+        raise RuntimeError("checkout expected tree object is unreachable")
+    if _er_consumer_git(root, "status", "--porcelain") != "":
+        raise RuntimeError("checkout ER consumer observed stale or dirty checkout")
+    return {
+        "result": "PREAUTH_GUEST_CHECKOUT_TREE_AUTHENTICATION_PASS",
+        "expected_head": checkout["head"],
+        "observed_head": observed_head,
+        "expected_tree": checkout["tree"],
+        "observed_tree": observed_tree,
+        "host_checkout_source_identity": str(root),
+        "host_gitdir_identity": str(gitdir),
+        "host_common_dir_identity": str(common_dir),
+        "required_git_metadata": "GITDIR_COMMON_DIR_HEAD_REFS_OBJECT_DATABASE",
+        "required_object_reachability": "GUEST_LOCAL_ONLY",
+        "reachable_object_directories": [str(path) for path in object_directories],
+        "presentation_root": str(root),
+        "presentation_mechanism": "QEMU_VIRTFS_LOCAL_9P_READ_ONLY",
+        "qemu_virtfs_argument": expected_argument,
+        "guest_destination": GUEST_CHECKOUT_DESTINATION,
+        "guest_destination_contract": destination_contract,
+        "er_consumer_semantics": (
+            "git -c safe.directory=/mnt/aigol rev-parse HEAD and HEAD^{tree}"
+        ),
+        "git_representation": git_representation,
+        "caller_supplied_readiness_override": False,
+    }
+
+
 def validate_checkout_preboot_readiness(context: dict[str, Any]) -> dict[str, Any]:
     checkout = context["qemu_executable_base_seed_checkout_bindings"]["checkout"]
     path = Path(checkout["path"])
@@ -1430,11 +1689,13 @@ def validate_checkout_preboot_readiness(context: dict[str, Any]) -> dict[str, An
     )
     if not checkout["read_only_mount"] or mount_argument is None or "readonly=on" not in mount_argument:
         raise RuntimeError("checkout read-only certified mount contract missing")
+    guest_tree_proof = prove_guest_checkout_tree_precondition(context)
     return {
         "checkout_exists": "PASS",
         "checkout_head_tree": "PASS",
         "checkout_clean_detached": "PASS",
         "checkout_read_only_mount": "PASS",
+        "preauth_guest_checkout_tree_authentication": guest_tree_proof,
     }
 
 

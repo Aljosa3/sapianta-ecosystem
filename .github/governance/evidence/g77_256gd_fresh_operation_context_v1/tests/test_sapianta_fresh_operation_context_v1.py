@@ -149,7 +149,7 @@ class FreshContextPositiveTests(unittest.TestCase):
             index = loaded["canonical_argv"].index("-nic")
             self.assertEqual(loaded["canonical_argv"][index + 1], "none")
 
-    def test_materialization_ga_visibility_and_authority_free_readiness_pass(self):
+    def test_historical_shared_checkout_is_rejected_by_authority_free_readiness(self):
         with tempfile.TemporaryDirectory(prefix="g77_256gd_static_") as temporary:
             root = Path(temporary)
             context = context_for(root)
@@ -162,19 +162,19 @@ class FreshContextPositiveTests(unittest.TestCase):
             self.assertEqual(materialized["qemu_execution_count"], 0)
             prepared = LAUNCHER.prepare_receipt_parent(REPOSITORY_ROOT, context)
             self.assertTrue(prepared["receipt_namespace_unused"])
-            readiness = LAUNCHER.authority_free_static_readiness(
-                repository_root=REPOSITORY_ROOT,
-                context=context,
-                observed_head=context["repository_head"],
-                observed_tree=context["repository_tree"],
-                repository_clean=True,
-                observed_asset_sha256=LAUNCHER.observe_context_assets(
-                    REPOSITORY_ROOT, context
-                ),
-            )
-            self.assertEqual(readiness["result"], "STATIC_READINESS_PASS")
-            self.assertEqual(readiness["human_operational_authorization_count"], 0)
-            self.assertEqual(readiness["qemu_execution_count"], 0)
+            with self.assertRaisesRegex(
+                RuntimeError, "object alternate escapes presentation root"
+            ):
+                LAUNCHER.authority_free_static_readiness(
+                    repository_root=REPOSITORY_ROOT,
+                    context=context,
+                    observed_head=context["repository_head"],
+                    observed_tree=context["repository_tree"],
+                    repository_clean=True,
+                    observed_asset_sha256=LAUNCHER.observe_context_assets(
+                        REPOSITORY_ROOT, context
+                    ),
+                )
 
     def test_test_only_non_authority_fixture_binds_context(self):
         with tempfile.TemporaryDirectory(prefix="g77_256gd_authority_") as temporary:
