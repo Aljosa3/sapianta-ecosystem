@@ -1,0 +1,235 @@
+{
+  "schema_id": "G77_256GT_SPCE_FINAL_REPOSITORY_ONLY_REDUCTION_ENVELOPE_V1",
+  "reduction": {
+    "schema_id": "G77_256GT_SPCE_FINAL_REPOSITORY_ONLY_REDUCTION_V1",
+    "generation_identity": "G77_256GT_SPCE_CLREC_CROSS_WORKER_CHECKOUT_LIFECYCLE_CORRECTION_V1",
+    "entry": {
+      "repository": "/home/pisarna/work/sapianta-fl",
+      "branch": "g77-256fl-wrong-attempt-preboot-blocker",
+      "head": "5eddad9cfaec82f2d0cd67258138bd773983d939",
+      "tree": "0b7dfa62195ef9eb06980bc3628113b228a9b9a5",
+      "subject": "G77-256GS fail closed on fresh checkout destination collision",
+      "remote_head": "5eddad9cfaec82f2d0cd67258138bd773983d939",
+      "local_remote_equal": true,
+      "index_empty": true,
+      "stable_ancestry_anchor": "5c972e9960987ab27420395b54ace693df097e7b",
+      "stable_ancestry_verified": true,
+      "interrupted_delta_inventory_matched": true,
+      "unexplained_mutation_found": false
+    },
+    "nested_immutable_authority": {
+      "origin": "git@github.com:Aljosa3/sapianta-core.git",
+      "ref": "refs/tags/sapianta-system-nested-authority-3183bab-v1",
+      "head": "3183bab71f8f30397c0309dd2e6d846d14a11f66",
+      "tree": "7c32ec05efc2be43297849bc38ec8766514a523d",
+      "remote_ref_equal": true,
+      "clean": true,
+      "detached": true,
+      "pinned": true,
+      "layer_0_freeze": "PASS"
+    },
+    "sealed_lineage": {
+      "duplicate_key_rejection": "PASS",
+      "canonical_inner_sha256_recomputation": "PASS",
+      "gp_inner_sha256": "f8948b4ecc0a07b865d06d404e830ba216b8aa4fd841e54cae18883561d3269b",
+      "gq_inner_sha256": "2c46a847854b566d33a679ed8bfd0b3897c3dec2c586f0b3c17bb7b14e1c62a4",
+      "gr_inner_sha256": "9f1c9d04e693a57cf494ee3bd30bd6a040a2a5b13e0fd624d3cd15e5b9debbc3",
+      "gs_inner_sha256": "76b1a282d3abcd6055cb100a6279d67cb01e3e206e86b77470be5fb98ba79f51"
+    },
+    "authenticated_gs_frontier": {
+      "first_broken_edge": "GS_FM_FRESH_SELF_CONTAINED_CHECKOUT_MATERIALIZATION_DESTINATION_ABSENCE_PRECONDITION",
+      "last_verified_edge": "GS_C_FRESH_POST_GR_GF_GD_DU_EB_EE_LIVE_BINDING",
+      "historical_destination": "/tmp/g77_256fm/checkout",
+      "error": "RuntimeError: fresh checkout destination collision",
+      "classification": "A__ALREADY_KNOWN_INSTANCE",
+      "e05_after": "6/18"
+    },
+    "cross_worker_recovery": {
+      "previous_worker_candidate_hypothesis": "CONFIRMED",
+      "previous_worker_conversation_available": false,
+      "previous_worker_conversation_required": false,
+      "authenticated_repository_continuation": true,
+      "uncommitted_delta_recovered_as_candidate_not_certificate": true,
+      "delta_review_completed_before_continuation": true,
+      "cross_worker_constitutional_drift": "NONE_OBSERVED_WITHIN_REVIEWED_BOUNDARY"
+    },
+    "root_cause": {
+      "class": "SHARED_FIXED_DISPOSABLE_CHECKOUT_ESCAPES_GENERATION_SPECIFIC_TRANSIENT_ROOT_TEARDOWN_OWNERSHIP",
+      "historical_checkout": "/tmp/g77_256fm/checkout",
+      "historical_transient_root": "/tmp/g77_256gs_wrong_attempt_operational_v1",
+      "historical_checkout_within_transient_root": false,
+      "certified_teardown_scope": "ONLY_AUTHENTICATED_GENERATION_SPECIFIC_TRANSIENT_ROOT",
+      "permanent_evidence_location": "REPOSITORY_GOVERNANCE_EVIDENCE_ROOT_OUTSIDE_TRANSIENT_ROOT",
+      "disposable_runtime_material_equals_permanent_constitutional_evidence": false
+    },
+    "formal_property": {
+      "identity": "FRESH_OPERATION_SCOPED_CHECKOUT_LIFECYCLE_READY_V1",
+      "definition": "EXACT_TRANSIENT_ROOT_CHILD_BINDING_AND_UNIQUE_TRANSIENT_ROOT_ABSENT_AND_OPERATION_EVIDENCE_ROOT_ABSENT_AND_NO_LIVE_AUTHORITY_DEPENDENCY_AND_PERMANENT_EVIDENCE_OUTSIDE_TRANSIENT_ROOT_AND_DESTINATION_ABSENT_BEFORE_EXISTING_GQ_MATERIALIZATION",
+      "previous_checkout_lifecycle_terminal": "NOT_APPLICABLE_FOR_UNIQUE_OPERATION_SCOPED_PATH",
+      "unsafe_or_incomplete_state_policy": "FAIL_CLOSED_NO_RETIREMENT",
+      "preauthorization_materialization_equivalence": "VERIFIED_WITHIN_EXACT_FM_CONTEXT_TO_GQ_MATERIALIZATION_ROUTE",
+      "destination_absence_alone_sufficient": false
+    },
+    "minimum_correction": {
+      "context_lifecycle_discriminator": "EXPLICIT_HISTORICAL_FIXED_PATH_V1_OR_TRANSIENT_ROOT_CHILD_V1",
+      "new_context_checkout_binding": "transient_root/checkout",
+      "materialization_parent_policy": "MISSING_EXACT_PARENT_ALLOWED_ONLY_AFTER_CANONICAL_GRANDPARENT_VALIDATION_AND_CREATED_AT_ATOMIC_INSTALL",
+      "existing_materialization_owner": "FM_MATERIALIZE_OPERATION_STATE_TO_GQ_MATERIALIZE_GUEST_SELF_CONTAINED_CHECKOUT",
+      "existing_teardown_owner": "SPCE_HOST_TEARDOWN_EXACT_TRANSIENT_ROOT",
+      "historical_context_policy": "LEGACY_FIXED_PATH_REMAINS_EXPLICITLY_CLASSIFIED_AND_RETAINS_COLLISION_FAIL_CLOSED_SEMANTICS",
+      "context_schema_version": "1.0.0",
+      "schema_version_change_required": false,
+      "schema_version_reason": "STRUCTURAL_SCHEMA_DID_NOT_CHANGE_AND_EXACT_PATH_DISCRIMINATOR_PREVENTS_RETROACTIVE_SEMANTIC_REINTERPRETATION",
+      "historical_replay_preserved": true,
+      "candidate_semantics_changed": false,
+      "new_owner_created": false,
+      "new_lifecycle_model_created": false,
+      "destination_freshness_weakened": false,
+      "production_route_changed": false,
+      "future_commit_self_reference_created": false,
+      "post_commit_live_binding_regeneration_required": true
+    },
+    "delta_review": {
+      "context_validator": "RETAINED_AND_HARDENED_WITH_EXPLICIT_LIFECYCLE_CLASSIFICATION",
+      "context_builder": "RETAINED__BINDS_CURRENT_CHECKOUT_TO_EXACT_TRANSIENT_ROOT_CHILD",
+      "immutable_binding_validator": "RETAINED__ACCEPTS_ONLY_EXPLICIT_LEGACY_OR_OPERATION_SCOPED_CLASS",
+      "preauthorization_readiness": "RETAINED__PROVES_ABSENCE_OWNERSHIP_OPERATION_AND_AUTHORITY_PRECONDITIONS",
+      "operation_materialization": "RETAINED__CALLS_PREAUTHORIZATION_BEFORE_EXACT_GQ_MATERIALIZER_AND_REOBSERVES_TRANSIENT_ROOT_CONTENT",
+      "gq_materializer": "RETAINED__SUPPORTS_ATOMIC_NESTED_PARENT_CREATION_WITH_FAILURE_CLEANUP",
+      "affected_test_fixtures": "CORRECTED_TO_MODEL_NESTED_PARENT_CREATION_AND_EXPLICIT_HISTORICAL_CONTEXT",
+      "minimum_change_verified": true
+    },
+    "same_class_review": {
+      "boundary": "CURRENT_FM_CONTEXT_MUTABLE_RUNTIME_PATHS_AND_IMMEDIATE_FY_GH_GQ_GP_PRESENTATION_CHAIN",
+      "same_class_review_complete": true,
+      "second_independent_instance_found": false,
+      "systematic_architecture_review_required": false,
+      "historical_fixed_checkout_references": "RETAINED_ONLY_FOR_EXPLICIT_COMPATIBILITY_AND_SEALED_EVIDENCE",
+      "other_external_paths": "IMMUTABLE_BASE_QEMU_EXECUTABLE_AND_REPOSITORY_SEED_NOT_DISPOSABLE_GENERATION_CHECKOUT_STATE"
+    },
+    "reuse_impact": {
+      "reused_certified_capabilities": [
+        "EX_17_OF_17_COMMON_CERTIFIED_SUBSTRATE",
+        "FM_FRESH_OPERATION_CONTEXT_AND_MATERIALIZATION_OWNER",
+        "GQ_SELF_CONTAINED_CHECKOUT_MATERIALIZER",
+        "GP_GUEST_CHECKOUT_TREE_PREAUTHORIZATION",
+        "FY_RUNTIME_PRESENTATION",
+        "GH_GUEST_ADAPTER_BINDING",
+        "GF_GD_DU_EB_EE_LIVE_BINDING_CHAIN",
+        "SPCE_EXACT_TRANSIENT_ROOT_HOST_TEARDOWN"
+      ],
+      "new_capabilities": "NONE__ONE_NEW_LIFECYCLE_BINDING_PROPERTY_AND_GT_EVIDENCE_ONLY",
+      "existing_capability_unreachable": false,
+      "parallel_flow_created": false,
+      "production_routes_before": 0,
+      "production_routes_after": 0,
+      "production_route_delta": 0
+    },
+    "architecture_counters": {
+      "new_launchers": 0,
+      "new_production_routes": 0,
+      "new_authorization_models": 0,
+      "new_receipt_subsystems": 0,
+      "new_validator_architectures": 0,
+      "parallel_execution_flows": 0,
+      "production_route_delta": 0
+    },
+    "operational_counters": {
+      "human_operational_authorization_count": 0,
+      "governed_launcher_activation_count": 0,
+      "pre_count": 0,
+      "qemu_execution_count": 0,
+      "vm_boot_count": 0,
+      "operation_attempt_count": 0,
+      "wrong_attempt_execution_count": 0,
+      "request_count": 0,
+      "p11_entry_count": 0,
+      "protected_invocation_count": 0,
+      "protected_effect_count": 0,
+      "retry_count": 0,
+      "repair_execution_count": 0,
+      "replay_execution_count": 0
+    },
+    "ex": {
+      "reused": "17/17",
+      "reconstructed": 0,
+      "regression_total": 12,
+      "regression_pass": 12,
+      "regression_fail": 0,
+      "operational_effect": 0,
+      "credit_effect": 0
+    },
+    "e05": {
+      "before": "6/18",
+      "credit_awarded": 0,
+      "after": "6/18"
+    },
+    "validation": {
+      "gt_regression": "5_OF_5_PASS",
+      "affected_owner_regressions": "61_OF_61_PASS",
+      "ex_regression": "12_OF_12_PASS",
+      "governance_conformance_tests": "9_OF_9_PASS",
+      "governance_conformance_engine": "20_OF_20_CONFORMANT_ZERO_WARNINGS",
+      "layer_0_freeze": "PASS",
+      "gp_gq_gr_gs_duplicate_key_and_inner_hash_reauthentication": "PASS",
+      "nested_authority_local_and_remote": "PASS",
+      "git_diff_check": "PASS",
+      "gr_historical_exact_head_guard": "NOT_APPLICABLE_TO_LATER_GS_BASE__REJECTED_5EDDAD9_AS_NOT_99D8E8",
+      "qemu_or_vm_validation": "NOT_RUN__PROHIBITED_AND_NOT_REQUIRED"
+    },
+    "required_metrics": {
+      "project_progress_estimate": {"classification": "ESTIMATED", "result": "GT_BOUNDED_CORRECTION_COMPLETE_PENDING_HUMAN_REVIEW_COMMIT_AND_POST_COMMIT_LIVE_BINDING"},
+      "constitutional_health_evidence": {"classification": "VERIFIED", "result": "HISTORICAL_FAIL_CLOSED_SEMANTICS_PRESERVED_AND_CURRENT_DISPOSABLE_CHECKOUT_BOUND_TO_CERTIFIED_TRANSIENT_TEARDOWN_SCOPE"},
+      "shadow_automation_status": {"classification": "VERIFIED", "result": "REPOSITORY_ONLY_VALIDATION_ACTIVE__ZERO_OPERATIONAL_AUTOMATION"},
+      "constitutional_frontier_distance": {"classification": "NOT_MEASURED", "result": "NO_CANONICAL_SCALAR__E05_REMAINS_6_OF_18"},
+      "wrong_attempt_local_frontier_distance": {"classification": "ESTIMATED", "result": "HUMAN_REVIEW_COMMIT_AND_POST_COMMIT_LIVE_BINDING_PRECEDE_ANY_SEPARATE_OPERATIONAL_GENERATION"},
+      "governance_efficiency": {"classification": "ESTIMATED", "result": "ONE_EXISTING_OWNER_CHAIN_CORRECTED_WITH_ZERO_ROUTE_GROWTH"},
+      "operational_proof_yield": {"classification": "VERIFIED", "result": "ZERO_OPERATIONAL_PROOF_AND_ZERO_E05_CREDIT"},
+      "cognition_assisted_handoff": {"classification": "VERIFIED", "result": "CROSS_WORKER_DELTA_RECOVERED_FROM_COMMITTED_BASE_SEALED_EVIDENCE_CURRENT_DELTA_AND_OWNER_SEMANTICS"},
+      "aigol_codex_work_share": {"classification": "NOT_MEASURED", "result": "NO_INSTRUMENTED_WORK_SHARE_MEASURE"},
+      "overengineering_risk": {"classification": "ESTIMATED", "result": "LOW__NO_NEW_OWNER_ROUTE_AUTHORIZATION_OR_TEARDOWN_ARCHITECTURE"},
+      "cognition_provenance": {"classification": "VERIFIED", "result": "REPOSITORY_FACTS_CURRENT_CODEX_REVIEW_HUMAN_COMMISSION_AND_PROVIDER_TELEMETRY_SEPARATED"},
+      "candidate_capability": {"classification": "NOT_PROVEN", "result": "NO_QEMU_VM_REQUEST_P11_INVOCATION_OR_EFFECT"},
+      "shadow_design_target": {"classification": "VERIFIED", "result": "GENERATION_SCOPED_DISPOSABLE_CHECKOUT_OWNED_BY_EXISTING_TRANSIENT_ROOT_LIFECYCLE"},
+      "constitutional_continuation_progress": {"classification": "ESTIMATED", "result": "GS_FIRST_BROKEN_EDGE_CORRECTED_AND_REPOSITORY_ONLY_PROVEN__OPERATIONAL_FRONTIER_UNCHANGED"},
+      "prompt_context_reuse_ratio": {"classification": "NOT_MEASURED", "result": "NO_INSTRUMENTED_CONTEXT_RATIO"},
+      "token_benchmark": {"classification": "NOT_MEASURED", "result": "NO_TOKEN_TELEMETRY__PROVIDER_CAPACITY_IS_NOT_TOKEN_EVIDENCE"},
+      "llm_cost_reduction_ratio_lcrr": {"classification": "NOT_MEASURED", "result": "NO_COMPARABLE_BILLABLE_COST_MEASUREMENTS"},
+      "human_intervention_efficiency": {"classification": "NOT_APPLICABLE", "result": "ZERO_HUMAN_OPERATIONAL_AUTHORIZATIONS"},
+      "checkout_lifecycle_readiness": {"classification": "VERIFIED", "result": "CURRENT_CONTEXT_BINDS_EXACT_TRANSIENT_ROOT_CHILD_AND_UNSAFE_LEFTOVERS_FAIL_CLOSED"},
+      "preauth_fresh_checkout_destination_readiness": {"classification": "VERIFIED", "result": "EXACT_CURRENT_FM_ROUTE_PREAUTHORIZES_THE_DESTINATION_CONSUMED_BY_GQ"},
+      "preauth_guest_checkout_tree_equivalence": {"classification": "VERIFIED", "result": "GP_ACCEPTS_ACTUAL_REPOSITORY_ONLY_NESTED_SELF_CONTAINED_CHECKOUT_WITHIN_REVIEWED_BOUNDARY"},
+      "self_contained_checkout_proof": {"classification": "VERIFIED", "result": "NESTED_DIRECT_DETACHED_OBJECT_LOCALIZED_CHECKOUT_MATERIALIZED_AND_REOBSERVED_REPOSITORY_SIDE"},
+      "post_commit_live_binding_status": {"classification": "VERIFIED", "result": "REQUIRED_NOT_PERFORMED__ACTUAL_GT_COMMITTED_HEAD_TREE_DO_NOT_EXIST"},
+      "same_class_review_status": {"classification": "VERIFIED", "result": "COMPLETE__NO_SECOND_INDEPENDENT_DISPOSABLE_FIXED_RUNTIME_PATH_FOUND"},
+      "formalize_reuse_bind_verify_compliance": {"classification": "VERIFIED", "result": "PROPERTY_FORMALIZED__FM_GQ_GP_AND_TEARDOWN_REUSED__EXACT_PATH_BOUND__AFFECTED_OWNERS_VERIFIED"}
+    },
+    "ccwim": {
+      "ccwim_maturity_level": {"classification": "ESTIMATED", "result": "AUTHENTICATED_REPOSITORY_CONTINUATION_WITH_UNCOMMITTED_DELTA_RECOVERY"},
+      "cross_worker_state_recovery_level": {"classification": "ESTIMATED", "result": "COMMITTED_BASE_SEALS_DELTA_OWNER_SEMANTICS_AND_FRONTIER_RECOVERED"},
+      "repository_derived_context_ratio": {"classification": "NOT_MEASURED", "result": "NO_INSTRUMENTED_RATIO__SEMANTIC_ESTIMATE_DOMINANT_REPOSITORY_DERIVATION"},
+      "human_handoff_information_required": {"classification": "VERIFIED", "result": "YES__GENERATION_COMMISSION_AND_CONTINUATION_LOCATOR_REQUIRED__PREVIOUS_CONVERSATION_NOT_REQUIRED"},
+      "prompt_context_reuse_ratio": {"classification": "NOT_MEASURED", "result": "NO_INSTRUMENTED_RATIO"},
+      "previous_worker_conversation_available": {"classification": "VERIFIED", "result": "NO__SESSION_IDENTIFIER_ONLY"},
+      "previous_worker_conversation_required": {"classification": "VERIFIED", "result": "NO_WITHIN_EXACT_OBSERVED_GT_BOUNDARY"},
+      "authenticated_repository_continuation": {"classification": "VERIFIED", "result": "YES"},
+      "cross_worker_constitutional_drift": {"classification": "VERIFIED", "result": "NONE_OBSERVED_WITHIN_REVIEWED_BOUNDARY"},
+      "intra_task_cross_worker_continuation": {"classification": "VERIFIED", "result": "YES__SAME_G77_256GT_GENERATION"},
+      "uncommitted_delta_recovery": {"classification": "VERIFIED", "result": "CANDIDATE_DELTA_INVENTORIED_REVIEWED_CORRECTED_AND_VALIDATED_WITHOUT_RESET_OR_RECONSTRUCTION"}
+    },
+    "resource_telemetry": {
+      "context_remaining": "NOT_EXPOSED",
+      "five_hour_remaining": "NOT_EXPOSED",
+      "seven_day_remaining": "NOT_EXPOSED",
+      "telemetry_is_token_or_cost_evidence": false
+    },
+    "terminal": {
+      "verdict": "PASS__G77_256GT_CHECKOUT_LIFECYCLE_BOUND_TO_EXISTING_TRANSIENT_ROOT_TEARDOWN_OWNER__HISTORICAL_COLLISION_SEMANTICS_PRESERVED__CROSS_WORKER_RECOVERY_VERIFIED__EX_17_OF_17_REUSED__ZERO_OPERATIONAL_AUTHORITY__ZERO_QEMU_VM__ZERO_PRODUCTION_ROUTE_DELTA__E05_REMAINS_6_OF_18__POST_COMMIT_LIVE_BINDING_REQUIRED__HUMAN_REVIEW_REQUIRED",
+      "candidate_capability": "NOT_PROVEN",
+      "auto_continuable": false,
+      "human_review_required": true,
+      "next_legal_action": "HUMAN_REVIEW_OF_UNSTAGED_GT_MUTATIONS__COMMIT_IF_APPROVED__THEN_SEPARATE_POST_COMMIT_LIVE_BINDING_REGENERATION"
+    }
+  },
+  "reduction_sha256": "fe28c8dedaf4afb2df0d68fd45693c162a61645d83a23e2c044d9c0ce1c3c572"
+}

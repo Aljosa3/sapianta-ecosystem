@@ -153,6 +153,17 @@ class FreshContextPositiveTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix="g77_256gd_static_") as temporary:
             root = Path(temporary)
             context = context_for(root)
+            checkout = context["qemu_executable_base_seed_checkout_bindings"]["checkout"]
+            operation_scoped_checkout = checkout["path"]
+            checkout["path"] = LAUNCHER.CHECKOUT
+            context["canonical_argv"] = [
+                item.replace(operation_scoped_checkout, LAUNCHER.CHECKOUT)
+                for item in context["canonical_argv"]
+            ]
+            context["canonical_argv_sha256"] = LAUNCHER.fresh_context.argv_sha256(
+                context["canonical_argv"]
+            )
+            reseal(context)
             path = write_context(root, context)
             with self.assertRaisesRegex(RuntimeError, "checkout destination collision"):
                 LAUNCHER.materialize_operation_state(
@@ -301,10 +312,15 @@ class FreshContextNegativeTests(unittest.TestCase):
                 root = Path(temporary)
                 context = context_for(root)
                 path = write_context(root, context)
+
+                def materialize_nested_checkout(**arguments):
+                    arguments["checkout_path"].mkdir(parents=True)
+                    return {"result": "TEST_ONLY_GQ_MATERIALIZATION_PASS"}
+
                 with mock.patch.object(
                     LAUNCHER,
                     "materialize_guest_self_contained_checkout",
-                    return_value={"result": "TEST_ONLY_GQ_MATERIALIZATION_PASS"},
+                    side_effect=materialize_nested_checkout,
                 ):
                     LAUNCHER.materialize_operation_state(
                         repository_root=REPOSITORY_ROOT,

@@ -182,10 +182,15 @@ class GuestSelfContainedCheckoutMaterializationTests(unittest.TestCase):
             context_path = root / "context.json"
             context_path.write_bytes(LAUNCHER.canonical_bytes(context))
             result = {"result": "TEST_ONLY_MATERIALIZATION_BINDING_PASS"}
+
+            def materialize_nested_checkout(**arguments):
+                arguments["checkout_path"].mkdir(parents=True)
+                return result
+
             with mock.patch.object(
                 LAUNCHER,
                 "materialize_guest_self_contained_checkout",
-                return_value=result,
+                side_effect=materialize_nested_checkout,
             ) as materialize:
                 observed = LAUNCHER.materialize_operation_state(
                     repository_root=REPOSITORY_ROOT,

@@ -14,6 +14,9 @@ from typing import Any, Iterable
 
 SCHEMA_ID = "SAPIANTA_FRESH_OPERATION_CONTEXT_V1"
 SCHEMA_VERSION = "1.0.0"
+LEGACY_FIXED_CHECKOUT_PATH = Path("/tmp/g77_256fm/checkout")
+LEGACY_FIXED_CHECKOUT_LIFECYCLE = "HISTORICAL_FIXED_PATH_V1"
+OPERATION_SCOPED_CHECKOUT_LIFECYCLE = "TRANSIENT_ROOT_CHILD_V1"
 CONSTITUTIONAL_ANCHOR_HEAD = "5c972e9960987ab27420395b54ace693df097e7b"
 MOUNT_TAG = "g77_evidence"
 GUEST_MOUNT_ROOT = "/mnt/g77-evidence"
@@ -156,6 +159,20 @@ def sha256_path(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def checkout_lifecycle_binding(context: dict[str, Any]) -> str:
+    """Classify checkout ownership without rewriting historical V1 semantics."""
+
+    checkout = Path(
+        context["qemu_executable_base_seed_checkout_bindings"]["checkout"]["path"]
+    )
+    transient_root = Path(context["transient_root"])
+    if checkout == LEGACY_FIXED_CHECKOUT_PATH:
+        return LEGACY_FIXED_CHECKOUT_LIFECYCLE
+    if checkout == transient_root / "checkout":
+        return OPERATION_SCOPED_CHECKOUT_LIFECYCLE
+    raise ContextError("checkout path has no authenticated lifecycle owner")
 
 
 def argv_sha256(argv: list[str]) -> str:
@@ -536,7 +553,13 @@ def validate_context(context: dict[str, Any], *, repository_root: Path) -> dict[
     checkout = bindings["checkout"]
     if not isinstance(checkout, dict) or set(checkout) != {"path", "head", "tree", "detached", "clean", "read_only_mount"}:
         raise ContextError("checkout binding malformed")
-    _absolute_canonical_path(checkout["path"], "checkout.path")
+    checkout_path = _absolute_canonical_path(checkout["path"], "checkout.path")
+    lifecycle = checkout_lifecycle_binding(context)
+    if lifecycle == LEGACY_FIXED_CHECKOUT_LIFECYCLE:
+        if checkout_path != LEGACY_FIXED_CHECKOUT_PATH:
+            raise ContextError("historical checkout lifecycle classification mismatch")
+    elif checkout_path != paths["transient_root"] / "checkout":
+        raise ContextError("operation-scoped checkout lifecycle classification mismatch")
     if HEX_40.fullmatch(str(checkout["head"])) is None or HEX_40.fullmatch(str(checkout["tree"])) is None:
         raise ContextError("checkout Git binding malformed")
     if checkout["detached"] is not True or checkout["clean"] is not True or checkout["read_only_mount"] is not True:

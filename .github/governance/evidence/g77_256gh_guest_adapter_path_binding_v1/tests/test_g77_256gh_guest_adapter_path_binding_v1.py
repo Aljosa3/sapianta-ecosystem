@@ -53,10 +53,15 @@ def build_and_materialize(root: Path, prefix: str) -> dict:
     )
     context_path = root / "context.json"
     context_path.write_bytes(LAUNCHER.canonical_bytes(context))
+
+    def materialize_nested_checkout(**arguments):
+        arguments["checkout_path"].mkdir(parents=True)
+        return {"result": "TEST_ONLY_GQ_MATERIALIZATION_PASS"}
+
     with mock.patch.object(
         LAUNCHER,
         "materialize_guest_self_contained_checkout",
-        return_value={"result": "TEST_ONLY_GQ_MATERIALIZATION_PASS"},
+        side_effect=materialize_nested_checkout,
     ):
         materialization = LAUNCHER.materialize_operation_state(
             repository_root=REPOSITORY_ROOT,

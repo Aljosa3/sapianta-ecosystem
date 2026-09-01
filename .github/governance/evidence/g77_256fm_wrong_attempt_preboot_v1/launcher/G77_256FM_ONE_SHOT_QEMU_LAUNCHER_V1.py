@@ -868,12 +868,19 @@ def validate_immutable_context_bindings(
     if hashes != expected_hashes:
         raise RuntimeError("context immutable wrapper/FC/ER/CHE/schema binding mismatch")
     bindings = context["qemu_executable_base_seed_checkout_bindings"]
+    checkout_path = bindings["checkout"]["path"]
+    lifecycle = fresh_context.checkout_lifecycle_binding(context)
+    if lifecycle == fresh_context.LEGACY_FIXED_CHECKOUT_LIFECYCLE:
+        if checkout_path != CHECKOUT:
+            raise RuntimeError("historical context checkout lifecycle binding mismatch")
+    elif checkout_path != str(Path(context["transient_root"]) / "checkout"):
+        raise RuntimeError("operation-scoped context checkout lifecycle binding mismatch")
     expected_bindings = {
         "qemu_executable": {"path": "/usr/bin/qemu-system-x86_64", "sha256": QEMU_EXECUTABLE_SHA256},
         "base": {"path": BASE_IMAGE, "sha256": EXPECTED_ASSET_SHA256[BASE_IMAGE]},
         "seed": {"path": SEED, "sha256": EXPECTED_ASSET_SHA256[SEED]},
         "checkout": {
-            "path": CHECKOUT,
+            "path": checkout_path,
             "head": CHECKOUT_HEAD,
             "tree": CHECKOUT_TREE,
             "detached": True,
@@ -1314,12 +1321,13 @@ def build_operation_context(
         "canonicalizer": CANONICALIZER_SHA256,
         "cloud_init": CLOUD_INIT_SHA256,
     }
+    checkout_path = transient_root.absolute() / "checkout"
     bindings = {
         "qemu_executable": {"path": "/usr/bin/qemu-system-x86_64", "sha256": QEMU_EXECUTABLE_SHA256},
         "base": {"path": BASE_IMAGE, "sha256": EXPECTED_ASSET_SHA256[BASE_IMAGE]},
         "seed": {"path": SEED, "sha256": EXPECTED_ASSET_SHA256[SEED]},
         "checkout": {
-            "path": CHECKOUT,
+            "path": str(checkout_path),
             "head": CHECKOUT_HEAD,
             "tree": CHECKOUT_TREE,
             "detached": True,
@@ -1343,6 +1351,74 @@ def build_operation_context(
     )
 
 
+def preauth_fresh_checkout_destination_readiness(
+    repository_root: Path,
+    context: dict[str, Any],
+) -> dict[str, Any]:
+    """Prove the new checkout belongs to one unused transient lifecycle.
+
+    Destination absence is necessary but not independently sufficient. The
+    exact context must use the current operation-scoped checkout binding, both
+    mutable roots must be absent, and no exact Human authority source or
+    canonical handoff may exist for the generation.
+    """
+
+    fresh_context.validate_context(context, repository_root=repository_root)
+    operation_root = Path(context["operation_evidence_root"])
+    transient_root = Path(context["transient_root"])
+    checkout = Path(
+        context["qemu_executable_base_seed_checkout_bindings"]["checkout"]["path"]
+    )
+    lifecycle = fresh_context.checkout_lifecycle_binding(context)
+    if lifecycle != fresh_context.OPERATION_SCOPED_CHECKOUT_LIFECYCLE:
+        raise RuntimeError(
+            "legacy checkout destination requires terminal lifecycle review"
+        )
+    if checkout.exists() or checkout.is_symlink():
+        raise RuntimeError("fresh checkout destination collision")
+    if transient_root.exists() or transient_root.is_symlink():
+        raise RuntimeError("active or incomplete transient checkout lifecycle")
+    if operation_root.exists() or operation_root.is_symlink():
+        raise RuntimeError("active or incomplete operation dependency")
+    evidence_root = operation_root.parent
+    prefix = context["identity_namespace_prefix"]
+    authority_paths = (
+        evidence_root / f"{prefix}_HUMAN_OPERATIONAL_AUTHORIZATION_SOURCE_V1.txt",
+        evidence_root
+        / f"{prefix}_FRESH_HUMAN_OPERATIONAL_AUTHORIZATION_HANDOFF_V1.json",
+    )
+    if any(path.exists() or path.is_symlink() for path in authority_paths):
+        raise RuntimeError("live authority dependency blocks checkout preparation")
+    return {
+        "result": "PREAUTH_FRESH_CHECKOUT_DESTINATION_READINESS_PASS",
+        "property": (
+            "EXACT_OPERATION_SCOPED_DESTINATION_BOUND"
+            "_AND_PREVIOUS_CHECKOUT_LIFECYCLE_NOT_APPLICABLE_TO_UNIQUE_PATH"
+            "_AND_REQUIRED_PERMANENT_EVIDENCE_OUTSIDE_TRANSIENT_ROOT"
+            "_AND_NO_ACTIVE_OPERATION_DEPENDENCY"
+            "_AND_NO_LIVE_AUTHORITY_DEPENDENCY"
+            "_AND_EXISTING_SPCE_TRANSIENT_ROOT_TEARDOWN_OWNER_BOUND"
+            "_AND_DESTINATION_ABSENT_BEFORE_FRESH_MATERIALIZATION"
+        ),
+        "checkout_path": str(checkout),
+        "transient_root": str(transient_root),
+        "operation_evidence_root": str(operation_root),
+        "previous_checkout_lifecycle_terminal": (
+            "NOT_APPLICABLE__UNIQUE_OPERATION_SCOPED_DESTINATION"
+        ),
+        "required_permanent_evidence_preserved": True,
+        "no_active_operation_dependency": True,
+        "no_live_authority_dependency": True,
+        "retirement_or_preparation_owner": (
+            "EXISTING_SPCE_HOST_TEARDOWN_EXACT_TRANSIENT_ROOT_OWNER"
+        ),
+        "destination_absent": True,
+        "destination_absence_alone_sufficient": False,
+        "human_operational_authorization_count": 0,
+        "qemu_execution_count": 0,
+    }
+
+
 def materialize_operation_state(
     *,
     repository_root: Path,
@@ -1356,6 +1432,10 @@ def materialize_operation_state(
         repository_root, context, candidate_source_path
     )
     fresh_context.validate_freshness(context)
+    operation_scoped_checkout = (
+        fresh_context.checkout_lifecycle_binding(context)
+        == fresh_context.OPERATION_SCOPED_CHECKOUT_LIFECYCLE
+    )
     operation_root = Path(context["operation_evidence_root"])
     transient_root = Path(context["transient_root"])
     runtime_export = Path(context["runtime_export_root"])
@@ -1364,6 +1444,8 @@ def materialize_operation_state(
             raise RuntimeError(f"fresh materialization root collision: {root}")
         if root.parent.is_symlink() or not root.parent.is_dir():
             raise RuntimeError(f"fresh materialization parent absent or unsafe: {root.parent}")
+    if operation_scoped_checkout:
+        preauth_fresh_checkout_destination_readiness(repository_root, context)
     checkout_binding = context["qemu_executable_base_seed_checkout_bindings"]["checkout"]
     checkout_materialization = materialize_guest_self_contained_checkout(
         source_repository=repository_root,
@@ -1371,8 +1453,14 @@ def materialize_operation_state(
         expected_head=checkout_binding["head"],
         expected_tree=checkout_binding["tree"],
     )
-    for root in (operation_root, transient_root):
-        root.mkdir(mode=0o700, parents=False, exist_ok=False)
+    operation_root.mkdir(mode=0o700, parents=False, exist_ok=False)
+    if operation_scoped_checkout:
+        if transient_root.is_symlink() or not transient_root.is_dir():
+            raise RuntimeError("checkout materializer did not create the transient root")
+        if set(transient_root.iterdir()) != {Path(checkout_binding["path"])}:
+            raise RuntimeError("transient root contains state outside checkout lifecycle")
+    else:
+        transient_root.mkdir(mode=0o700, parents=False, exist_ok=False)
     runtime_export.mkdir(mode=0o700, parents=False, exist_ok=False)
     adapter_binding = context["guest_adapter_binding"]
     adapter_projection_root = Path(adapter_binding["projection_root"])
@@ -1481,9 +1569,23 @@ def materialize_guest_self_contained_checkout(
         raise RuntimeError("checkout expected HEAD/TREE malformed")
     if checkout_path != checkout_path.absolute():
         raise RuntimeError("checkout destination must be absolute")
-    parent = checkout_path.parent.resolve(strict=True)
-    if checkout_path.parent.absolute() != parent or not parent.is_dir():
-        raise RuntimeError("checkout destination parent is not canonical")
+    supplied_parent = checkout_path.parent
+    parent_created = False
+    if supplied_parent.exists() or supplied_parent.is_symlink():
+        parent = supplied_parent.resolve(strict=True)
+        if supplied_parent.absolute() != parent or not parent.is_dir():
+            raise RuntimeError("checkout destination parent is not canonical")
+        staging_parent = parent
+    else:
+        grandparent = supplied_parent.parent.resolve(strict=True)
+        if (
+            supplied_parent.parent.absolute() != grandparent
+            or not grandparent.is_dir()
+            or supplied_parent.absolute() != grandparent / supplied_parent.name
+        ):
+            raise RuntimeError("checkout destination parent is not canonical")
+        parent = supplied_parent.absolute()
+        staging_parent = grandparent
     destination = parent / checkout_path.name
     if destination.exists() or destination.is_symlink():
         raise RuntimeError("fresh checkout destination collision")
@@ -1519,7 +1621,7 @@ def materialize_guest_self_contained_checkout(
         raise RuntimeError("checkout source does not resolve exact expected HEAD/TREE")
 
     with tempfile.TemporaryDirectory(
-        dir=parent, prefix=f".{destination.name}.g77_256gq_"
+        dir=staging_parent, prefix=f".{destination.name}.g77_256gq_"
     ) as temporary:
         staged = Path(temporary) / "checkout"
         subprocess.run(
@@ -1549,7 +1651,15 @@ def materialize_guest_self_contained_checkout(
             env=environment,
         )
         _materialized_checkout_observation(staged, expected_head, expected_tree)
-        os.replace(staged, destination)
+        if not parent.exists():
+            parent.mkdir(mode=0o700, parents=False, exist_ok=False)
+            parent_created = True
+        try:
+            os.replace(staged, destination)
+        except BaseException:
+            if parent_created:
+                parent.rmdir()
+            raise
 
     return _materialized_checkout_observation(
         destination, expected_head, expected_tree
