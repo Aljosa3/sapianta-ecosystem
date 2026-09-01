@@ -1,0 +1,36 @@
+I GRANT exactly one fresh, explicit, one-shot, non-reusable,
+non-transferable G77-256GO Human constitutional operational authorization
+for the complete authoritative Human-facing authorization presentation
+immediately above.
+
+This authorization binds exactly and exclusively to the complete
+SAPIANTA SEALED AUTHORIZATION REQUEST HUMAN PRESENTATION V1 presented
+immediately above, including every constitutional binding, limit,
+prohibition, identity, and one-shot condition contained in that
+presentation.
+
+SEALED\_AUTHORIZATION\_REQUEST\_SHA256 =
+a25663ced18ea3b84e89f6de793d704ec587c9ad48b9a8996579e665025ac73d
+
+GN\_PRESENTATION\_SHA256 =
+d6d92ee2c8fb8190853e464bae23aba27cce5392f0e004c7c60ef0c0ee69b4e6
+
+The authorization is limited to:
+
+GENERATION\_ID =
+G77\_256GO\_ONE\_FRESH\_HUMAN\_AUTHORIZED\_WRONG\_ATTEMPT\_OPERATIONAL\_COMMISSIONING\_V1
+
+OPERATION\_ID =
+G77\_256GO\_E05\_WRONG\_ATTEMPT\_DENIAL\_BEFORE\_ENTRY\_001
+
+I authorize no replacement authority, no second attempt, no retry,
+no repair execution, no replay execution, no successor generation,
+and no network capability.
+
+This Human authorization does not waive, bypass, weaken, or replace
+GJ canonical authority handoff validation, FO final admission,
+P11, CHE, FK, or any other existing constitutional enforcement.
+
+Any binding mismatch or constitutional admission failure SHALL fail closed.
+
+GRANT.

@@ -1,0 +1,252 @@
+{
+  "reduction": {
+    "schema_id": "G77_256GO_SPCE_FINAL_FAIL_CLOSED_REDUCTION_V1",
+    "recorded_at_utc": "2026-09-01T05:10:09Z",
+    "entry": {
+      "repository": "/home/pisarna/work/sapianta-fl",
+      "branch": "g77-256fl-wrong-attempt-preboot-blocker",
+      "head": "e2933f3ce86e722b0f1241142267541df6807bc3",
+      "tree": "ec879d8809d373809f412de526cad76bf18de3c6",
+      "subject": "G77-256GN bind human authorization presentation to sealed request",
+      "remote_head": "e2933f3ce86e722b0f1241142267541df6807bc3",
+      "stable_ancestry_anchor": "5c972e9960987ab27420395b54ace693df097e7b",
+      "index_empty": true,
+      "tracked_worktree_clean": true,
+      "expected_go_uncommitted_evidence_only": true
+    },
+    "cross_worker_continuation": {
+      "identity": "VERIFIED",
+      "same_generation": "VERIFIED",
+      "same_operation": "VERIFIED",
+      "same_candidate": "VERIFIED",
+      "same_context": "VERIFIED",
+      "same_canonical_argv": "VERIFIED",
+      "same_checkpoint": "VERIFIED",
+      "same_authorization_request": "VERIFIED",
+      "same_gn_presentation": "VERIFIED",
+      "previous_human_authority_absent": "VERIFIED",
+      "previous_machine_operation_absent": "VERIFIED",
+      "continuation_file_sha256": "0ec53214d6e437a77819da6d0c3a2b4ea66c8b909c7ad3ae82d9002102e0ac61",
+      "continuation_sha256": "cf3127dca163b639a0a042adf3d8f8132400bfbdf73f144054a29855acaee7c2"
+    },
+    "identities": {
+      "generation_id": "G77_256GO_ONE_FRESH_HUMAN_AUTHORIZED_WRONG_ATTEMPT_OPERATIONAL_COMMISSIONING_V1",
+      "operation_id": "G77_256GO_E05_WRONG_ATTEMPT_DENIAL_BEFORE_ENTRY_001",
+      "candidate_sha256": "8792a2b179f24d7ff00d8bb5ea15a3be3015c2f996d14a91e79130fade2492dc",
+      "context_sha256": "8415e893ea01e568aa31bb40b4976c39036d0bf41ae99e15c13b0d83813ada4d",
+      "context_file_sha256": "2ea1e7136970fd48818e810749c6b4f2d03071aa18605c9ea827bae9c2c082c3",
+      "canonical_argv_sha256": "cca895f02e4cee65d1e4a7feba7f6d0c830896bfb2fd8a3260ce3e944dc63cfc",
+      "checkpoint_sha256": "725a82fe0fefe313bab1946282f1d61bc2e774f3b1e9336fe3098af55866eda9",
+      "sealed_authorization_request_sha256": "a25663ced18ea3b84e89f6de793d704ec587c9ad48b9a8996579e665025ac73d",
+      "gn_presentation_sha256": "d6d92ee2c8fb8190853e464bae23aba27cce5392f0e004c7c60ef0c0ee69b4e6"
+    },
+    "nested_authority": {
+      "head": "3183bab71f8f30397c0309dd2e6d846d14a11f66",
+      "tree": "7c32ec05efc2be43297849bc38ec8766514a523d",
+      "ref": "refs/tags/sapianta-system-nested-authority-3183bab-v1",
+      "clean": true,
+      "detached": true,
+      "pinned": true
+    },
+    "preauthorization": {
+      "affected_regression_stack": "129/129 PASS__SEALED_PHASE_I_AUTHENTICATED__NOT_REEXECUTED",
+      "du": "PASS",
+      "eb": "PASS",
+      "ee": "PASS",
+      "gf_gd": "PASS",
+      "gh": "PASS",
+      "fy": "PASS",
+      "gl": "PASS",
+      "gj": "PASS",
+      "gn": "PASS",
+      "fo_static_prerequisites": "PASS",
+      "layer_0_freeze": "PASS",
+      "governance_conformance": "20/20 PASS__CONFORMANT__ZERO_WARNINGS__ZERO_VIOLATIONS"
+    },
+    "ex": {
+      "reused": "17/17",
+      "reconstructed": 0,
+      "validator": "12/12 PASS",
+      "operational_effect": 0
+    },
+    "gl_boundary": {
+      "preauth_final_admission_equivalence": "VERIFIED_WITHIN_EXACT_REVIEWED_RECEIPT_PARENT_BOUNDARY",
+      "preparation_owner": "EXISTING_FM_PREPARE_RECEIPT_PARENT",
+      "validation_owner": "EXISTING_FM_VALIDATE_RECEIPT_PARENT_READY",
+      "caller_supplied_readiness_boolean_used": false
+    },
+    "gn_boundary": {
+      "human_presentation_request_equivalence": "VERIFIED_WITHIN_EXACT_REVIEWED_AUTHORIZATION_BINDING_BOUNDARY",
+      "human_presentation_caller_override_blocked": "VERIFIED",
+      "reviewed_field_count": 44,
+      "historical_gm_wrong_presentation_binding_absent": true
+    },
+    "human_authority": {
+      "human_constitutional_authorization_count": 1,
+      "disposition": "CONSUMED_TERMINAL_NON_REUSABLE_NON_TRANSFERABLE",
+      "authorization_source_sha256": "bfeeeb0849b55dfd773dc134faa24372a7b97f3b1ac92d49546e5220b1fac0b2",
+      "authorization_handoff_file_sha256": "e6346e1a0ce0b26a29120c614f2f5aa0153129e1c9ff4916d9cafabc77de9eb6",
+      "authorization_handoff_inner_sha256": "25c833b910565d5be083f1564a1940daf6b99b651cffe05efcbafa159dedeff1",
+      "canonical_byte_count": 1739,
+      "authority_binding_eq_sealed_request": "VERIFIED",
+      "authority_binding_eq_gn_presentation": "VERIFIED",
+      "authority_handoff_canonicalization": "VERIFIED",
+      "one_shot": true,
+      "reusable": false,
+      "transferable": false,
+      "replacement_authority_authorized": false,
+      "second_attempt_authorized": false,
+      "successor_generation_authorized": false,
+      "network_authorized": false
+    },
+    "fo_final_admission": {
+      "owner": "UNCHANGED_FO_VALIDATE_FINAL_ADMISSION_TO_FM_VALIDATE_RECEIPT_PARENT_READY",
+      "result": "ADMIT_TO_BOOT_BOUNDARY_ONLY",
+      "proof": "PRE_RECEIPT_WRITTEN_ONLY_AFTER_UNCHANGED_VALIDATE_FINAL_ADMISSION_RETURNED",
+      "bypass": false,
+      "weakening": false
+    },
+    "execution_binding": {
+      "network": "NONE__EXACTLY_ONE_NIC_NONE",
+      "pre_post_correlation": "VERIFIED",
+      "raw_teardown_terminal_correlation": "VERIFIED",
+      "qemu_process_terminally_absent": true,
+      "host_qemu_exit_status": 0,
+      "guest_harness_exit_status": 40
+    },
+    "artifacts": {
+      "pre_receipt_sha256": "d163cbf7dbfda312f932b31bd768e3323f5148cabcb783138afa90a28c447b60",
+      "post_receipt_sha256": "7834185dfd4a1d7e58f0c5e707dee2535a27e106e79cedc28aa0e8c87586aff6",
+      "raw_execution_evidence_sha256": "8aa17a52ea5cc9151b92afa21e4fa73809a546eda40f4b12c8bba196d9c20f96",
+      "raw_record_count": 2,
+      "guest_teardown_seal_sha256": "ba152a130a39ff55220a36ae87437c275d1702e30942cefc51966992ed6f1713",
+      "terminal_manifest_file_sha256": "69cc6b3ecedcec44fa679850ddac3f4b8caaee59c43cb31a469f6140735cc199",
+      "terminal_manifest_inner_sha256": "d5c2ed22cfbf229e727afb2c685a8c164daef9398ac87af866d6a82f727cfd94",
+      "serial_console_sha256": "126c8fe168cc3fa79f8aa26779287097675721df68eb23dcc91b6c83705ece86"
+    },
+    "operational_counters": {
+      "human_constitutional_authorization_count": 1,
+      "pre_count": 1,
+      "post_count": 1,
+      "governed_launcher_activations": 1,
+      "qemu_execution_count": 1,
+      "vm_boot_count": 1,
+      "wrong_attempt_execution_count": 0,
+      "operation_attempt_count": 1,
+      "request_count": 0,
+      "p11_entry_count": 0,
+      "protected_invocation_count": 0,
+      "protected_effect_count": 0,
+      "retry_count": 0,
+      "repair_execution_count": 0,
+      "replay_execution_count": 0
+    },
+    "p11_che_fk": {
+      "request": "NOT_CREATED",
+      "p11": "NOT_ENTERED",
+      "canonical_che": "NOT_PRODUCED",
+      "fk_terminal_result": "FAIL_CLOSED__REQUIRED_SUCCESS_EVIDENCE_MISSING",
+      "protected_effect": "ABSENT"
+    },
+    "first_constitutional_failure": {
+      "first_broken_edge": "GO_GUEST_READ_ONLY_CHECKOUT_BINDING_TO_ER_PRECONDITION_TREE_AUTHENTICATION",
+      "first_failure": "CalledProcessError: Command '['git', '-c', 'safe.directory=/mnt/aigol', 'rev-parse', 'HEAD^{tree}']' returned non-zero exit status 128.",
+      "source_owner": "FM_FRESH_CONTEXT_AND_CANONICAL_QEMU_READ_ONLY_CHECKOUT_BINDING",
+      "rejecting_owner": "ER_P11_HARNESS_GUEST_CHECKOUT_IDENTITY_AUTHENTICATION",
+      "failure_phase": "GUEST_PRECONDITION_VALIDATION_BEFORE_REQUEST_AND_P11_ENTRY",
+      "minimum_safe_correction_owner_set": [
+        "EXISTING_FM_FY_GUEST_CHECKOUT_MOUNT_PRESENTATION",
+        "EXISTING_ER_GUEST_CHECKOUT_IDENTITY_VERIFIER",
+        "FUTURE_PREAUTHORIZATION_GUEST_READABILITY_PROOF"
+      ],
+      "after_human_authority": true,
+      "after_pre": true,
+      "after_launcher": true,
+      "after_qemu": true,
+      "after_vm_boot": true,
+      "before_request": true,
+      "before_p11_entry": true
+    },
+    "e05": {
+      "before": "6/18",
+      "credit_awarded": 0,
+      "after": "6/18",
+      "reason": "NO_WRONG_ATTEMPT_REQUEST_OR_COMPLETE_P11_CHE_FK_OPERATIONAL_PROOF"
+    },
+    "architecture_counters": {
+      "new_launchers": 0,
+      "new_production_routes": 0,
+      "new_authorization_models": 0,
+      "new_receipt_subsystems": 0,
+      "new_validator_architectures": 0,
+      "parallel_execution_flows": 0,
+      "production_route_delta": 0
+    },
+    "metrics": {
+      "PROJECT_PROGRESS_ESTIMATE": {"classification": "ESTIMATED", "result": "ONE_AUTHORIZED_ATTEMPT_REACHED_VM_BOOT_AND_TERMINALLY_DISCLOSED_THE_NEXT_GUEST_PRECONDITION_EDGE"},
+      "CONSTITUTIONAL_HEALTH_EVIDENCE": {"classification": "VERIFIED", "result": "FAIL_CLOSED_BEFORE_REQUEST_P11_INVOCATION_OR_EFFECT"},
+      "SHADOW_AUTOMATION_STATUS": {"classification": "VERIFIED", "result": "ONE_GOVERNED_OPERATION_COMPLETED_WITH_ZERO_RETRY_REPAIR_REPLAY"},
+      "CONSTITUTIONAL_FRONTIER_DISTANCE": {"classification": "NOT_MEASURED", "result": "NO_CANONICAL_SCALAR"},
+      "WRONG_ATTEMPT_LOCAL_FRONTIER_DISTANCE": {"classification": "ESTIMATED", "result": "GUEST_CHECKOUT_TREE_AUTHENTICATION_PRECEDES_THE_REQUEST_BOUNDARY"},
+      "GOVERNANCE_EFFICIENCE": {"classification": "ESTIMATED", "result": "ONE_AUTHORITY_ONE_ATTEMPT_ONE_TERMINAL_FINDING_ZERO_PROTECTED_EFFECT"},
+      "OPERATIONAL_PROOF_YIELD": {"classification": "VERIFIED", "result": "ZERO_E05_CREDIT"},
+      "COGNITION_ASSISTED_HANDOFF": {"classification": "VERIFIED", "result": "CROSS_WORKER_IDENTITY_AND_FIRST_BROKEN_EDGE_SEALED"},
+      "AIGOL_CODEX_WORK_SHARE": {"classification": "NOT_MEASURED", "result": "NO_DETERMINISTIC_PERCENTAGE_INSTRUMENT"},
+      "OVERENGINEERING_RISK": {"classification": "ESTIMATED", "result": "LOW_IF_FUTURE_WORK_REMAINS_WITHIN_THE_EXISTING_OWNER_SET"},
+      "COGNITION_PROVENANCE": {"classification": "VERIFIED", "result": "REPOSITORY_HUMAN_CODEX_AND_PROVIDER_PROVENANCE_SEPARATED"},
+      "CANDIDATE_CAPABILITY": {"classification": "VERIFIED", "result": "CANDIDATE_IDENTITY_BOUND_WITHOUT_INFERRING_OPERATIONAL_SUCCESS"},
+      "SHADOW_DESIGN_TARGET": {"classification": "VERIFIED", "result": "FAIL_CLOSED_GUEST_PRECONDITION_AUTHENTICATION"},
+      "CONSTITUTIONAL_CONTINUATION_PROGRESS": {"classification": "ESTIMATED", "result": "SEALED_PREHUMAN_TO_TERMINAL_ONE_SHOT_REDUCTION_COMPLETE"},
+      "PROMPT_CONTEXT_REUSE_RATIO": {"classification": "NOT_MEASURED", "result": "NO_TOKEN_OR_CONTEXT_RATIO_INSTRUMENT"},
+      "TOKEN_BENCHMARK": {"classification": "NOT_MEASURED", "result": "NO_TOKEN_INSTRUMENTATION"},
+      "LLM_COST_REDUCTION_RATIO_LCRR": {"classification": "NOT_MEASURED", "result": "NO_COMPARABLE_BILLABLE_COST_BASELINE"},
+      "HUMAN_INTERVENTION_EFFICIENCY": {"classification": "ESTIMATED", "result": "ONE_EXPLICIT_AUTHORITY_PRODUCED_ONE_TERMINAL_FINDING"},
+      "PREAUTH_FINAL_ADMISSION_EQUIVALENCE": {"classification": "VERIFIED", "result": "VERIFIED_WITHIN_EXACT_REVIEWED_RECEIPT_PARENT_BOUNDARY"},
+      "HUMAN_PRESENTATION_REQUEST_EQUIVALENCE": {"classification": "VERIFIED", "result": "VERIFIED_WITHIN_EXACT_REVIEWED_AUTHORIZATION_BINDING_BOUNDARY"},
+      "CROSS_WORKER_CONTINUATION_IDENTITY": {"classification": "VERIFIED", "result": "SAME_SEALED_GO_GENERATION"},
+      "AUTHORITY_BINDING_EQ_SEALED_REQUEST": {"classification": "VERIFIED", "result": "EXACT_REQUEST_SHA_AND_ALL_OPERATION_BINDINGS"},
+      "AUTHORITY_BINDING_EQ_GN_PRESENTATION": {"classification": "VERIFIED", "result": "EXACT_PRESENTATION_SHA_AND_44_FIELDS"},
+      "FORMALIZE_REUSE_BIND_VERIFY_COMPLIANCE": {"classification": "VERIFIED", "result": "REUSE_BIND_VERIFY_APPLIED_WITH_TERMINAL_FAILURE_VISIBLE_AND_NO_REPAIR"}
+    },
+    "resource_telemetry": {
+      "five_hour_remaining_percent_before_human_authority": 81,
+      "seven_day_remaining_percent_before_human_authority": 89,
+      "context_remaining_percent": "NOT_MEASURED",
+      "resource_capacity_is_authority": false
+    },
+    "token_cost_discipline": {
+      "token_benchmark": "NOT_MEASURED",
+      "llm_cost_reduction_ratio": "NOT_MEASURED",
+      "account_window_percentages_used_as_token_or_cost_measurements": false
+    },
+    "cognition_provenance": {
+      "repository_and_sealed_deterministic_evidence": "VERIFIED_FACT_SOURCE",
+      "previous_codex_cognition": "NONAUTHORITATIVE",
+      "current_codex_cognition": "CLASSIFICATION_AND_REDUCTION_ONLY",
+      "human_authority": "ONE_EXPLICIT_GRANT__CONSUMED_TERMINAL",
+      "provider_permission": "INFRASTRUCTURE_PERMISSION_ONLY__NONAUTHORITY"
+    },
+    "reuse_impact_assessment": {
+      "katere_obstojece_certificirane_zmogljivosti_se_ponovno_uporabijo": "EX_17_OF_17_AND_EXISTING_DU_EB_EE_GF_GD_GH_GJ_GL_GN_FY_FO_FM_P11_CHE_FK_OWNERS",
+      "katere_nove_zmogljivosti_nastanejo": "NONE__FRESH_OPERATION_EVIDENCE_IS_NOT_A_NEW_REUSABLE_CAPABILITY",
+      "ali_katera_obstojeca_zmogljivost_postane_nedosegljiva": "NO",
+      "ali_implementacija_ustvarja_vzporedni_tok": "NO",
+      "ali_zmanjsuje_ali_povecuje_stevilo_produkcijskih_poti": "NEITHER__PRODUCTION_ROUTE_DELTA_ZERO"
+    },
+    "terminal": {
+      "verdict": "FAIL_CLOSED__G77_256GO_GUEST_CHECKOUT_TREE_AUTHENTICATION_FAILED_BEFORE_REQUEST__NO_RETRY_REPAIR_REPLAY__E05_REMAINS_6_OF_18__HUMAN_REVIEW_REQUIRED",
+      "auto_continuable": false,
+      "human_review_required": true,
+      "authority_survives": false,
+      "next_legal_action": "HUMAN_TERMINAL_REVIEW",
+      "retry_prohibited": true,
+      "repair_and_rerun_prohibited": true,
+      "replay_prohibited": true,
+      "replacement_authority_prohibited": true,
+      "second_operation_prohibited": true,
+      "successor_generation_prohibited": true
+    }
+  },
+  "reduction_sha256": "5b736a2e6428cd46b9deeb3f3db96059f0698a3c981a08e2a347ab59b66f413d",
+  "schema_id": "G77_256GO_SPCE_FINAL_FAIL_CLOSED_REDUCTION_ENVELOPE_V1"
+}
