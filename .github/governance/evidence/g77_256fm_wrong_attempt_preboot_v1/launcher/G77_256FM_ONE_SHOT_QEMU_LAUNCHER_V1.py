@@ -147,6 +147,28 @@ AUTHORIZATION_FIELDS = {
     "authorization_reusable",
     "auto_continuable",
 }
+WRONG_INPUT_AUTHORIZATION_FIELDS = (
+    AUTHORIZATION_FIELDS - {"wrong_attempt_operational_attempt_limit"}
+) | {"wrong_input_operational_attempt_limit"}
+
+
+def context_vector(context: dict[str, Any]) -> str:
+    """Return the exact vector already sealed into the generation identity."""
+
+    return fresh_context.operation_vector(context["generation_identity"])
+
+
+def active_adapter_path(context: dict[str, Any]) -> str:
+    return fresh_context.adapter_source_relative_path(context["generation_identity"])
+
+
+def authorization_fields(value: dict[str, Any]) -> set[str]:
+    vector = value.get("authorized_vector")
+    if vector == fresh_context.WRONG_ATTEMPT:
+        return AUTHORIZATION_FIELDS
+    if vector == fresh_context.WRONG_INPUT:
+        return WRONG_INPUT_AUTHORIZATION_FIELDS
+    raise RuntimeError("execution authority vector unsupported")
 
 
 def canonical_bytes(value: Any) -> bytes:
@@ -446,7 +468,11 @@ def guest_harness_virtfs_argument(argv: list[str]) -> str:
     return matches[0]
 
 
-def fc_guest_consumer_path(repository_root: Path, prefix: str) -> str:
+def fc_guest_consumer_path(
+    repository_root: Path,
+    prefix: str,
+    vector: str = fresh_context.WRONG_ATTEMPT,
+) -> str:
     """Authenticate and derive the specialized FC/ER adapter open path."""
 
     source_path = repository_root / FK_ADAPTER
@@ -476,6 +502,10 @@ def fc_guest_consumer_path(repository_root: Path, prefix: str) -> str:
     ]:
         raise RuntimeError("FC guest adapter consumer path missing or ambiguous")
     fresh_context._validate_prefix(prefix)
+    if vector == fresh_context.WRONG_INPUT:
+        return f"{fresh_context.GUEST_HARNESS_ROOT}/{fresh_context.ADAPTER_BOOTSTRAP_FILENAME}"
+    if vector != fresh_context.WRONG_ATTEMPT:
+        raise RuntimeError("guest adapter vector unsupported")
     return paths[0].replace("G77_256FC", prefix)
 
 
@@ -551,7 +581,7 @@ def prove_guest_adapter_binding(
             raise RuntimeError(f"NoCloud seed {member} source bytes differ")
     command_bindings = (
         binding["bootstrap_guest_path"],
-        binding["source_sha256"],
+        ADAPTER_SHA256,
         context["wrapper_fc_er_che_schema_hashes"]["raw_evidence_schema"],
         context["qemu_executable_base_seed_checkout_bindings"]["checkout"]["head"],
         context["qemu_executable_base_seed_checkout_bindings"]["checkout"]["tree"],
@@ -561,7 +591,9 @@ def prove_guest_adapter_binding(
         raise RuntimeError("cloud-init pre-request argument binding missing or ambiguous")
 
     consumer_path = fc_guest_consumer_path(
-        repository_root, context["identity_namespace_prefix"]
+        repository_root,
+        context["identity_namespace_prefix"],
+        context_vector(context),
     )
     if consumer_path != binding["guest_path"]:
         raise RuntimeError("projected adapter and guest consumer path differ")
@@ -828,9 +860,10 @@ def context_asset_expectations(
     if Path(candidate_key).is_absolute() or ".." in Path(candidate_key).parts:
         raise RuntimeError("candidate asset key must be repository-relative")
     checkout_root = Path(bindings["checkout"]["path"])
+    adapter_path = active_adapter_path(context)
     return {
         candidate_key: context["candidate_manifest_sha256"],
-        WRAPPER: hashes["wrapper"],
+        adapter_path: hashes["wrapper"],
         CLOUD_INIT: hashes["cloud_init"],
         FK_ADAPTER: hashes["fc_fk_adapter"],
         CANONICAL_CHE: hashes["canonical_che"],
@@ -857,7 +890,7 @@ def validate_immutable_context_bindings(
         raise RuntimeError("context live candidate binding mismatch")
     hashes = context["wrapper_fc_er_che_schema_hashes"]
     expected_hashes = {
-        "wrapper": sha256_path(repository_root / WRAPPER),
+        "wrapper": sha256_path(repository_root / active_adapter_path(context)),
         "fc_fk_adapter": FK_ADAPTER_SHA256,
         "er_harness": "4a2a84ff83c61bfec013b4bcd20eb16905eeb240869182edd6c0d948444bae89",
         "canonical_che": "75801995214e81419aab9a02326499c771ec0039658fb49598aa54bd033e13c5",
@@ -914,7 +947,7 @@ def authority_sha256(value: dict[str, Any]) -> str:
 def build_authority_handoff(authorization: dict[str, Any]) -> dict[str, Any]:
     """Build the one canonical envelope shape without granting authority."""
 
-    if not isinstance(authorization, dict) or set(authorization) != AUTHORIZATION_FIELDS:
+    if not isinstance(authorization, dict) or set(authorization) != authorization_fields(authorization):
         raise RuntimeError("required execution authority field malformed, missing, or unknown")
     envelope = {
         "schema_id": AUTHORITY_SCHEMA,
@@ -933,7 +966,7 @@ def validate_authority_handoff_envelope_shape(value: dict[str, Any]) -> None:
     if value.get("schema_id") != AUTHORITY_SCHEMA:
         raise RuntimeError("execution authority envelope schema mismatch")
     authorization = value.get("authorization")
-    if not isinstance(authorization, dict) or set(authorization) != AUTHORIZATION_FIELDS:
+    if not isinstance(authorization, dict) or set(authorization) != authorization_fields(authorization):
         raise RuntimeError("required execution authority field malformed, missing, or unknown")
     if value.get("authorization_sha256") != authority_sha256(authorization):
         raise RuntimeError("execution authority inner seal mismatch")
@@ -1013,7 +1046,13 @@ def preauthority_serialization_fixture(
         "candidate_sha256": context["candidate_manifest_sha256"],
         "canonical_argv_sha256": context["canonical_argv_sha256"],
     }
-    return {
+    vector = context_vector(context)
+    attempt_limit = (
+        "wrong_attempt_operational_attempt_limit"
+        if vector == fresh_context.WRONG_ATTEMPT
+        else "wrong_input_operational_attempt_limit"
+    )
+    authorization = {
         "schema_id": AUTHORIZATION_SCHEMA,
         "authorization_present": False,
         "authorization_kind": "TEST_ONLY_NON_AUTHORITY_SERIALIZATION_FIXTURE",
@@ -1023,7 +1062,7 @@ def preauthority_serialization_fixture(
         "authorized_context_sha256": context["context_sha256"],
         "authorized_operation_identity": context["operation_identity"],
         "authorized_generation_identity": context["generation_identity"],
-        "authorized_vector": "WRONG_ATTEMPT",
+        "authorized_vector": vector,
         "authorized_repository_head": context["repository_head"],
         "authorized_repository_tree": context["repository_tree"],
         "authorized_constitutional_anchor_head": CONSTITUTIONAL_ANCHOR_HEAD,
@@ -1033,7 +1072,6 @@ def preauthority_serialization_fixture(
         "authorized_fk_adapter_sha256": FK_ADAPTER_SHA256,
         "vm_boot_limit": 1,
         "qemu_system_execution_limit": 1,
-        "wrong_attempt_operational_attempt_limit": 1,
         "retry_limit": 0,
         "repair_limit": 0,
         "replay_limit": 0,
@@ -1044,6 +1082,8 @@ def preauthority_serialization_fixture(
         "authorization_reusable": False,
         "auto_continuable": False,
     }
+    authorization[attempt_limit] = 1
+    return authorization
 
 
 def validate_preauthority_serialization_fixture(
@@ -1145,7 +1185,7 @@ def validate_execution_admission(
     if authority.get("schema_id") != AUTHORITY_SCHEMA:
         raise RuntimeError("execution authority envelope schema mismatch")
     authorization = authority.get("authorization")
-    if not isinstance(authorization, dict) or set(authorization) != AUTHORIZATION_FIELDS:
+    if not isinstance(authorization, dict) or set(authorization) != authorization_fields(authorization):
         raise RuntimeError("required execution authority field malformed, missing, or unknown")
     if not HEX_64.fullmatch(supplied_authority_sha256):
         raise RuntimeError("supplied execution authority hash malformed")
@@ -1160,13 +1200,19 @@ def validate_execution_admission(
         raise RuntimeError("Human operational authorization source hash malformed")
     if source_sha in {FO_REPOSITORY_ONLY_AUTHORIZATION_SHA256, FN_SPENT_AUTHORIZATION_SHA256}:
         raise RuntimeError("non-operational or already-spent Human authorization prohibited")
+    vector = context_vector(context)
+    attempt_limit = (
+        "wrong_attempt_operational_attempt_limit"
+        if vector == fresh_context.WRONG_ATTEMPT
+        else "wrong_input_operational_attempt_limit"
+    )
     expected_authorization = {
         "authorization_present": True,
         "authorization_kind": "FRESH_HUMAN_OPERATIONAL_AUTHORIZATION",
         "authorized_context_sha256": context["context_sha256"],
         "authorized_generation_identity": context["generation_identity"],
         "authorized_operation_identity": context["operation_identity"],
-        "authorized_vector": "WRONG_ATTEMPT",
+        "authorized_vector": vector,
         "authorized_constitutional_anchor_head": CONSTITUTIONAL_ANCHOR_HEAD,
         "authorized_candidate_sha256": context["candidate_manifest_sha256"],
         "authorized_canonical_argv_sha256": context["canonical_argv_sha256"],
@@ -1174,7 +1220,6 @@ def validate_execution_admission(
         "authorized_fk_adapter_sha256": FK_ADAPTER_SHA256,
         "vm_boot_limit": 1,
         "qemu_system_execution_limit": 1,
-        "wrong_attempt_operational_attempt_limit": 1,
         "retry_limit": 0,
         "repair_limit": 0,
         "replay_limit": 0,
@@ -1185,6 +1230,7 @@ def validate_execution_admission(
         "authorization_reusable": False,
         "auto_continuable": False,
     }
+    expected_authorization[attempt_limit] = 1
     for field, expected in expected_authorization.items():
         if authorization[field] != expected:
             raise RuntimeError(f"execution authority binding mismatch: {field}")
@@ -1312,8 +1358,9 @@ def build_operation_context(
 ) -> dict[str, Any]:
     """Build and seal one context before any Human authorization can exist."""
 
+    adapter_path = fresh_context.adapter_source_relative_path(generation_identity)
     hashes = {
-        "wrapper": sha256_path(repository_root / WRAPPER),
+        "wrapper": sha256_path(repository_root / adapter_path),
         "fc_fk_adapter": FK_ADAPTER_SHA256,
         "er_harness": "4a2a84ff83c61bfec013b4bcd20eb16905eeb240869182edd6c0d948444bae89",
         "canonical_che": "75801995214e81419aab9a02326499c771ec0039658fb49598aa54bd033e13c5",

@@ -29,6 +29,7 @@ REQUEST_SCHEMA_RE = re.compile(
 )
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 GIT_ID_RE = re.compile(r"^[0-9a-f]{40}$")
+SUPPORTED_VECTORS = frozenset({"WRONG_ATTEMPT", "WRONG_INPUT"})
 
 PRESENTATION_HEADER = "SAPIANTA SEALED AUTHORIZATION REQUEST HUMAN PRESENTATION V1"
 PRESENTATION_NOTICE = (
@@ -159,6 +160,7 @@ PRESENTATION_FIELDS = (
     "REQUEST_CLASS",
     "GENERATION_ID",
     "OPERATION_ID",
+    "AUTHORIZED_VECTOR_REQUESTED",
     "HEAD",
     "TREE",
     "CANDIDATE_SHA256",
@@ -197,6 +199,9 @@ PRESENTATION_FIELDS = (
     "PROVIDER_PERMISSION_IS_AUTHORITY",
     "AUTO_CONTINUABLE",
     "HUMAN_REVIEW_REQUIRED",
+)
+LEGACY_WRONG_ATTEMPT_PRESENTATION_FIELDS = tuple(
+    field for field in PRESENTATION_FIELDS if field != "AUTHORIZED_VECTOR_REQUESTED"
 )
 
 
@@ -301,12 +306,17 @@ def _validate_request_semantics(envelope: dict[str, Any]) -> None:
 
     if request["request_class"] != "NON_AUTHORITY__ONE_EXPLICIT_HUMAN_DECISION_REQUIRED":
         _fail("SEALED_REQUEST_CLASS_INVALID")
-    if request["authorized_vector_requested"] != "WRONG_ATTEMPT":
+    if request["authorized_vector_requested"] not in SUPPORTED_VECTORS:
         _fail("SEALED_REQUEST_VECTOR_INVALID")
     if not isinstance(request["generation_identity"], str) or not request["generation_identity"]:
         _fail("SEALED_REQUEST_GENERATION_INVALID")
     if not isinstance(request["operation_identity"], str) or not request["operation_identity"]:
         _fail("SEALED_REQUEST_OPERATION_INVALID")
+    if (
+        request["authorized_vector_requested"] == "WRONG_INPUT"
+        and "WRONG_INPUT" not in request["generation_identity"]
+    ):
+        _fail("SEALED_REQUEST_VECTOR_GENERATION_BINDING_INVALID")
     if preauthorization["complete_deterministic_readiness"] != "PASS":
         _fail("SEALED_REQUEST_READINESS_INVALID")
     if preauthorization["all_operational_counters_zero"] is not True:
@@ -397,6 +407,7 @@ def _project(envelope: dict[str, Any]) -> dict[str, Any]:
         "REQUEST_CLASS": request["request_class"],
         "GENERATION_ID": request["generation_identity"],
         "OPERATION_ID": request["operation_identity"],
+        "AUTHORIZED_VECTOR_REQUESTED": request["authorized_vector_requested"],
         "HEAD": repository["head"],
         "TREE": repository["tree"],
         "CANDIDATE_SHA256": live["candidate_sha256"],
@@ -441,13 +452,12 @@ def _project(envelope: dict[str, Any]) -> dict[str, Any]:
     return projection
 
 
-def render_human_authorization_presentation(request_path: Path) -> bytes:
-    """Render only from the sealed path; no constitutional override exists."""
-
-    projection = _project(load_validated_sealed_request(request_path))
+def _render_projection(
+    projection: dict[str, Any], fields: tuple[str, ...]
+) -> bytes:
     binding_lines = [
         f"{field} {json.dumps(projection[field], ensure_ascii=False, allow_nan=False)}"
-        for field in PRESENTATION_FIELDS
+        for field in fields
     ]
     lines = [
         PRESENTATION_HEADER,
@@ -460,6 +470,13 @@ def render_human_authorization_presentation(request_path: Path) -> bytes:
     return ("\n".join(lines) + "\n").encode("utf-8")
 
 
+def render_human_authorization_presentation(request_path: Path) -> bytes:
+    """Render only from the sealed path; no constitutional override exists."""
+
+    projection = _project(load_validated_sealed_request(request_path))
+    return _render_projection(projection, PRESENTATION_FIELDS)
+
+
 def parse_human_authorization_presentation(raw: bytes) -> dict[str, Any]:
     """Parse one exact deterministic presentation and reject ambiguity."""
 
@@ -470,8 +487,14 @@ def parse_human_authorization_presentation(raw: bytes) -> dict[str, Any]:
     if not text.endswith("\n") or text.endswith("\n\n"):
         _fail("PRESENTATION_TERMINATOR_INVALID")
     lines = text[:-1].split("\n")
-    expected_count = len(PRESENTATION_FIELDS) + 5
-    if len(lines) != expected_count:
+    field_sets = {
+        len(PRESENTATION_FIELDS) + 5: PRESENTATION_FIELDS,
+        len(LEGACY_WRONG_ATTEMPT_PRESENTATION_FIELDS) + 5: (
+            LEGACY_WRONG_ATTEMPT_PRESENTATION_FIELDS
+        ),
+    }
+    fields = field_sets.get(len(lines))
+    if fields is None:
         _fail("PRESENTATION_STRUCTURE_INVALID")
     if lines[:3] != [PRESENTATION_HEADER, PRESENTATION_NOTICE, PRESENTATION_BEGIN]:
         _fail("PRESENTATION_PREAMBLE_INVALID")
@@ -479,14 +502,14 @@ def parse_human_authorization_presentation(raw: bytes) -> dict[str, Any]:
         _fail("PRESENTATION_POSTAMBLE_INVALID")
 
     parsed: dict[str, Any] = {}
-    for expected_field, line in zip(PRESENTATION_FIELDS, lines[3:-2], strict=True):
+    for expected_field, line in zip(fields, lines[3:-2], strict=True):
         field, separator, encoded = line.partition(" ")
         if not separator or not field or not encoded:
             _fail("PRESENTATION_BINDING_MALFORMED")
         if field in parsed:
             _fail(f"PRESENTATION_BINDING_DUPLICATE__{field}")
         if field != expected_field:
-            if field in PRESENTATION_FIELDS:
+            if field in fields:
                 _fail(f"PRESENTATION_BINDING_DUPLICATE_OR_OUT_OF_ORDER__{field}")
             _fail(f"PRESENTATION_BINDING_UNKNOWN_OR_AMBIGUOUS__{field}")
         try:
@@ -500,7 +523,7 @@ def parse_human_authorization_presentation(raw: bytes) -> dict[str, Any]:
         if json.dumps(value, ensure_ascii=False, allow_nan=False) != encoded:
             _fail(f"PRESENTATION_BINDING_VALUE_NONCANONICAL__{field}")
         parsed[field] = value
-    if tuple(parsed) != PRESENTATION_FIELDS:
+    if tuple(parsed) != fields:
         _fail("PRESENTATION_BINDING_SET_INCOMPLETE")
     return parsed
 
@@ -512,15 +535,22 @@ def validate_human_authorization_presentation(
     """Prove exact request/presentation equivalence and deterministic bytes."""
 
     envelope = load_validated_sealed_request(request_path)
-    expected = _project(envelope)
+    complete_projection = _project(envelope)
     observed = parse_human_authorization_presentation(presentation)
+    fields = tuple(observed)
+    if fields == LEGACY_WRONG_ATTEMPT_PRESENTATION_FIELDS:
+        if envelope["request"]["authorized_vector_requested"] != "WRONG_ATTEMPT":
+            _fail("LEGACY_PRESENTATION_VECTOR_INVALID")
+    elif fields != PRESENTATION_FIELDS:
+        _fail("PRESENTATION_BINDING_SET_INCOMPLETE")
+    expected = {field: complete_projection[field] for field in fields}
     if observed != expected:
         divergent = next(
-            field for field in PRESENTATION_FIELDS
+            field for field in fields
             if observed.get(field) != expected.get(field)
         )
         _fail(f"PRESENTATION_REQUEST_FIELD_DIVERGENCE__{divergent}")
-    deterministic = render_human_authorization_presentation(request_path)
+    deterministic = _render_projection(complete_projection, fields)
     if presentation != deterministic:
         _fail("PRESENTATION_POST_DERIVATION_MUTATION")
     return {
@@ -530,7 +560,7 @@ def validate_human_authorization_presentation(
         "human_presentation_caller_override_blocked": True,
         "request_sha256": envelope["request_sha256"],
         "presentation_sha256": hashlib.sha256(presentation).hexdigest(),
-        "reviewed_field_count": len(PRESENTATION_FIELDS),
+        "reviewed_field_count": len(fields),
         "human_constitutional_authorization_count": 0,
         "operational_execution_count": 0,
         "qemu_execution_count": 0,

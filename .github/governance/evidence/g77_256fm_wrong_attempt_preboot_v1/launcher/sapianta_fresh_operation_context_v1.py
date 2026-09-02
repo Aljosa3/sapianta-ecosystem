@@ -27,8 +27,15 @@ ADAPTER_SOURCE_RELATIVE_PATH = (
     ".github/governance/evidence/g77_256fm_wrong_attempt_preboot_v1/harness/"
     "G77_256FM_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py"
 )
+WRONG_INPUT_ADAPTER_SOURCE_RELATIVE_PATH = (
+    ".github/governance/evidence/g77_256ha_wrong_input_route_binding_v1/adapter/"
+    "G77_256HA_WRONG_INPUT_VECTOR_ADAPTER_V1.py"
+)
 ADAPTER_BOOTSTRAP_FILENAME = "G77_256FM_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py"
 ADAPTER_IDENTITY_SUFFIX = "_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py"
+WRONG_INPUT_ADAPTER_IDENTITY_SUFFIX = "_WRONG_INPUT_VECTOR_ADAPTER_V1.py"
+WRONG_ATTEMPT = "WRONG_ATTEMPT"
+WRONG_INPUT = "WRONG_INPUT"
 CANONICAL_ARGV_DOMAIN = b"SAPIANTA_G77_256ER_CANONICAL_QEMU_ARGV_V1\x00"
 U64 = struct.Struct(">Q")
 HEX_40 = re.compile(r"^[0-9a-f]{40}$")
@@ -206,10 +213,33 @@ def guest_output_relative_paths(prefix: str) -> list[str]:
     ]
 
 
+def operation_vector(generation_identity: str) -> str:
+    """Derive the closed vector set from the context-bound generation identity."""
+
+    suffixes = {
+        "_ONE_FRESH_HUMAN_AUTHORIZED_WRONG_ATTEMPT_OPERATIONAL_COMMISSIONING_V1": WRONG_ATTEMPT,
+        "_ONE_FRESH_HUMAN_AUTHORIZED_WRONG_INPUT_OPERATIONAL_COMMISSIONING_V1": WRONG_INPUT,
+    }
+    matches = [vector for suffix, vector in suffixes.items() if generation_identity.endswith(suffix)]
+    if len(matches) != 1:
+        raise ContextError("generation identity has no exact supported operation vector")
+    return matches[0]
+
+
+def adapter_source_relative_path(generation_identity: str) -> str:
+    return (
+        ADAPTER_SOURCE_RELATIVE_PATH
+        if operation_vector(generation_identity) == WRONG_ATTEMPT
+        else WRONG_INPUT_ADAPTER_SOURCE_RELATIVE_PATH
+    )
+
+
 def derive_guest_adapter_binding(
     prefix: str,
     operation_evidence_root: Path,
     source_sha256: str,
+    *,
+    vector: str = WRONG_ATTEMPT,
 ) -> dict[str, Any]:
     """Derive the one operation-local adapter projection and guest consumer path."""
 
@@ -217,14 +247,31 @@ def derive_guest_adapter_binding(
     if not isinstance(source_sha256, str) or HEX_64.fullmatch(source_sha256) is None:
         raise ContextError("adapter source SHA-256 malformed")
     projection_root = operation_evidence_root.absolute() / "guest_harness"
-    adapter_identity = f"{prefix}{ADAPTER_IDENTITY_SUFFIX}"
+    if vector not in {WRONG_ATTEMPT, WRONG_INPUT}:
+        raise ContextError("guest adapter vector unsupported")
+    source_path = (
+        ADAPTER_SOURCE_RELATIVE_PATH
+        if vector == WRONG_ATTEMPT
+        else WRONG_INPUT_ADAPTER_SOURCE_RELATIVE_PATH
+    )
+    suffix = (
+        ADAPTER_IDENTITY_SUFFIX
+        if vector == WRONG_ATTEMPT
+        else WRONG_INPUT_ADAPTER_IDENTITY_SUFFIX
+    )
+    adapter_identity = f"{prefix}{suffix}"
+    guest_path = (
+        f"{GUEST_HARNESS_ROOT}/{adapter_identity}"
+        if vector == WRONG_ATTEMPT
+        else f"{GUEST_HARNESS_ROOT}/{ADAPTER_BOOTSTRAP_FILENAME}"
+    )
     return {
-        "source_path": ADAPTER_SOURCE_RELATIVE_PATH,
+        "source_path": source_path,
         "source_sha256": source_sha256,
         "adapter_identity": adapter_identity,
         "projection_root": str(projection_root),
         "projected_path": str(projection_root / adapter_identity),
-        "guest_path": f"{GUEST_HARNESS_ROOT}/{adapter_identity}",
+        "guest_path": guest_path,
         "bootstrap_identity": ADAPTER_BOOTSTRAP_FILENAME,
         "bootstrap_projected_path": str(
             projection_root / ADAPTER_BOOTSTRAP_FILENAME
@@ -310,12 +357,14 @@ def build_context(
     transient_root = transient_root.absolute()
     prefix = identity_namespace_prefix
     _validate_prefix(prefix)
+    vector = operation_vector(generation_identity)
     receipt_parent = operation_evidence_root / "receipts"
     runtime_export = operation_evidence_root / "runtime_export"
     adapter_binding = derive_guest_adapter_binding(
         prefix,
         operation_evidence_root,
-        wrapper_fc_er_che_schema_hashes["wrapper"],
+        sha256_path(repository_root / adapter_source_relative_path(generation_identity)),
+        vector=vector,
     )
     overlay = transient_root / "guest-overlay.qcow2"
     serial = transient_root / "serial.log"
@@ -457,8 +506,9 @@ def validate_context(context: dict[str, Any], *, repository_root: Path) -> dict[
             raise ContextError(f"{field} not derived from identity namespace prefix")
     if context["generation_identity"] == context["operation_identity"]:
         raise ContextError("generation and operation identities must be distinct")
+    vector = operation_vector(context["generation_identity"])
     expected_generation = (
-        f"{prefix}_ONE_FRESH_HUMAN_AUTHORIZED_WRONG_ATTEMPT_"
+        f"{prefix}_ONE_FRESH_HUMAN_AUTHORIZED_{vector}_"
         "OPERATIONAL_COMMISSIONING_V1"
     )
     if context["generation_identity"] != expected_generation:
@@ -476,7 +526,10 @@ def validate_context(context: dict[str, Any], *, repository_root: Path) -> dict[
     expected_adapter = derive_guest_adapter_binding(
         prefix,
         paths["operation_evidence_root"],
-        context["wrapper_fc_er_che_schema_hashes"].get("wrapper", ""),
+        sha256_path(repository_root.resolve() / adapter_source_relative_path(
+            context["generation_identity"]
+        )),
+        vector=vector,
     )
     if adapter != expected_adapter:
         raise ContextError("guest adapter binding is not canonically derived")
@@ -585,7 +638,10 @@ def validate_context(context: dict[str, Any], *, repository_root: Path) -> dict[
     unsealed = {key: value for key, value in context.items() if key != "context_sha256"}
     if context["context_sha256"] != sha256_bytes(canonical_bytes(unsealed)):
         raise ContextError("context seal mismatch")
-    if len(FC_IDENTITY_TOKENS) != 39 or len(set(derived_identity_tokens(prefix))) != 39:
+    if vector == WRONG_ATTEMPT and (
+        len(FC_IDENTITY_TOKENS) != 39
+        or len(set(derived_identity_tokens(prefix))) != 39
+    ):
         raise ContextError("full 39-token guest identity family derivation failed")
     return context
 
