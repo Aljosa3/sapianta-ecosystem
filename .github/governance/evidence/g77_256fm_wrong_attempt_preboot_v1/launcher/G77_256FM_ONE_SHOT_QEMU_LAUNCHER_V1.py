@@ -57,10 +57,15 @@ CANDIDATE = (
 )
 MATERIALIZATION = f"{FY_ROOT}/G77_256FY_RUNTIME_EXPORT_PREBOOT_COMPOSITION_V1.json"
 WRAPPER = f"{FM_ROOT}/harness/G77_256FM_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py"
-CLOUD_INIT = f"{FM_ROOT}/raw/G77_256FM_CLOUD_INIT_USER_DATA_V1.yaml"
+LEGACY_CLOUD_INIT = f"{FM_ROOT}/raw/G77_256FM_CLOUD_INIT_USER_DATA_V1.yaml"
+CLOUD_INIT = (
+    ".github/governance/evidence/g77_256hd_guest_context_owner_binding_v1/"
+    "static/G77_256HD_CLOUD_INIT_USER_DATA_V1.yaml"
+)
 CLOUD_INIT_META_DATA = f"{FM_ROOT}/raw/G77_256FM_CLOUD_INIT_META_DATA_V1.yaml"
 CLOUD_INIT_NETWORK_CONFIG = f"{FM_ROOT}/raw/G77_256FM_CLOUD_INIT_NETWORK_CONFIG_V1.yaml"
-CLOUD_INIT_SHA256 = "3a4c989de77abec366ec5587b038a7341e71aac916d9cd9c7deba424f4a275ec"
+LEGACY_CLOUD_INIT_SHA256 = "3a4c989de77abec366ec5587b038a7341e71aac916d9cd9c7deba424f4a275ec"
+CLOUD_INIT_SHA256 = "95038a31879b3654607ae82533e9b043fee47e7cc157efdad1b7654a11664421"
 FK_ADAPTER = ".github/governance/evidence/g77_256fc_wrong_attempt_operational_v1/harness/G77_256FC_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py"
 CANONICAL_CHE = "aigol/runtime/canonical_che_evidence_correlation_contract_v1.py"
 ER_HARNESS_RELATIVE = (
@@ -77,16 +82,31 @@ RAW_EVIDENCE_SCHEMA = (
 )
 BASE_IMAGE = "/tmp/g77_256cw.IkqZJN/noble-server-cloudimg-amd64.img"
 OVERLAY = "/tmp/g77_256fy/guest-overlay.qcow2"
-SEED = (
+LEGACY_SEED = (
     "/home/pisarna/work/sapianta-fl/.github/governance/evidence/"
     "g77_256gh_guest_adapter_path_binding_v1/static/"
     "SAPIANTA_WRONG_ATTEMPT_NOCLOUD_SEED_V1.img"
 )
+SEED = (
+    "/home/pisarna/work/sapianta-fl/.github/governance/evidence/"
+    "g77_256hd_guest_context_owner_binding_v1/static/"
+    "SAPIANTA_WRONG_ATTEMPT_NOCLOUD_SEED_V1.img"
+)
 CHECKOUT = "/tmp/g77_256fm/checkout"
-CHECKOUT_HEAD = "7dce67ec18696ba0bad73130f3f7a84168f25277"
-CHECKOUT_TREE = "3cb61ec34e9593efb711dce61014dc8fdf0f6dd9"
+LEGACY_CHECKOUT_HEAD = "7dce67ec18696ba0bad73130f3f7a84168f25277"
+LEGACY_CHECKOUT_TREE = "3cb61ec34e9593efb711dce61014dc8fdf0f6dd9"
+CHECKOUT_HEAD = "a5fde262c8833922375a10e79c745c0ff19e698e"
+CHECKOUT_TREE = "c265719bc048a9ab686e290d1952280d5584a43e"
 GUEST_CHECKOUT_DESTINATION = "/mnt/aigol"
 GUEST_CHECKOUT_MOUNT_TAG = "aigol_checkout"
+FRESH_OPERATION_CONTEXT_OWNER = (
+    ".github/governance/evidence/g77_256fm_wrong_attempt_preboot_v1/launcher/"
+    "sapianta_fresh_operation_context_v1.py"
+)
+FRESH_OPERATION_CONTEXT_OWNER_HASH_KEY = "fresh_operation_context_owner"
+FRESH_OPERATION_CONTEXT_OWNER_SHA256 = (
+    "45b97e99122146ec3aa95f45fe5ac71381ca1a11e83b7355438b988608f52fca"
+)
 ER_HARNESS_SHA256 = "4a2a84ff83c61bfec013b4bcd20eb16905eeb240869182edd6c0d948444bae89"
 QEMU_EXECUTABLE_SHA256 = "8a35ccba41582fc6c38b9df85fc9e35fa1d42f414d2d7d8090ee9b2f5e7c0854"
 
@@ -115,7 +135,9 @@ EXPECTED_ASSET_SHA256 = {
     CANONICALIZER: CANONICALIZER_SHA256,
     BASE_IMAGE: "6e40c07ae715f744f84af0bec76415cc1987dd115b4b8de437818561f01a3733",
     OVERLAY: "6ea4eed169518c646774cfbe2c7b8c00646a9cdead8798f7c94c786c6b6ce8b2",
-    SEED: "966f1910bbffe20fa18c4cee56ff61dcbb069348e2929bfda74e029a9dc0ec58",
+    SEED: "15910599577a84545d79d49383747ce22e630d1cb3f1228509b307487a2261cf",
+    LEGACY_CLOUD_INIT: LEGACY_CLOUD_INIT_SHA256,
+    LEGACY_SEED: "966f1910bbffe20fa18c4cee56ff61dcbb069348e2929bfda74e029a9dc0ec58",
 }
 
 AUTHORIZATION_FIELDS = {
@@ -147,6 +169,27 @@ AUTHORIZATION_FIELDS = {
     "authorization_reusable",
     "auto_continuable",
 }
+
+
+def bootstrap_asset_bindings(context: dict[str, Any]) -> dict[str, str]:
+    """Select the immutable bootstrap pair bound by this context revision."""
+
+    hashes = context.get("wrapper_fc_er_che_schema_hashes", {})
+    if FRESH_OPERATION_CONTEXT_OWNER_HASH_KEY in hashes:
+        return {
+            "cloud_init_path": CLOUD_INIT,
+            "cloud_init_sha256": CLOUD_INIT_SHA256,
+            "seed_path": SEED,
+            "seed_sha256": EXPECTED_ASSET_SHA256[SEED],
+        }
+    return {
+        "cloud_init_path": LEGACY_CLOUD_INIT,
+        "cloud_init_sha256": LEGACY_CLOUD_INIT_SHA256,
+        "seed_path": LEGACY_SEED,
+        "seed_sha256": EXPECTED_ASSET_SHA256[LEGACY_SEED],
+    }
+
+
 WRONG_INPUT_AUTHORIZATION_FIELDS = (
     AUTHORIZATION_FIELDS - {"wrong_attempt_operational_attempt_limit"}
 ) | {"wrong_input_operational_attempt_limit"}
@@ -546,8 +589,13 @@ def prove_guest_adapter_binding(
     if qemu_argument != expected_argument:
         raise RuntimeError("adapter projection/QEMU mount binding mismatch")
 
-    cloud_init = repository_root / CLOUD_INIT
-    if sha256_path(cloud_init) != context["wrapper_fc_er_che_schema_hashes"]["cloud_init"]:
+    bootstrap_assets = bootstrap_asset_bindings(context)
+    cloud_init = repository_root / bootstrap_assets["cloud_init_path"]
+    if (
+        context["wrapper_fc_er_che_schema_hashes"]["cloud_init"]
+        != bootstrap_assets["cloud_init_sha256"]
+        or sha256_path(cloud_init) != bootstrap_assets["cloud_init_sha256"]
+    ):
         raise RuntimeError("cloud-init source identity mismatch")
     cloud_text = cloud_init.read_text(encoding="utf-8")
     mount_literal = (
@@ -562,7 +610,14 @@ def prove_guest_adapter_binding(
         context["qemu_executable_base_seed_checkout_bindings"]["seed"]["path"]
     )
     seed_sha = sha256_path(seed)
-    if seed_sha != context["qemu_executable_base_seed_checkout_bindings"]["seed"]["sha256"]:
+    if (
+        context["qemu_executable_base_seed_checkout_bindings"]["seed"]
+        != {
+            "path": bootstrap_assets["seed_path"],
+            "sha256": bootstrap_assets["seed_sha256"],
+        }
+        or seed_sha != bootstrap_assets["seed_sha256"]
+    ):
         raise RuntimeError("NoCloud seed SHA-256 mismatch")
     seed_sources = {
         "/user-data": cloud_init,
@@ -861,10 +916,11 @@ def context_asset_expectations(
         raise RuntimeError("candidate asset key must be repository-relative")
     checkout_root = Path(bindings["checkout"]["path"])
     adapter_path = active_adapter_path(context)
-    return {
+    bootstrap_assets = bootstrap_asset_bindings(context)
+    expectations = {
         candidate_key: context["candidate_manifest_sha256"],
         adapter_path: hashes["wrapper"],
-        CLOUD_INIT: hashes["cloud_init"],
+        bootstrap_assets["cloud_init_path"]: hashes["cloud_init"],
         FK_ADAPTER: hashes["fc_fk_adapter"],
         CANONICAL_CHE: hashes["canonical_che"],
         CANONICALIZER: hashes["canonicalizer"],
@@ -877,6 +933,12 @@ def context_asset_expectations(
         bindings["base"]["path"]: bindings["base"]["sha256"],
         bindings["seed"]["path"]: bindings["seed"]["sha256"],
     }
+    owner_sha256 = hashes.get(FRESH_OPERATION_CONTEXT_OWNER_HASH_KEY)
+    if owner_sha256 is not None:
+        expectations[str(checkout_root / FRESH_OPERATION_CONTEXT_OWNER)] = (
+            owner_sha256
+        )
+    return expectations
 
 
 def validate_immutable_context_bindings(
@@ -889,6 +951,7 @@ def validate_immutable_context_bindings(
     if sha256_path(candidate) != context["candidate_manifest_sha256"]:
         raise RuntimeError("context live candidate binding mismatch")
     hashes = context["wrapper_fc_er_che_schema_hashes"]
+    bootstrap_assets = bootstrap_asset_bindings(context)
     expected_hashes = {
         "wrapper": sha256_path(repository_root / active_adapter_path(context)),
         "fc_fk_adapter": FK_ADAPTER_SHA256,
@@ -896,8 +959,20 @@ def validate_immutable_context_bindings(
         "canonical_che": "75801995214e81419aab9a02326499c771ec0039658fb49598aa54bd033e13c5",
         "raw_evidence_schema": "95ca9b753b2e4256b6530652d5a6e2a8220fed68c52f774928e1e39721f4ca67",
         "canonicalizer": CANONICALIZER_SHA256,
-        "cloud_init": CLOUD_INIT_SHA256,
+        "cloud_init": bootstrap_assets["cloud_init_sha256"],
     }
+    owner_binding_present = FRESH_OPERATION_CONTEXT_OWNER_HASH_KEY in hashes
+    current_head = git(repository_root, "rev-parse", "HEAD")
+    if owner_binding_present:
+        if sha256_path(repository_root / FRESH_OPERATION_CONTEXT_OWNER) != (
+            FRESH_OPERATION_CONTEXT_OWNER_SHA256
+        ):
+            raise RuntimeError("authoritative FM context owner identity mismatch")
+        expected_hashes[FRESH_OPERATION_CONTEXT_OWNER_HASH_KEY] = (
+            FRESH_OPERATION_CONTEXT_OWNER_SHA256
+        )
+    elif context["repository_head"] == current_head:
+        raise RuntimeError("current context omits FM context owner binding")
     if hashes != expected_hashes:
         raise RuntimeError("context immutable wrapper/FC/ER/CHE/schema binding mismatch")
     bindings = context["qemu_executable_base_seed_checkout_bindings"]
@@ -908,14 +983,23 @@ def validate_immutable_context_bindings(
             raise RuntimeError("historical context checkout lifecycle binding mismatch")
     elif checkout_path != str(Path(context["transient_root"]) / "checkout"):
         raise RuntimeError("operation-scoped context checkout lifecycle binding mismatch")
+    expected_checkout_head = (
+        CHECKOUT_HEAD if owner_binding_present else LEGACY_CHECKOUT_HEAD
+    )
+    expected_checkout_tree = (
+        CHECKOUT_TREE if owner_binding_present else LEGACY_CHECKOUT_TREE
+    )
     expected_bindings = {
         "qemu_executable": {"path": "/usr/bin/qemu-system-x86_64", "sha256": QEMU_EXECUTABLE_SHA256},
         "base": {"path": BASE_IMAGE, "sha256": EXPECTED_ASSET_SHA256[BASE_IMAGE]},
-        "seed": {"path": SEED, "sha256": EXPECTED_ASSET_SHA256[SEED]},
+        "seed": {
+            "path": bootstrap_assets["seed_path"],
+            "sha256": bootstrap_assets["seed_sha256"],
+        },
         "checkout": {
             "path": checkout_path,
-            "head": CHECKOUT_HEAD,
-            "tree": CHECKOUT_TREE,
+            "head": expected_checkout_head,
+            "tree": expected_checkout_tree,
             "detached": True,
             "clean": True,
             "read_only_mount": True,
@@ -1367,6 +1451,9 @@ def build_operation_context(
         "raw_evidence_schema": "95ca9b753b2e4256b6530652d5a6e2a8220fed68c52f774928e1e39721f4ca67",
         "canonicalizer": CANONICALIZER_SHA256,
         "cloud_init": CLOUD_INIT_SHA256,
+        FRESH_OPERATION_CONTEXT_OWNER_HASH_KEY: (
+            FRESH_OPERATION_CONTEXT_OWNER_SHA256
+        ),
     }
     checkout_path = transient_root.absolute() / "checkout"
     bindings = {
@@ -1875,11 +1962,12 @@ def _validate_guest_destination_sources(
         raise RuntimeError("ER checkout consumer semantics binding mismatch")
 
 
-def _guest_destination_contract() -> dict[str, str]:
+def _guest_destination_contract(context: dict[str, Any]) -> dict[str, str]:
     repository_root = Path(__file__).resolve().parents[5]
-    cloud_init = repository_root / CLOUD_INIT
+    bootstrap_assets = bootstrap_asset_bindings(context)
+    cloud_init = repository_root / bootstrap_assets["cloud_init_path"]
     er_harness = repository_root / ER_HARNESS_RELATIVE
-    if sha256_path(cloud_init) != CLOUD_INIT_SHA256:
+    if sha256_path(cloud_init) != bootstrap_assets["cloud_init_sha256"]:
         raise RuntimeError("checkout cloud-init mount source identity mismatch")
     if sha256_path(er_harness) != ER_HARNESS_SHA256:
         raise RuntimeError("ER checkout consumer source identity mismatch")
@@ -1887,7 +1975,7 @@ def _guest_destination_contract() -> dict[str, str]:
     er_source = er_harness.read_text(encoding="utf-8")
     _validate_guest_destination_sources(cloud_source, er_source)
     return {
-        "cloud_init_sha256": CLOUD_INIT_SHA256,
+        "cloud_init_sha256": bootstrap_assets["cloud_init_sha256"],
         "er_harness_sha256": ER_HARNESS_SHA256,
         "mount_tag": GUEST_CHECKOUT_MOUNT_TAG,
         "guest_destination": GUEST_CHECKOUT_DESTINATION,
@@ -1906,7 +1994,7 @@ def prove_guest_checkout_tree_precondition(
     }
     if forbidden_overrides & context.keys():
         raise RuntimeError("caller-supplied guest checkout readiness override prohibited")
-    destination_contract = _guest_destination_contract()
+    destination_contract = _guest_destination_contract(context)
     checkout = context["qemu_executable_base_seed_checkout_bindings"]["checkout"]
     root = Path(checkout["path"])
     if root.absolute() != root.resolve(strict=True):
@@ -1969,6 +2057,74 @@ def prove_guest_checkout_tree_precondition(
     }
 
 
+def prove_guest_fresh_operation_context_owner_binding(
+    repository_root: Path,
+    context: dict[str, Any],
+) -> dict[str, Any]:
+    """Prove one source -> checkout -> read-only guest owner identity."""
+
+    hashes = context["wrapper_fc_er_che_schema_hashes"]
+    expected_sha256 = hashes.get(FRESH_OPERATION_CONTEXT_OWNER_HASH_KEY)
+    if expected_sha256 != FRESH_OPERATION_CONTEXT_OWNER_SHA256:
+        raise RuntimeError("FM context owner hash binding missing or invalid")
+
+    source = repository_root.resolve() / FRESH_OPERATION_CONTEXT_OWNER
+    if source.is_symlink() or not source.is_file():
+        raise RuntimeError("authoritative FM context owner absent or unsafe")
+    source_sha256 = sha256_path(source)
+    if source_sha256 != expected_sha256:
+        raise RuntimeError("authoritative FM context owner SHA-256 mismatch")
+
+    checkout = Path(
+        context["qemu_executable_base_seed_checkout_bindings"]["checkout"]["path"]
+    )
+    try:
+        resolved_checkout = checkout.resolve(strict=True)
+    except (FileNotFoundError, RuntimeError) as exc:
+        raise RuntimeError("FM context owner checkout root is not canonical") from exc
+    if checkout.absolute() != resolved_checkout:
+        raise RuntimeError("FM context owner checkout root is not canonical")
+    projected = checkout / FRESH_OPERATION_CONTEXT_OWNER
+    if projected.is_symlink() or not projected.is_file():
+        raise RuntimeError("materialized checkout FM context owner absent or unsafe")
+    if projected.resolve() != projected.absolute():
+        raise RuntimeError("materialized checkout FM context owner path is not canonical")
+    checkout_sha256 = sha256_path(projected)
+    if checkout_sha256 != expected_sha256 or projected.read_bytes() != source.read_bytes():
+        raise RuntimeError("materialized checkout FM context owner identity mismatch")
+
+    expected_argument = (
+        f"local,path={checkout},mount_tag={GUEST_CHECKOUT_MOUNT_TAG},"
+        "security_model=none,readonly=on"
+    )
+    arguments = [
+        context["canonical_argv"][index + 1]
+        for index, value in enumerate(context["canonical_argv"][:-1])
+        if value == "-virtfs"
+        and f"mount_tag={GUEST_CHECKOUT_MOUNT_TAG}" in (
+            context["canonical_argv"][index + 1]
+        )
+    ]
+    if arguments != [expected_argument]:
+        raise RuntimeError("FM context owner guest presentation binding mismatch")
+    guest_path = str(
+        Path(GUEST_CHECKOUT_DESTINATION) / FRESH_OPERATION_CONTEXT_OWNER
+    )
+    return {
+        "result": "PREAUTH_GUEST_FM_CONTEXT_OWNER_BINDING_PASS",
+        "authoritative_source_path": FRESH_OPERATION_CONTEXT_OWNER,
+        "authoritative_source_sha256": source_sha256,
+        "checkout_path": str(projected),
+        "checkout_sha256": checkout_sha256,
+        "guest_visible_path": guest_path,
+        "guest_expected_owner_sha256": expected_sha256,
+        "host_checkout_guest_byte_identity": "PASS",
+        "host_checkout_guest_hash_identity": "PASS",
+        "qemu_virtfs_argument": expected_argument,
+        "read_only_guest_presentation": True,
+    }
+
+
 def validate_checkout_preboot_readiness(context: dict[str, Any]) -> dict[str, Any]:
     checkout = context["qemu_executable_base_seed_checkout_bindings"]["checkout"]
     path = Path(checkout["path"])
@@ -2000,13 +2156,22 @@ def validate_checkout_preboot_readiness(context: dict[str, Any]) -> dict[str, An
     if not checkout["read_only_mount"] or mount_argument is None or "readonly=on" not in mount_argument:
         raise RuntimeError("checkout read-only certified mount contract missing")
     guest_tree_proof = prove_guest_checkout_tree_precondition(context)
-    return {
+    result = {
         "checkout_exists": "PASS",
         "checkout_head_tree": "PASS",
         "checkout_clean_detached": "PASS",
         "checkout_read_only_mount": "PASS",
         "preauth_guest_checkout_tree_authentication": guest_tree_proof,
     }
+    if FRESH_OPERATION_CONTEXT_OWNER_HASH_KEY in context.get(
+        "wrapper_fc_er_che_schema_hashes", {}
+    ):
+        result["preauth_guest_fm_context_owner_binding"] = (
+            prove_guest_fresh_operation_context_owner_binding(
+                Path(__file__).resolve().parents[5], context
+            )
+        )
+    return result
 
 
 def authority_free_static_readiness(
