@@ -59,13 +59,13 @@ MATERIALIZATION = f"{FY_ROOT}/G77_256FY_RUNTIME_EXPORT_PREBOOT_COMPOSITION_V1.js
 WRAPPER = f"{FM_ROOT}/harness/G77_256FM_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py"
 LEGACY_CLOUD_INIT = f"{FM_ROOT}/raw/G77_256FM_CLOUD_INIT_USER_DATA_V1.yaml"
 CLOUD_INIT = (
-    ".github/governance/evidence/g77_256hd_guest_context_owner_binding_v1/"
-    "static/G77_256HD_CLOUD_INIT_USER_DATA_V1.yaml"
+    ".github/governance/evidence/g77_256hk_current_hg_bootstrap_binding_v1/"
+    "static/G77_256HK_CLOUD_INIT_USER_DATA_V1.yaml"
 )
 CLOUD_INIT_META_DATA = f"{FM_ROOT}/raw/G77_256FM_CLOUD_INIT_META_DATA_V1.yaml"
 CLOUD_INIT_NETWORK_CONFIG = f"{FM_ROOT}/raw/G77_256FM_CLOUD_INIT_NETWORK_CONFIG_V1.yaml"
 LEGACY_CLOUD_INIT_SHA256 = "3a4c989de77abec366ec5587b038a7341e71aac916d9cd9c7deba424f4a275ec"
-CLOUD_INIT_SHA256 = "95038a31879b3654607ae82533e9b043fee47e7cc157efdad1b7654a11664421"
+CLOUD_INIT_SHA256 = "f10425de141e2f790b4b57fe00aa59c345aeb4e2c0e58e3a2b57cbaf602ff666"
 FK_ADAPTER = ".github/governance/evidence/g77_256fc_wrong_attempt_operational_v1/harness/G77_256FC_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py"
 CANONICAL_CHE = "aigol/runtime/canonical_che_evidence_correlation_contract_v1.py"
 ER_HARNESS_RELATIVE = (
@@ -89,7 +89,7 @@ LEGACY_SEED = (
 )
 SEED = (
     "/home/pisarna/work/sapianta-fl/.github/governance/evidence/"
-    "g77_256hd_guest_context_owner_binding_v1/static/"
+    "g77_256hk_current_hg_bootstrap_binding_v1/static/"
     "SAPIANTA_WRONG_ATTEMPT_NOCLOUD_SEED_V1.img"
 )
 CHECKOUT = "/tmp/g77_256fm/checkout"
@@ -135,7 +135,7 @@ EXPECTED_ASSET_SHA256 = {
     CANONICALIZER: CANONICALIZER_SHA256,
     BASE_IMAGE: "6e40c07ae715f744f84af0bec76415cc1987dd115b4b8de437818561f01a3733",
     OVERLAY: "6ea4eed169518c646774cfbe2c7b8c00646a9cdead8798f7c94c786c6b6ce8b2",
-    SEED: "15910599577a84545d79d49383747ce22e630d1cb3f1228509b307487a2261cf",
+    SEED: "6346b9f02b236d71f2698b01a0d607549ad4d9d779a72b5168658994c519913d",
     LEGACY_CLOUD_INIT: LEGACY_CLOUD_INIT_SHA256,
     LEGACY_SEED: "966f1910bbffe20fa18c4cee56ff61dcbb069348e2929bfda74e029a9dc0ec58",
 }
