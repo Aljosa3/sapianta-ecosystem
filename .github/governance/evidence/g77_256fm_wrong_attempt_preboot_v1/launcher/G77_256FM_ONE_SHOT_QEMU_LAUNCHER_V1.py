@@ -11,6 +11,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shlex
 import subprocess
 import sys
 import tempfile
@@ -59,13 +60,21 @@ MATERIALIZATION = f"{FY_ROOT}/G77_256FY_RUNTIME_EXPORT_PREBOOT_COMPOSITION_V1.js
 WRAPPER = f"{FM_ROOT}/harness/G77_256FM_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py"
 LEGACY_CLOUD_INIT = f"{FM_ROOT}/raw/G77_256FM_CLOUD_INIT_USER_DATA_V1.yaml"
 CLOUD_INIT = (
-    ".github/governance/evidence/g77_256hk_current_hg_bootstrap_binding_v1/"
-    "static/G77_256HK_CLOUD_INIT_USER_DATA_V1.yaml"
+    ".github/governance/evidence/"
+    "g77_256hn_wrong_input_bootstrap_harness_binding_v1/"
+    "static/G77_256HN_CLOUD_INIT_USER_DATA_V1.yaml"
 )
 CLOUD_INIT_META_DATA = f"{FM_ROOT}/raw/G77_256FM_CLOUD_INIT_META_DATA_V1.yaml"
 CLOUD_INIT_NETWORK_CONFIG = f"{FM_ROOT}/raw/G77_256FM_CLOUD_INIT_NETWORK_CONFIG_V1.yaml"
 LEGACY_CLOUD_INIT_SHA256 = "3a4c989de77abec366ec5587b038a7341e71aac916d9cd9c7deba424f4a275ec"
-CLOUD_INIT_SHA256 = "f10425de141e2f790b4b57fe00aa59c345aeb4e2c0e58e3a2b57cbaf602ff666"
+CLOUD_INIT_SHA256 = "be30e3c5084b7464653b8560d4259d69dbdff106d5c118791df6cf87c28d718f"
+WRONG_ATTEMPT_CLOUD_INIT = (
+    ".github/governance/evidence/g77_256hk_current_hg_bootstrap_binding_v1/"
+    "static/G77_256HK_CLOUD_INIT_USER_DATA_V1.yaml"
+)
+WRONG_ATTEMPT_CLOUD_INIT_SHA256 = (
+    "f10425de141e2f790b4b57fe00aa59c345aeb4e2c0e58e3a2b57cbaf602ff666"
+)
 FK_ADAPTER = ".github/governance/evidence/g77_256fc_wrong_attempt_operational_v1/harness/G77_256FC_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py"
 CANONICAL_CHE = "aigol/runtime/canonical_che_evidence_correlation_contract_v1.py"
 ER_HARNESS_RELATIVE = (
@@ -88,6 +97,11 @@ LEGACY_SEED = (
     "SAPIANTA_WRONG_ATTEMPT_NOCLOUD_SEED_V1.img"
 )
 SEED = (
+    "/home/pisarna/work/sapianta-fl/.github/governance/evidence/"
+    "g77_256hn_wrong_input_bootstrap_harness_binding_v1/static/"
+    "SAPIANTA_WRONG_ATTEMPT_NOCLOUD_SEED_V1.img"
+)
+WRONG_ATTEMPT_SEED = (
     "/home/pisarna/work/sapianta-fl/.github/governance/evidence/"
     "g77_256hk_current_hg_bootstrap_binding_v1/static/"
     "SAPIANTA_WRONG_ATTEMPT_NOCLOUD_SEED_V1.img"
@@ -130,12 +144,14 @@ EXPECTED_ASSET_SHA256 = {
     RUNTIME_MANIFEST: CANDIDATE_SHA256,
     WRAPPER: ADAPTER_SHA256,
     CLOUD_INIT: CLOUD_INIT_SHA256,
+    WRONG_ATTEMPT_CLOUD_INIT: WRONG_ATTEMPT_CLOUD_INIT_SHA256,
     FK_ADAPTER: FK_ADAPTER_SHA256,
     CANONICAL_CHE: "75801995214e81419aab9a02326499c771ec0039658fb49598aa54bd033e13c5",
     CANONICALIZER: CANONICALIZER_SHA256,
     BASE_IMAGE: "6e40c07ae715f744f84af0bec76415cc1987dd115b4b8de437818561f01a3733",
     OVERLAY: "6ea4eed169518c646774cfbe2c7b8c00646a9cdead8798f7c94c786c6b6ce8b2",
-    SEED: "6346b9f02b236d71f2698b01a0d607549ad4d9d779a72b5168658994c519913d",
+    SEED: "e9aeac9135ecbf92bffbb8798a90bd61e39e49e15fa5dff0a4c0e6974e6bf731",
+    WRONG_ATTEMPT_SEED: "6346b9f02b236d71f2698b01a0d607549ad4d9d779a72b5168658994c519913d",
     LEGACY_CLOUD_INIT: LEGACY_CLOUD_INIT_SHA256,
     LEGACY_SEED: "966f1910bbffe20fa18c4cee56ff61dcbb069348e2929bfda74e029a9dc0ec58",
 }
@@ -171,17 +187,32 @@ AUTHORIZATION_FIELDS = {
 }
 
 
-def bootstrap_asset_bindings(context: dict[str, Any]) -> dict[str, str]:
-    """Select the immutable bootstrap pair bound by this context revision."""
+def current_bootstrap_asset_bindings(vector: str) -> dict[str, str]:
+    """Select one immutable bootstrap pair from the context-derived vector."""
 
-    hashes = context.get("wrapper_fc_er_che_schema_hashes", {})
-    if FRESH_OPERATION_CONTEXT_OWNER_HASH_KEY in hashes:
+    if vector == fresh_context.WRONG_INPUT:
         return {
             "cloud_init_path": CLOUD_INIT,
             "cloud_init_sha256": CLOUD_INIT_SHA256,
             "seed_path": SEED,
             "seed_sha256": EXPECTED_ASSET_SHA256[SEED],
         }
+    if vector == fresh_context.WRONG_ATTEMPT:
+        return {
+            "cloud_init_path": WRONG_ATTEMPT_CLOUD_INIT,
+            "cloud_init_sha256": WRONG_ATTEMPT_CLOUD_INIT_SHA256,
+            "seed_path": WRONG_ATTEMPT_SEED,
+            "seed_sha256": EXPECTED_ASSET_SHA256[WRONG_ATTEMPT_SEED],
+        }
+    raise RuntimeError("bootstrap operation vector unsupported")
+
+
+def bootstrap_asset_bindings(context: dict[str, Any]) -> dict[str, str]:
+    """Select the immutable bootstrap pair bound by this context revision."""
+
+    hashes = context.get("wrapper_fc_er_che_schema_hashes", {})
+    if FRESH_OPERATION_CONTEXT_OWNER_HASH_KEY in hashes:
+        return current_bootstrap_asset_bindings(context_vector(context))
     return {
         "cloud_init_path": LEGACY_CLOUD_INIT,
         "cloud_init_sha256": LEGACY_CLOUD_INIT_SHA256,
@@ -552,6 +583,31 @@ def fc_guest_consumer_path(
     return paths[0].replace("G77_256FC", prefix)
 
 
+def bootstrap_guest_command_arguments(
+    cloud_text: str,
+    bootstrap_guest_path: str,
+) -> tuple[str, str, str, str, str]:
+    """Return the one exact pre-request guest adapter argument vector."""
+
+    commands: list[list[str]] = []
+    for line in cloud_text.splitlines():
+        stripped = line.strip()
+        if not stripped.startswith("/usr/bin/python3 "):
+            continue
+        try:
+            arguments = shlex.split(stripped, posix=True)
+        except ValueError as exc:
+            raise RuntimeError("cloud-init guest adapter command malformed") from exc
+        if len(arguments) >= 2 and arguments[1] == bootstrap_guest_path:
+            commands.append(arguments)
+    if len(commands) != 1:
+        raise RuntimeError("cloud-init guest adapter command missing or ambiguous")
+    command = commands[0]
+    if len(command) != 7 or command[:2] != ["/usr/bin/python3", bootstrap_guest_path]:
+        raise RuntimeError("cloud-init guest adapter argument vector malformed")
+    return tuple(command[2:])  # type: ignore[return-value]
+
+
 def prove_guest_adapter_binding(
     repository_root: Path,
     context: dict[str, Any],
@@ -635,15 +691,16 @@ def prove_guest_adapter_binding(
         if projected_bytes != source_path.read_bytes():
             raise RuntimeError(f"NoCloud seed {member} source bytes differ")
     command_bindings = (
-        binding["bootstrap_guest_path"],
-        ADAPTER_SHA256,
+        binding["source_sha256"],
         context["wrapper_fc_er_che_schema_hashes"]["raw_evidence_schema"],
         context["qemu_executable_base_seed_checkout_bindings"]["checkout"]["head"],
         context["qemu_executable_base_seed_checkout_bindings"]["checkout"]["tree"],
         sha256_path(repository_root / DN_HARNESS),
     )
-    if any(cloud_text.count(value) != 1 for value in command_bindings):
-        raise RuntimeError("cloud-init pre-request argument binding missing or ambiguous")
+    if bootstrap_guest_command_arguments(
+        cloud_text, binding["bootstrap_guest_path"]
+    ) != command_bindings:
+        raise RuntimeError("cloud-init pre-request argument binding mismatch")
 
     consumer_path = fc_guest_consumer_path(
         repository_root,
@@ -1442,7 +1499,9 @@ def build_operation_context(
 ) -> dict[str, Any]:
     """Build and seal one context before any Human authorization can exist."""
 
+    vector = fresh_context.operation_vector(generation_identity)
     adapter_path = fresh_context.adapter_source_relative_path(generation_identity)
+    bootstrap = current_bootstrap_asset_bindings(vector)
     hashes = {
         "wrapper": sha256_path(repository_root / adapter_path),
         "fc_fk_adapter": FK_ADAPTER_SHA256,
@@ -1450,7 +1509,7 @@ def build_operation_context(
         "canonical_che": "75801995214e81419aab9a02326499c771ec0039658fb49598aa54bd033e13c5",
         "raw_evidence_schema": "95ca9b753b2e4256b6530652d5a6e2a8220fed68c52f774928e1e39721f4ca67",
         "canonicalizer": CANONICALIZER_SHA256,
-        "cloud_init": CLOUD_INIT_SHA256,
+        "cloud_init": bootstrap["cloud_init_sha256"],
         FRESH_OPERATION_CONTEXT_OWNER_HASH_KEY: (
             FRESH_OPERATION_CONTEXT_OWNER_SHA256
         ),
@@ -1459,7 +1518,10 @@ def build_operation_context(
     bindings = {
         "qemu_executable": {"path": "/usr/bin/qemu-system-x86_64", "sha256": QEMU_EXECUTABLE_SHA256},
         "base": {"path": BASE_IMAGE, "sha256": EXPECTED_ASSET_SHA256[BASE_IMAGE]},
-        "seed": {"path": SEED, "sha256": EXPECTED_ASSET_SHA256[SEED]},
+        "seed": {
+            "path": bootstrap["seed_path"],
+            "sha256": bootstrap["seed_sha256"],
+        },
         "checkout": {
             "path": str(checkout_path),
             "head": CHECKOUT_HEAD,
