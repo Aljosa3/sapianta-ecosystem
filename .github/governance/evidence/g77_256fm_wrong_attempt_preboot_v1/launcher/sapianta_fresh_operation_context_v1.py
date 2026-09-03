@@ -23,6 +23,11 @@ GUEST_MOUNT_ROOT = "/mnt/g77-evidence"
 GUEST_CONTEXT_FILENAME = "SAPIANTA_FRESH_OPERATION_CONTEXT_V1.json"
 GUEST_HARNESS_MOUNT_TAG = "fm_harness"
 GUEST_HARNESS_ROOT = "/mnt/dp-harness"
+GUEST_REPOSITORY_ROOT = Path("/mnt/aigol")
+REPOSITORY_EVIDENCE_MARKER = (".github", "governance", "evidence")
+DN_HARNESS_RELATIVE_PATH = Path(
+    ".github/governance/evidence/g77_256dn_p03_diagnostic_v1/harness"
+)
 ADAPTER_SOURCE_RELATIVE_PATH = (
     ".github/governance/evidence/g77_256fm_wrong_attempt_preboot_v1/harness/"
     "G77_256FM_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py"
@@ -475,6 +480,116 @@ def _is_relative_to(path: Path, parent: Path) -> bool:
         return False
 
 
+def _derive_sealed_host_repository_root(
+    context: dict[str, Any],
+    operation_root: Path,
+) -> Path:
+    """Recover one host root from the already-sealed operation projection.
+
+    The rule is deliberately narrower than general path translation.  A
+    current operation root has exactly one repository-evidence marker and the
+    exact ``<generation namespace>/operation_state`` suffix.  The immutable
+    seed must also be repository-resident under the same host root.  Multiple
+    possible markers are ambiguity and therefore fail closed.
+    """
+
+    parts = operation_root.parts
+    marker_size = len(REPOSITORY_EVIDENCE_MARKER)
+    matches = [
+        index
+        for index in range(len(parts) - marker_size + 1)
+        if tuple(parts[index:index + marker_size]) == REPOSITORY_EVIDENCE_MARKER
+    ]
+    if len(matches) != 1:
+        raise ContextError("sealed host repository projection missing or ambiguous")
+    marker_index = matches[0]
+    host_root = Path(*parts[:marker_index])
+    if not host_root.is_absolute() or host_root == Path(host_root.anchor):
+        raise ContextError("sealed host repository root is unsafe")
+    suffix = parts[marker_index + marker_size:]
+    prefix = str(context["identity_namespace_prefix"]).lower()
+    vector = operation_vector(context["generation_identity"]).lower()
+    expected_suffix = (f"{prefix}_{vector}_operational_v1", "operation_state")
+    if tuple(suffix) != expected_suffix:
+        raise ContextError("sealed operation projection is not namespace-bound")
+
+    seed_path = Path(
+        context["qemu_executable_base_seed_checkout_bindings"]["seed"]["path"]
+    )
+    try:
+        seed_relative = seed_path.relative_to(host_root)
+    except ValueError as exc:
+        raise ContextError("sealed seed and host repository projection disagree") from exc
+    if tuple(seed_relative.parts[:marker_size]) != REPOSITORY_EVIDENCE_MARKER:
+        raise ContextError("sealed seed is not repository-bound")
+    return host_root
+
+
+def validate_sealed_canonical_argv(
+    context: dict[str, Any],
+    *,
+    validation_repository_root: Path,
+) -> dict[str, str]:
+    """Validate sealed host argv through either its host or exact guest view.
+
+    Projection selects the host identity used to reconstruct the expectation;
+    it never transforms the supplied argv.  Consequently the full canonical
+    argv, including every non-path field, remains equality-checked and sealed.
+    """
+
+    view_root = validation_repository_root.resolve()
+    operation_root = _absolute_canonical_path(
+        context["operation_evidence_root"], "operation_evidence_root"
+    )
+    try:
+        sealed_host_root = _derive_sealed_host_repository_root(
+            context, operation_root
+        )
+    except ContextError:
+        if view_root == GUEST_REPOSITORY_ROOT:
+            raise
+        sealed_host_root = view_root
+        projection_status = "HOST_VALIDATION_WITHOUT_GUEST_PROJECTION"
+    else:
+        if view_root not in {sealed_host_root, GUEST_REPOSITORY_ROOT}:
+            raise ContextError("repository validation view is not projection-bound")
+        projection_status = (
+            "EXACT_GUEST_PROJECTION"
+            if view_root == GUEST_REPOSITORY_ROOT
+            else "EXACT_HOST_IDENTITY"
+        )
+
+    bindings = context["qemu_executable_base_seed_checkout_bindings"]
+    adapter = context["guest_adapter_binding"]
+    expected_argv = derive_canonical_argv(
+        overlay_path=Path(context["overlay_path"]),
+        serial_path=Path(context["serial_path"]),
+        seed_path=Path(bindings["seed"]["path"]),
+        checkout_path=Path(bindings["checkout"]["path"]),
+        wrapper_host_root=Path(adapter["projection_root"]),
+        dn_harness_host_root=sealed_host_root / DN_HARNESS_RELATIVE_PATH,
+        runtime_export_root=Path(context["runtime_export_root"]),
+    )
+    if context["canonical_argv"] != expected_argv:
+        raise ContextError("canonical argv changed outside approved operation slots")
+    digest = argv_sha256(expected_argv)
+    if context["canonical_argv_sha256"] != digest:
+        raise ContextError("canonical argv seal mismatch")
+    if (
+        expected_argv.count("-nic") != 1
+        or expected_argv[expected_argv.index("-nic") + 1] != "none"
+    ):
+        raise ContextError("no-network canonical argv contract violated")
+    return {
+        "host_canonical_identity": str(sealed_host_root),
+        "guest_projected_path": str(GUEST_REPOSITORY_ROOT),
+        "guest_validation_view": str(view_root),
+        "projection_status": projection_status,
+        "sealed_host_qemu_argv_sha256": digest,
+        "runtime_execution_identity": str(bindings["qemu_executable"]["path"]),
+    }
+
+
 def _validate_hash_map(value: Any, field: str) -> None:
     if not isinstance(value, dict) or not value:
         raise ContextError(f"{field} missing or malformed")
@@ -618,23 +733,10 @@ def validate_context(context: dict[str, Any], *, repository_root: Path) -> dict[
     if checkout["detached"] is not True or checkout["clean"] is not True or checkout["read_only_mount"] is not True:
         raise ContextError("checkout exact detached/clean/read-only contract missing")
 
-    repository_root = repository_root.resolve()
-    expected_argv = derive_canonical_argv(
-        overlay_path=paths["overlay_path"],
-        serial_path=paths["serial_path"],
-        seed_path=Path(bindings["seed"]["path"]),
-        checkout_path=Path(checkout["path"]),
-        wrapper_host_root=adapter_paths["projection_root"],
-        dn_harness_host_root=repository_root / ".github/governance/evidence/g77_256dn_p03_diagnostic_v1/harness",
-        runtime_export_root=paths["runtime_export_root"],
+    validate_sealed_canonical_argv(
+        context,
+        validation_repository_root=repository_root,
     )
-    if context["canonical_argv"] != expected_argv:
-        raise ContextError("canonical argv changed outside approved operation slots")
-    digest = argv_sha256(expected_argv)
-    if context["canonical_argv_sha256"] != digest:
-        raise ContextError("canonical argv seal mismatch")
-    if expected_argv.count("-nic") != 1 or expected_argv[expected_argv.index("-nic") + 1] != "none":
-        raise ContextError("no-network canonical argv contract violated")
     unsealed = {key: value for key, value in context.items() if key != "context_sha256"}
     if context["context_sha256"] != sha256_bytes(canonical_bytes(unsealed)):
         raise ContextError("context seal mismatch")
