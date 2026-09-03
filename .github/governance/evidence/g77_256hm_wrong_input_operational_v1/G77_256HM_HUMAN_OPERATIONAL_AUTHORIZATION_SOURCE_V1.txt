@@ -1,0 +1,1 @@
+I explicitly authorize request `fa99566594f5efba7eb1c428a8551e74514f32797ee93343778f39b8a94749b6` for operation `G77_256HM_E05_WRONG_INPUT_DENIAL_BEFORE_ENTRY_001`, subject to its exact one-shot, no-network, zero-retry, zero-repair, and zero-replay limits.
