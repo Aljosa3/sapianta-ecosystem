@@ -75,6 +75,13 @@ WRONG_ATTEMPT_CLOUD_INIT = (
 WRONG_ATTEMPT_CLOUD_INIT_SHA256 = (
     "f10425de141e2f790b4b57fe00aa59c345aeb4e2c0e58e3a2b57cbaf602ff666"
 )
+WRONG_CONTRACT_CLOUD_INIT = (
+    ".github/governance/evidence/g77_256ht_wrong_contract_route_extension_v1/"
+    "static/G77_256HT_CLOUD_INIT_USER_DATA_TEMPLATE_V1.yaml"
+)
+WRONG_CONTRACT_CLOUD_INIT_SHA256 = (
+    "c8557ae4a8c600ef28e55e5020d8ba1f1e5a4b8e833b7136c22708d1ef420c59"
+)
 FK_ADAPTER = ".github/governance/evidence/g77_256fc_wrong_attempt_operational_v1/harness/G77_256FC_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py"
 CANONICAL_CHE = "aigol/runtime/canonical_che_evidence_correlation_contract_v1.py"
 ER_HARNESS_RELATIVE = (
@@ -106,6 +113,11 @@ WRONG_ATTEMPT_SEED = (
     "g77_256hk_current_hg_bootstrap_binding_v1/static/"
     "SAPIANTA_WRONG_ATTEMPT_NOCLOUD_SEED_V1.img"
 )
+WRONG_CONTRACT_SEED = (
+    "/home/pisarna/work/sapianta-fl/.github/governance/evidence/"
+    "g77_256ht_wrong_contract_route_extension_v1/static/"
+    "SAPIANTA_WRONG_CONTRACT_NOCLOUD_SEED_TEMPLATE_V1.img"
+)
 CHECKOUT = "/tmp/g77_256fm/checkout"
 LEGACY_CHECKOUT_HEAD = "7dce67ec18696ba0bad73130f3f7a84168f25277"
 LEGACY_CHECKOUT_TREE = "3cb61ec34e9593efb711dce61014dc8fdf0f6dd9"
@@ -119,7 +131,7 @@ FRESH_OPERATION_CONTEXT_OWNER = (
 )
 FRESH_OPERATION_CONTEXT_OWNER_HASH_KEY = "fresh_operation_context_owner"
 FRESH_OPERATION_CONTEXT_OWNER_SHA256 = (
-    "db8257ab2e693edf842ba8224792910eb77a32116bf61cd60290d6ca535c73bf"
+    "3c24621ec9f0bd67e5e3468d728446069f54628f4150ee02b677a973f24972e4"
 )
 ER_HARNESS_SHA256 = "4a2a84ff83c61bfec013b4bcd20eb16905eeb240869182edd6c0d948444bae89"
 QEMU_EXECUTABLE_SHA256 = "8a35ccba41582fc6c38b9df85fc9e35fa1d42f414d2d7d8090ee9b2f5e7c0854"
@@ -145,6 +157,7 @@ EXPECTED_ASSET_SHA256 = {
     WRAPPER: ADAPTER_SHA256,
     CLOUD_INIT: CLOUD_INIT_SHA256,
     WRONG_ATTEMPT_CLOUD_INIT: WRONG_ATTEMPT_CLOUD_INIT_SHA256,
+    WRONG_CONTRACT_CLOUD_INIT: WRONG_CONTRACT_CLOUD_INIT_SHA256,
     FK_ADAPTER: FK_ADAPTER_SHA256,
     CANONICAL_CHE: "75801995214e81419aab9a02326499c771ec0039658fb49598aa54bd033e13c5",
     CANONICALIZER: CANONICALIZER_SHA256,
@@ -152,6 +165,7 @@ EXPECTED_ASSET_SHA256 = {
     OVERLAY: "6ea4eed169518c646774cfbe2c7b8c00646a9cdead8798f7c94c786c6b6ce8b2",
     SEED: "e9aeac9135ecbf92bffbb8798a90bd61e39e49e15fa5dff0a4c0e6974e6bf731",
     WRONG_ATTEMPT_SEED: "6346b9f02b236d71f2698b01a0d607549ad4d9d779a72b5168658994c519913d",
+    WRONG_CONTRACT_SEED: "0ad4f6e144f64586357962ea508d44775c169c058f9f1c30fa7d883ccc76f096",
     LEGACY_CLOUD_INIT: LEGACY_CLOUD_INIT_SHA256,
     LEGACY_SEED: "966f1910bbffe20fa18c4cee56ff61dcbb069348e2929bfda74e029a9dc0ec58",
 }
@@ -204,6 +218,13 @@ def current_bootstrap_asset_bindings(vector: str) -> dict[str, str]:
             "seed_path": WRONG_ATTEMPT_SEED,
             "seed_sha256": EXPECTED_ASSET_SHA256[WRONG_ATTEMPT_SEED],
         }
+    if vector == fresh_context.WRONG_CONTRACT:
+        return {
+            "cloud_init_path": WRONG_CONTRACT_CLOUD_INIT,
+            "cloud_init_sha256": WRONG_CONTRACT_CLOUD_INIT_SHA256,
+            "seed_path": WRONG_CONTRACT_SEED,
+            "seed_sha256": EXPECTED_ASSET_SHA256[WRONG_CONTRACT_SEED],
+        }
     raise RuntimeError("bootstrap operation vector unsupported")
 
 
@@ -224,6 +245,9 @@ def bootstrap_asset_bindings(context: dict[str, Any]) -> dict[str, str]:
 WRONG_INPUT_AUTHORIZATION_FIELDS = (
     AUTHORIZATION_FIELDS - {"wrong_attempt_operational_attempt_limit"}
 ) | {"wrong_input_operational_attempt_limit"}
+WRONG_CONTRACT_AUTHORIZATION_FIELDS = (
+    AUTHORIZATION_FIELDS - {"wrong_attempt_operational_attempt_limit"}
+) | {"wrong_contract_operational_attempt_limit"}
 
 
 def context_vector(context: dict[str, Any]) -> str:
@@ -242,7 +266,23 @@ def authorization_fields(value: dict[str, Any]) -> set[str]:
         return AUTHORIZATION_FIELDS
     if vector == fresh_context.WRONG_INPUT:
         return WRONG_INPUT_AUTHORIZATION_FIELDS
+    if vector == fresh_context.WRONG_CONTRACT:
+        return WRONG_CONTRACT_AUTHORIZATION_FIELDS
     raise RuntimeError("execution authority vector unsupported")
+
+
+def operation_attempt_limit_field(vector: str) -> str:
+    """Select one vector-specific one-shot field and reject unknown vectors."""
+
+    fields = {
+        fresh_context.WRONG_ATTEMPT: "wrong_attempt_operational_attempt_limit",
+        fresh_context.WRONG_INPUT: "wrong_input_operational_attempt_limit",
+        fresh_context.WRONG_CONTRACT: "wrong_contract_operational_attempt_limit",
+    }
+    try:
+        return fields[vector]
+    except KeyError as exc:
+        raise RuntimeError("execution authority vector unsupported") from exc
 
 
 def canonical_bytes(value: Any) -> bytes:
@@ -576,7 +616,7 @@ def fc_guest_consumer_path(
     ]:
         raise RuntimeError("FC guest adapter consumer path missing or ambiguous")
     fresh_context._validate_prefix(prefix)
-    if vector == fresh_context.WRONG_INPUT:
+    if vector in {fresh_context.WRONG_INPUT, fresh_context.WRONG_CONTRACT}:
         return f"{fresh_context.GUEST_HARNESS_ROOT}/{fresh_context.ADAPTER_BOOTSTRAP_FILENAME}"
     if vector != fresh_context.WRONG_ATTEMPT:
         raise RuntimeError("guest adapter vector unsupported")
@@ -1188,11 +1228,7 @@ def preauthority_serialization_fixture(
         "canonical_argv_sha256": context["canonical_argv_sha256"],
     }
     vector = context_vector(context)
-    attempt_limit = (
-        "wrong_attempt_operational_attempt_limit"
-        if vector == fresh_context.WRONG_ATTEMPT
-        else "wrong_input_operational_attempt_limit"
-    )
+    attempt_limit = operation_attempt_limit_field(vector)
     authorization = {
         "schema_id": AUTHORIZATION_SCHEMA,
         "authorization_present": False,
@@ -1342,11 +1378,7 @@ def validate_execution_admission(
     if source_sha in {FO_REPOSITORY_ONLY_AUTHORIZATION_SHA256, FN_SPENT_AUTHORIZATION_SHA256}:
         raise RuntimeError("non-operational or already-spent Human authorization prohibited")
     vector = context_vector(context)
-    attempt_limit = (
-        "wrong_attempt_operational_attempt_limit"
-        if vector == fresh_context.WRONG_ATTEMPT
-        else "wrong_input_operational_attempt_limit"
-    )
+    attempt_limit = operation_attempt_limit_field(vector)
     expected_authorization = {
         "authorization_present": True,
         "authorization_kind": "FRESH_HUMAN_OPERATIONAL_AUTHORIZATION",

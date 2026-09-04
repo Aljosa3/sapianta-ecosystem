@@ -36,11 +36,22 @@ WRONG_INPUT_ADAPTER_SOURCE_RELATIVE_PATH = (
     ".github/governance/evidence/g77_256ha_wrong_input_route_binding_v1/adapter/"
     "G77_256HA_WRONG_INPUT_VECTOR_ADAPTER_V1.py"
 )
+WRONG_CONTRACT_ADAPTER_SOURCE_RELATIVE_PATH = (
+    ".github/governance/evidence/g77_256ht_wrong_contract_route_extension_v1/"
+    "adapter/G77_256HT_WRONG_CONTRACT_VECTOR_ADAPTER_V1.py"
+)
 ADAPTER_BOOTSTRAP_FILENAME = "G77_256FM_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py"
 ADAPTER_IDENTITY_SUFFIX = "_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py"
 WRONG_INPUT_ADAPTER_IDENTITY_SUFFIX = "_WRONG_INPUT_VECTOR_ADAPTER_V1.py"
+WRONG_CONTRACT_ADAPTER_IDENTITY_SUFFIX = "_WRONG_CONTRACT_VECTOR_ADAPTER_V1.py"
 WRONG_ATTEMPT = "WRONG_ATTEMPT"
 WRONG_INPUT = "WRONG_INPUT"
+WRONG_CONTRACT = "WRONG_CONTRACT"
+SUPPORTED_OPERATION_VECTORS = frozenset({
+    WRONG_ATTEMPT,
+    WRONG_INPUT,
+    WRONG_CONTRACT,
+})
 CANONICAL_ARGV_DOMAIN = b"SAPIANTA_G77_256ER_CANONICAL_QEMU_ARGV_V1\x00"
 U64 = struct.Struct(">Q")
 HEX_40 = re.compile(r"^[0-9a-f]{40}$")
@@ -224,6 +235,7 @@ def operation_vector(generation_identity: str) -> str:
     suffixes = {
         "_ONE_FRESH_HUMAN_AUTHORIZED_WRONG_ATTEMPT_OPERATIONAL_COMMISSIONING_V1": WRONG_ATTEMPT,
         "_ONE_FRESH_HUMAN_AUTHORIZED_WRONG_INPUT_OPERATIONAL_COMMISSIONING_V1": WRONG_INPUT,
+        "_ONE_FRESH_HUMAN_AUTHORIZED_WRONG_CONTRACT_OPERATIONAL_COMMISSIONING_V1": WRONG_CONTRACT,
     }
     matches = [vector for suffix, vector in suffixes.items() if generation_identity.endswith(suffix)]
     if len(matches) != 1:
@@ -232,11 +244,12 @@ def operation_vector(generation_identity: str) -> str:
 
 
 def adapter_source_relative_path(generation_identity: str) -> str:
-    return (
-        ADAPTER_SOURCE_RELATIVE_PATH
-        if operation_vector(generation_identity) == WRONG_ATTEMPT
-        else WRONG_INPUT_ADAPTER_SOURCE_RELATIVE_PATH
-    )
+    paths = {
+        WRONG_ATTEMPT: ADAPTER_SOURCE_RELATIVE_PATH,
+        WRONG_INPUT: WRONG_INPUT_ADAPTER_SOURCE_RELATIVE_PATH,
+        WRONG_CONTRACT: WRONG_CONTRACT_ADAPTER_SOURCE_RELATIVE_PATH,
+    }
+    return paths[operation_vector(generation_identity)]
 
 
 def derive_guest_adapter_binding(
@@ -252,18 +265,20 @@ def derive_guest_adapter_binding(
     if not isinstance(source_sha256, str) or HEX_64.fullmatch(source_sha256) is None:
         raise ContextError("adapter source SHA-256 malformed")
     projection_root = operation_evidence_root.absolute() / "guest_harness"
-    if vector not in {WRONG_ATTEMPT, WRONG_INPUT}:
+    if vector not in SUPPORTED_OPERATION_VECTORS:
         raise ContextError("guest adapter vector unsupported")
-    source_path = (
-        ADAPTER_SOURCE_RELATIVE_PATH
-        if vector == WRONG_ATTEMPT
-        else WRONG_INPUT_ADAPTER_SOURCE_RELATIVE_PATH
-    )
-    suffix = (
-        ADAPTER_IDENTITY_SUFFIX
-        if vector == WRONG_ATTEMPT
-        else WRONG_INPUT_ADAPTER_IDENTITY_SUFFIX
-    )
+    source_paths = {
+        WRONG_ATTEMPT: ADAPTER_SOURCE_RELATIVE_PATH,
+        WRONG_INPUT: WRONG_INPUT_ADAPTER_SOURCE_RELATIVE_PATH,
+        WRONG_CONTRACT: WRONG_CONTRACT_ADAPTER_SOURCE_RELATIVE_PATH,
+    }
+    suffixes = {
+        WRONG_ATTEMPT: ADAPTER_IDENTITY_SUFFIX,
+        WRONG_INPUT: WRONG_INPUT_ADAPTER_IDENTITY_SUFFIX,
+        WRONG_CONTRACT: WRONG_CONTRACT_ADAPTER_IDENTITY_SUFFIX,
+    }
+    source_path = source_paths[vector]
+    suffix = suffixes[vector]
     adapter_identity = f"{prefix}{suffix}"
     guest_path = (
         f"{GUEST_HARNESS_ROOT}/{adapter_identity}"
