@@ -1,0 +1,155 @@
+{
+  "schema_id": "G77_256HZ_WRONG_PROVENANCE_FORMAL_SPECIFICATION_ENVELOPE_V1",
+  "specification": {
+    "authoritative_provenance_resolution": {
+      "authoritative_owner": "AUTHORITY_CUSTODY_PROCESS_PRINCIPAL",
+      "authoritative_source": "EXISTING_P11_PROTECTED_OWNER_STATE_BINDING",
+      "conflicting_material_identity_count_allowed": 0,
+      "resolution_rule": "Authenticate the committed HX raw evidence and canonical Human act/CHE tuple; resolve the provenance_identity only from the two agreeing replay observations of the same protected owner-state binding at records 17 and 18; reject zero observations, any owner/state/act conflict, or more than one distinct provenance_identity.",
+      "source_is_current_operational_authority": false,
+      "source_observation_records": [
+        17,
+        18
+      ],
+      "supplied_input_is_authoritative_source": false
+    },
+    "authoritative_semantics": {
+      "baseline_provenance_requirement": "AUTHORIZED_BASELINE_PROVENANCE_IDENTITY_EQUALS_AUTHORITATIVE_PROTECTED_OWNER_STATE_PROVENANCE_IDENTITY",
+      "dependent_identity_rule": "record_identity is the canonical replay hash of the full input record excluding record_identity",
+      "supplied_provenance_requirement": "SUPPLIED_PROVENANCE_IDENTITY_DIFFERS_FROM_AUTHORITATIVE_PROTECTED_OWNER_STATE_PROVENANCE_IDENTITY",
+      "wrong_provenance_definition": "A structurally valid P11 input derived from one otherwise-valid authenticated authorized baseline whose provenance_identity alone is replaced by one distinct nonempty identity while every other independent semantic coordinate remains unchanged; record_identity is recomputed only because it commits to the changed provenance coordinate."
+    },
+    "case_id": "G77_256HZ_E05_WRONG_PROVENANCE_REPOSITORY_VECTOR_001",
+    "dependent_recomputation": {
+      "dependent_recomputation_count": 1,
+      "dependent_recomputation_is_second_independent_mutation": false,
+      "fields": [
+        "record_identity"
+      ],
+      "identities_forbidden_from_recomputation": [
+        "authorization_reference",
+        "attempt_identity",
+        "caller_identity_reference",
+        "comparator_outcome_identity",
+        "contract_content_sha256",
+        "contract_identity",
+        "contract_version",
+        "input_identity",
+        "p10_inventory_identity",
+        "preflight_binding_identity",
+        "replay_context_identity"
+      ]
+    },
+    "expected_denial": {
+      "boundary": "D2_PRECLAIM_AUTHORITY_BINDING_VALIDATION_BEFORE_PRECLAIM_LEDGER_APPEND_CLAIM_ENTRY_INVOCATION_OR_EFFECT",
+      "error_reason": "operational Human act input_record_identity binding is invalid",
+      "error_type": "FailClosedRuntimeError",
+      "explanation": "The isolated provenance_identity change requires a new record_identity. Current P11 validates the unchanged Human act payload input_record_identity against the supplied record before comparing the reconstructed binding with protected custody, so the record-identity denial necessarily occurs first and provenance-specific protected-binding comparison is not reached.",
+      "owner_state_change": 0,
+      "p11_entry": 0,
+      "protected_effect": 0,
+      "protected_invocation": 0,
+      "provenance_specific_comparison_reached": false
+    },
+    "formalization_boundary": {
+      "binding_status": "NOT_PROVEN",
+      "e05_after": "9/18",
+      "e05_before": "9/18",
+      "e05_credit": 0,
+      "operational_capability": "NOT_PROVEN",
+      "preoperational_readiness": "NOT_PROVEN",
+      "repository_capability_target": "VERIFIED",
+      "route_support": "NOT_PROVEN"
+    },
+    "generation_identity": "G77_256HZ_REPOSITORY_ONLY_WRONG_PROVENANCE_FORMALIZATION_V1",
+    "malformed_vector_classes": [
+      "SOURCE_INPUT_FAILS_CANONICAL_P11_STRUCTURAL_VALIDATION",
+      "CANONICAL_HUMAN_ACT_OR_CHE_BINDING_INVALID",
+      "PROTECTED_OWNER_STATE_PROVENANCE_SOURCE_MISSING",
+      "PROTECTED_OWNER_STATE_PROVENANCE_RESOLUTION_AMBIGUOUS",
+      "SUPPLIED_INPUT_USED_AS_AUTHORITATIVE_PROVENANCE_SOURCE",
+      "BASELINE_PROVENANCE_DIFFERS_FROM_AUTHORITATIVE_PROVENANCE",
+      "PROVENANCE_IDENTITY_NOT_CHANGED",
+      "PROVENANCE_IDENTITY_IS_NOT_A_NONEMPTY_STRING",
+      "MORE_THAN_ONE_INDEPENDENT_COORDINATE_CHANGED",
+      "RECORD_IDENTITY_NOT_RECOMPUTED",
+      "ANY_UNRELATED_IDENTITY_RECOMPUTED",
+      "GENERATION_OR_BASE_BINDING_CHANGED",
+      "DECLARED_VECTOR_OR_MUTATION_CLASS_CHANGED",
+      "NONCANONICAL_OR_DUPLICATE_KEY_JSON"
+    ],
+    "mutation_rule": {
+      "allowed_differing_record_fields": [
+        "provenance_identity",
+        "record_identity"
+      ],
+      "dependent_recomputation_count": 1,
+      "dependent_recomputed_coordinate": "record_identity",
+      "independent_mutated_coordinate": "provenance_identity",
+      "independent_mutation_count": 1,
+      "source_object": "canonical P11 bounded-consumer input record authenticated against the committed HX Human act, CHE correlation, and protected owner-state binding",
+      "target_object": "supplied canonical P11 bounded-consumer input record"
+    },
+    "operational_counters": {
+      "authority_consumption": 0,
+      "e05_credit": 0,
+      "fm_operational_launcher_invocation": 0,
+      "human_operational_authority": 0,
+      "operation_attempt": 0,
+      "p11_entry": 0,
+      "pre": 0,
+      "protected_effect": 0,
+      "protected_invocation": 0,
+      "qemu": 0,
+      "repair_retry": 0,
+      "replay": 0,
+      "request": 0,
+      "retry": 0,
+      "vm_boot": 0,
+      "vm_creation": 0
+    },
+    "preserved_non_target_independent_dimensions": [
+      "schema_id",
+      "schema_version",
+      "record_kind",
+      "attempt_identity",
+      "input_identity",
+      "contract_identity",
+      "contract_version",
+      "contract_content_sha256",
+      "authorization_reference",
+      "caller_identity_reference",
+      "preflight_binding_identity",
+      "preflight_status",
+      "p10_inventory_identity",
+      "comparator_outcome_identity",
+      "comparator_outcome",
+      "replay_context_identity"
+    ],
+    "selected_vector": "P11-E05/NEGATIVE_AUTHORITY/WRONG_PROVENANCE",
+    "source_fixture": {
+      "authority_status": "HISTORICAL_CERTIFIED_EVIDENCE_ONLY__NOT_CURRENT_AUTHORITY",
+      "git_blob": "4947ad5f128d8734cddb10b70cd7a3bfd72bd373",
+      "human_act_record_sequence": 16,
+      "path": ".github/governance/evidence/g77_256hx_wrong_contract_operational_v1/operation_state/runtime_export/G77_256HX_RAW_EXECUTION_EVIDENCE_V1.jsonl",
+      "protected_owner_state_record_sequences": [
+        17,
+        18
+      ],
+      "sha256": "ef68294aac53051396c5eac20c786bf914f42de9a4e628f07580591a797187f5"
+    },
+    "terminal_acceptance": {
+      "canonical_candidate_bytes_required": true,
+      "duplicate_json_keys_rejected": true,
+      "exact_differing_fields": [
+        "provenance_identity",
+        "record_identity"
+      ],
+      "fresh_valid_act_required_for_later_operation": true,
+      "repository_vector_accepted_is_operationally_proven": false,
+      "source_provenance_owner_reauthenticated": true,
+      "unique_authoritative_provenance_resolution_required": true
+    }
+  },
+  "specification_sha256": "f3dd54dafd6e3c390c456d3fdc1408c2f57c887352f26e7d122d59b292136bd0"
+}

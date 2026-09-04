@@ -1,0 +1,361 @@
+{
+  "reduction": {
+    "authoritative_provenance": {
+      "authoritative_owner": "AUTHORITY_CUSTODY_PROCESS_PRINCIPAL",
+      "authoritative_provenance_identity": "G77_256HX_AUTHENTICATED_FA_EM_CD_PROVENANCE_V1",
+      "baseline_equals_authoritative": true,
+      "conflicting_material_sources": 0,
+      "resolution_status": "VERIFIED__UNIQUE_EXISTING_PROTECTED_OWNER",
+      "source_observation_count": 2,
+      "supplied_equals_authoritative": false,
+      "supplied_input_is_authoritative_source": false
+    },
+    "capability_status": {
+      "authoritative_provenance_resolution_status": "VERIFIED",
+      "binding_status": "NOT_PROVEN",
+      "formalization_status": "VERIFIED",
+      "operational_capability": "NOT_PROVEN",
+      "preoperational_readiness": "NOT_PROVEN",
+      "producer_status": "VERIFIED",
+      "reducer_status": "VERIFIED",
+      "repository_capability": "VERIFIED",
+      "route_support": "NOT_PROVEN"
+    },
+    "ccwim": {
+      "authenticated_repository_continuation": {
+        "detail": "YES__EXACT_HY_CHECKPOINT_AUTHENTICATED",
+        "status": "VERIFIED"
+      },
+      "authority_state_recovery": {
+        "detail": "NOT_PERFORMED__HISTORICAL_OWNER_STATE_READ_ONLY",
+        "status": "NOT_APPLICABLE"
+      },
+      "ccwim_maturity_level": {
+        "detail": "L4_LIKE__NO_L5_ACCEPTANCE_ENVELOPE",
+        "status": "ESTIMATED"
+      },
+      "cross_worker_constitutional_drift": {
+        "detail": "ZERO_DETECTED",
+        "status": "VERIFIED"
+      },
+      "cross_worker_state_recovery_level": {
+        "detail": "REPOSITORY_AUTHENTICATED_CONTINUATION",
+        "status": "VERIFIED"
+      },
+      "handoff_ambiguity_count": {
+        "detail": 0,
+        "status": "VERIFIED"
+      },
+      "handoff_reconstruction_required": {
+        "detail": "YES__PROMPT_VALUES_REAUTHENTICATED",
+        "status": "VERIFIED"
+      },
+      "handoff_reconstruction_success": {
+        "detail": "YES",
+        "status": "VERIFIED"
+      },
+      "handoff_state_completeness": {
+        "detail": "COMPLETE_FOR_BOUNDED_HZ_SCOPE",
+        "status": "VERIFIED"
+      },
+      "handoff_sufficiency_status": {
+        "detail": "SUFFICIENT_AFTER_REPOSITORY_RECONSTRUCTION",
+        "status": "VERIFIED"
+      },
+      "human_handoff_information_required": {
+        "detail": "CHECKPOINT_SCOPE_AND_STOP_POLICY_ONLY",
+        "status": "VERIFIED"
+      },
+      "inter_generation_cross_worker_continuation": {
+        "detail": "HY_TO_HZ_REPOSITORY_HANDOFF",
+        "status": "VERIFIED"
+      },
+      "intra_generation_cross_worker_continuation": {
+        "detail": "NO_WORKER_TRANSITION",
+        "status": "NOT_APPLICABLE"
+      },
+      "previous_worker_conversation_required": {
+        "detail": "NO",
+        "status": "VERIFIED"
+      },
+      "previous_worker_identity_required": {
+        "detail": "NO",
+        "status": "VERIFIED"
+      },
+      "previous_worker_memory_required": {
+        "detail": "NO",
+        "status": "VERIFIED"
+      },
+      "repository_derived_context_ratio": {
+        "detail": "DOMINANT__NO_FORMAL_RATIO_INSTRUMENT",
+        "status": "ESTIMATED"
+      },
+      "unauthenticated_handoff_assumption_count": {
+        "detail": 0,
+        "status": "VERIFIED"
+      },
+      "uncommitted_delta_recovery": {
+        "detail": "NOT_REQUIRED_AT_ENTRY",
+        "status": "NOT_APPLICABLE"
+      }
+    },
+    "denial": {
+      "expected_boundary": "D2_PRECLAIM_AUTHORITY_BINDING_VALIDATION_BEFORE_PRECLAIM_LEDGER_APPEND_CLAIM_ENTRY_INVOCATION_OR_EFFECT",
+      "expected_error_reason": "operational Human act input_record_identity binding is invalid",
+      "expected_error_type": "FailClosedRuntimeError",
+      "reachability_status": "VERIFIED__EARLIER_RECORD_IDENTITY_BINDING_DENIAL__PROVENANCE_SPECIFIC_COMPARISON_NOT_REACHED"
+    },
+    "e05": {
+      "after": "9/18",
+      "before": "9/18",
+      "credit": 0
+    },
+    "entry_authentication": {
+      "branch": "g77-256fl-wrong-attempt-preboot-blocker",
+      "head": "451fafdeafc935c352a27f75fbddb473423ce7b3",
+      "index_state": "EMPTY",
+      "nested_authority_head": "3183bab71f8f30397c0309dd2e6d846d14a11f66",
+      "nested_authority_state": "CLEAN__DETACHED__PINNED",
+      "nested_authority_tree": "7c32ec05efc2be43297849bc38ec8766514a523d",
+      "origin": "git@github.com:Aljosa3/sapianta-ecosystem.git",
+      "remote_head": "451fafdeafc935c352a27f75fbddb473423ce7b3",
+      "subject": "G77-256HY select WRONG_PROVENANCE frontier",
+      "tracked_worktree_state": "CLEAN",
+      "tree": "98a5f94880cae12e91ab3173fad36de8c90d0d23",
+      "worktree": "/home/pisarna/work/sapianta-fl"
+    },
+    "ex": {
+      "reconstructed": 0,
+      "reused": "17/17"
+    },
+    "generation_identity": "G77_256HZ_REPOSITORY_ONLY_WRONG_PROVENANCE_FORMALIZATION_V1",
+    "infrastructure_amortization": {
+      "did_hz_require_new_authority_layer": false,
+      "did_hz_require_new_common_infrastructure": false,
+      "did_hz_require_new_generic_framework": false,
+      "did_hz_require_new_production_route": false,
+      "did_hz_require_new_runtime_owner": false,
+      "did_hz_require_new_vector_specific_infrastructure": true,
+      "did_hz_require_p11_core_change": false,
+      "did_hz_reuse_ex_17_of_17": true,
+      "did_hz_reuse_existing_canonical_json_and_seal_mechanics": true,
+      "did_hz_reuse_existing_identity_model": true,
+      "did_hz_reuse_existing_provenance_owner": true,
+      "did_hz_reuse_gy_wrong_input_pattern": true,
+      "did_hz_reuse_hr_wrong_contract_pattern": true,
+      "did_hz_reuse_hx_reducer_pattern": true,
+      "did_hz_reuse_p11_che_fk": true,
+      "generations_since_e05_9_of_18": {
+        "detail": 2,
+        "status": "VERIFIED"
+      },
+      "new_certified_components_since_e05_9_of_18": {
+        "detail": "HZ_DELTA_UNCOMMITTED_AND_AWAITING_HUMAN_REVIEW",
+        "status": "NOT_PROVEN"
+      },
+      "operational_attempts_since_e05_9_of_18": {
+        "detail": 0,
+        "status": "VERIFIED"
+      },
+      "reused_certified_components_since_e05_9_of_18": {
+        "detail": "EX_17_OF_17_PLUS_EXISTING_P11_CHE_FK_IDENTITY_AND_PRIOR_VECTOR_PATTERNS__NO_GOVERNED_TOTAL_DENOMINATOR",
+        "status": "NOT_MEASURED"
+      }
+    },
+    "mode": "REPOSITORY_ONLY__NO_AUTHORITY__NO_OPERATION",
+    "mutation_semantics": {
+      "dependent_recomputation_count": 1,
+      "dependent_recomputed_coordinate": "record_identity",
+      "independent_mutated_coordinate": "provenance_identity",
+      "independent_mutation_count": 1
+    },
+    "operational_counters": {
+      "authority_consumption": 0,
+      "e05_credit": 0,
+      "fm_operational_launcher_invocation": 0,
+      "human_operational_authority": 0,
+      "operation_attempt": 0,
+      "p11_entry": 0,
+      "pre": 0,
+      "protected_effect": 0,
+      "protected_invocation": 0,
+      "qemu": 0,
+      "repair_retry": 0,
+      "replay": 0,
+      "request": 0,
+      "retry": 0,
+      "vm_boot": 0,
+      "vm_creation": 0
+    },
+    "required_metrics": {
+      "AIGOL_CODEX_WORK_SHARE": {
+        "detail": "NO_FORMAL_ATTRIBUTION_INSTRUMENT",
+        "status": "NOT_MEASURED"
+      },
+      "ARCHITECTURAL_GOVERNANCE_EFFICIENCE": {
+        "detail": "EX_17_OF_17_REUSED__ZERO_COMMON_RECONSTRUCTION__ZERO_ROUTE_DELTA",
+        "status": "ESTIMATED"
+      },
+      "CANDIDATE_CAPABILITY": {
+        "detail": "ONE_BOUNDED_CANONICAL_WRONG_PROVENANCE_FIXTURE",
+        "status": "VERIFIED"
+      },
+      "COGNITION_ASSISTED_HANDOFF": {
+        "detail": "DURABLE_SPEC_PRODUCER_REDUCER_TESTS_TERMINAL_REDUCTION_AND_REPORT",
+        "status": "VERIFIED"
+      },
+      "COGNITION_PROVENANCE": {
+        "detail": "AUTHENTICATED_GIT_HY_HX_P11_CHE_FK_EX_AND_PINNED_NESTED_AUTHORITY__PROMPT_AS_SCOPE_ONLY",
+        "status": "VERIFIED"
+      },
+      "CONSTITUTIONAL_CONTINUATION_PROGRESS": {
+        "detail": "HZ_FORMALIZATION_PHASE_COMPLETE__NO_BINDING_OR_OPERATION",
+        "status": "VERIFIED"
+      },
+      "CONSTITUTIONAL_FRONTIER_DISTANCE": {
+        "detail": "NO_FORMAL_UNIVERSAL_SCALAR",
+        "status": "NOT_MEASURED"
+      },
+      "CONSTITUTIONAL_HEALTH_EVIDENCE": {
+        "detail": "FAIL_CLOSED_LIMITATIONS_VISIBLE__ZERO_OPERATIONAL_DRIFT",
+        "status": "VERIFIED"
+      },
+      "E05_FRONTIER_DISTANCE": {
+        "detail": "NINE_OF_EIGHTEEN_OBLIGATIONS_REMAIN",
+        "status": "VERIFIED"
+      },
+      "E05_GENERATIONS_PER_CREDIT": {
+        "detail": "LATEST_CREDIT_REQUIRED_SEVEN_VECTOR_LIFECYCLE_GENERATIONS_HR_THROUGH_HX__FRONTIER_SELECTION_HQ_EXCLUDED",
+        "status": "VERIFIED"
+      },
+      "EXPECTED_NEXT_CREDIT_GENERATION_COUNT": {
+        "detail": "AT_LEAST_ROUTE_BINDING_READINESS_AND_SEPARATELY_AUTHORIZED_OPERATIONAL_PHASES_REMAIN",
+        "status": "ESTIMATED"
+      },
+      "GOVERNANCE_EFFICIENCE": {
+        "detail": "ONE_SELECTED_VECTOR_FORMALIZED_WITHOUT_COMMON_OR_ROUTE_EXPANSION",
+        "status": "ESTIMATED"
+      },
+      "INFRASTRUCTURE_AMORTIZATION_SIGNAL": {
+        "detail": "STRONG_REUSE_SIGNAL__ONLY_VECTOR_SPECIFIC_FORMALIZATION_ARTIFACTS_ADDED",
+        "status": "ESTIMATED"
+      },
+      "LCRR": {
+        "detail": "NO_FORMAL_COST_BASELINE",
+        "status": "NOT_MEASURED"
+      },
+      "LLM_COST_REDUCTION_RATIO": {
+        "detail": "NO_FORMAL_COST_BASELINE",
+        "status": "NOT_MEASURED"
+      },
+      "MARGINAL_E05_GENERATION_COST": {
+        "detail": "ONE_REPOSITORY_ONLY_GENERATION__ZERO_E05_CREDIT",
+        "status": "VERIFIED"
+      },
+      "MARGINAL_NEW_INFRASTRUCTURE_PER_E05_CREDIT": {
+        "detail": "ONE_VECTOR_SPECIFIC_SPEC_PRODUCER_REDUCER_TEST_AND_EVIDENCE_SET_TOWARD_POTENTIAL_TENTH_CREDIT__NO_NUMERIC_RATIO_WITHOUT_GOVERNED_DENOMINATOR",
+        "status": "ESTIMATED"
+      },
+      "OPERATIONAL_ATTEMPTS_PER_CREDIT": {
+        "detail": "LATEST_HX_CREDIT_USED_ONE_OPERATIONAL_ATTEMPT__HZ_USED_ZERO",
+        "status": "VERIFIED"
+      },
+      "OVERENGINEERING_RISK": {
+        "detail": "LOW__NO_GENERIC_VECTOR_FRAMEWORK_OR_NEW_OWNER",
+        "status": "ESTIMATED"
+      },
+      "PROJECT_PROGRESS_ESTIMATE": {
+        "detail": "WRONG_PROVENANCE_REPOSITORY_FORMALIZATION_COMPLETE__TOTAL_PROJECT_PERCENTAGE_NOT_INFERRED",
+        "status": "ESTIMATED"
+      },
+      "PROMPT_CONTEXT_REUSE_RATIO": {
+        "detail": "NO_FORMAL_TOKEN_ATTRIBUTION_INSTRUMENT",
+        "status": "NOT_MEASURED"
+      },
+      "PROOF_PROCESS_OVERHEAD_RISK": {
+        "detail": "MODERATE__DUAL_OBSERVATION_PROVENANCE_RESOLUTION_AND_INDEPENDENT_REDUCTION_REQUIRED",
+        "status": "ESTIMATED"
+      },
+      "PROOF_REUSE_EFFICIENCY": {
+        "detail": "EX_17_OF_17_REUSED__ZERO_RECONSTRUCTED",
+        "status": "VERIFIED"
+      },
+      "SELECTED_E05_LOCAL_FRONTIER_DISTANCE": {
+        "detail": "FORMALIZATION_COMPLETE__ROUTE_BINDING_READINESS_AUTHORITY_AND_OPERATION_REMAIN",
+        "status": "ESTIMATED"
+      },
+      "SHADOW_AUTOMATION_STATUS": {
+        "detail": "DISABLED__AUTO_CONTINUABLE_FALSE",
+        "status": "VERIFIED"
+      },
+      "SHADOW_DESIGN_TARGET": {
+        "detail": "FORMALIZE_REUSE_VERIFY_STOP",
+        "status": "VERIFIED"
+      },
+      "TOKEN_BENCHMARK": {
+        "detail": "PROVIDER_AND_CONTEXT_TELEMETRY_EXCLUDED",
+        "status": "NOT_MEASURED"
+      },
+      "WRONG_PROVENANCE_BINDING_STATUS": {
+        "detail": "NO_LIVE_CONTEXT_ADAPTER_OR_ROUTE_BINDING",
+        "status": "NOT_PROVEN"
+      },
+      "WRONG_PROVENANCE_CANDIDATE_CAPABILITY": {
+        "detail": "DETERMINISTIC_ISOLATED_INPUT_COORDINATE_FIXTURE",
+        "status": "VERIFIED"
+      },
+      "WRONG_PROVENANCE_OPERATIONAL_CAPABILITY": {
+        "detail": "NO_OPERATION_PERFORMED",
+        "status": "NOT_PROVEN"
+      },
+      "WRONG_PROVENANCE_PREOPERATIONAL_READINESS": {
+        "detail": "ROUTE_BINDING_AND_LIVE_PROJECTION_ABSENT",
+        "status": "NOT_PROVEN"
+      },
+      "WRONG_PROVENANCE_REPOSITORY_CAPABILITY": {
+        "detail": "SPEC_PRODUCER_REDUCER_AND_FAIL_CLOSED_TESTS",
+        "status": "VERIFIED"
+      },
+      "WRONG_PROVENANCE_ROUTE_SUPPORT": {
+        "detail": "CURRENT_FM_CLOSED_SET_EXCLUDES_WRONG_PROVENANCE",
+        "status": "NOT_PROVEN"
+      }
+    },
+    "reuse_impact": {
+      "new_authority_layer_count": 0,
+      "new_capability_set": [
+        "WRONG_PROVENANCE_FORMAL_SPECIFICATION",
+        "WRONG_PROVENANCE_DETERMINISTIC_REPOSITORY_PRODUCER",
+        "WRONG_PROVENANCE_FAIL_CLOSED_REPOSITORY_REDUCER",
+        "AUTHORITATIVE_PROVENANCE_RESOLUTION_PROOF"
+      ],
+      "new_generic_framework_count": 0,
+      "new_production_route_count": 0,
+      "new_runtime_owner_count": 0,
+      "parallel_flow_created": false,
+      "production_route_after": 1,
+      "production_route_before": 1,
+      "production_route_delta": 0,
+      "reused_certified_capability_set": "P11_D2__CHE__FK_VALIDATION_PATTERN__EX_17_OF_17__CANONICAL_JSON_REPLAY_HASH__HX_PROTECTED_OWNER_STATE__GY_HA_HP_HR_HX_PATTERNS__FM_GN_GL_DU_EB_EE_UNCHANGED",
+      "unreachable_preexisting_capability_set": []
+    },
+    "terminal_control": {
+      "auto_continuable": false,
+      "human_authorization_required": false,
+      "human_review_required": true
+    },
+    "terminal_verdict": "VERIFIED__G77_256HZ_WRONG_PROVENANCE_REPOSITORY_ONLY_FORMALIZATION_COMPLETE__AUTHORITATIVE_PROVENANCE_UNIQUELY_RESOLVED_FROM_EXISTING_PROTECTED_CUSTODY_OWNER__ONE_INDEPENDENT_PROVENANCE_IDENTITY_MUTATION_AND_ONE_DEPENDENT_RECORD_IDENTITY_RECOMPUTATION__EXPECTED_EARLIER_RECORD_IDENTITY_DENIAL_FORMALIZED__NO_ROUTE_BINDING_AUTHORITY_OPERATION_OR_E05_CREDIT__E05_REMAINS_9_OF_18__HUMAN_REVIEW_REQUIRED",
+    "validation": {
+      "ex": "PASS__12_OF_12__17_COMPONENTS_REUSED",
+      "focused_hz": "PASS__22_OF_22",
+      "git_diff_check": "PASS",
+      "governance_conformance": "PASS__20_OF_20__CONFORMANT__ZERO_WARNINGS__ZERO_VIOLATIONS",
+      "governance_tests": "PASS__9_OF_9",
+      "layer_0_affected_check": "PASS__NO_LAYER_0_DELTA",
+      "p11_che_fk": "PASS__19_OF_19",
+      "python_ast": "PASS__2_OF_2"
+    }
+  },
+  "reduction_sha256": "02ee3d69d18a696530afcd044431d0aef737d7dad3edd5ce856be1f7ed580ed0",
+  "schema_id": "G77_256HZ_SPCE_TERMINAL_REDUCTION_ENVELOPE_V1"
+}
