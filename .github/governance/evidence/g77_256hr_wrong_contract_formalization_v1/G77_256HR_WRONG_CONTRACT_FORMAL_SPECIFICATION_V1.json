@@ -1,0 +1,131 @@
+{
+  "schema_id": "G77_256HR_WRONG_CONTRACT_FORMAL_SPECIFICATION_ENVELOPE_V1",
+  "specification": {
+    "authoritative_semantics": {
+      "contract_binding_fields": [
+        "contract_identity",
+        "contract_version",
+        "contract_content_sha256"
+      ],
+      "contract_identity_validity": "NONEMPTY_STRING_IN_A_CANONICAL_STRUCTURALLY_VALID_P11_INPUT_RECORD",
+      "dependent_identity_rule": "record_identity is the canonical replay hash of the full input record excluding record_identity",
+      "structural_similarity_is_semantic_equivalence": false,
+      "wrong_contract_definition": "A structurally valid P11 input derived from an otherwise-valid source whose contract_identity alone is replaced by one distinct nonempty identity while contract_version, contract_content_sha256, and every other semantic coordinate remain unchanged; record_identity is recomputed only because it depends on the changed record bytes."
+    },
+    "case_id": "G77_256HR_E05_WRONG_CONTRACT_REPOSITORY_VECTOR_001",
+    "dependent_recomputation": {
+      "dependent_recomputation_is_second_semantic_mutation": false,
+      "fields": [
+        "record_identity"
+      ],
+      "identities_forbidden_from_recomputation": [
+        "authorization_reference",
+        "attempt_identity",
+        "caller_identity_reference",
+        "comparator_outcome_identity",
+        "contract_content_sha256",
+        "input_identity",
+        "p10_inventory_identity",
+        "preflight_binding_identity",
+        "provenance_identity",
+        "replay_context_identity"
+      ]
+    },
+    "expected_denial": {
+      "boundary": "D2_PRECLAIM_AUTHORITY_BINDING_VALIDATION_BEFORE_PRECLAIM_LEDGER_APPEND_CLAIM_ENTRY_INVOCATION_OR_EFFECT",
+      "contract_specific_comparison_reached": false,
+      "error_reason": "operational Human act input_record_identity binding is invalid",
+      "error_type": "FailClosedRuntimeError",
+      "explanation": "The isolated contract_identity change alters record_identity. P11 compares the unchanged act input_record_identity before its contract triple, so denial occurs on that earlier equality. Rebinding the act would be an unauthorized additional mutation.",
+      "owner_state_change": 0,
+      "p11_entry": 0,
+      "protected_effect": 0,
+      "protected_invocation": 0
+    },
+    "formalization_boundary": {
+      "binding_status": "NOT_PROVEN",
+      "e05_after": "8/18",
+      "e05_before": "8/18",
+      "e05_credit": 0,
+      "operational_capability": "NOT_PROVEN",
+      "preoperational_readiness": "NOT_PROVEN",
+      "repository_capability_target": "VERIFIED"
+    },
+    "generation_identity": "G77_256HR_REPOSITORY_ONLY_WRONG_CONTRACT_FORMALIZATION_V1",
+    "malformed_vector_classes": [
+      "SOURCE_INPUT_FAILS_CANONICAL_P11_STRUCTURAL_VALIDATION",
+      "SOURCE_CONTRACT_TRIPLE_DOES_NOT_MATCH_AUTHENTICATED_SOURCE_ACT_PAYLOAD",
+      "CONTRACT_IDENTITY_NOT_CHANGED",
+      "CONTRACT_IDENTITY_IS_NOT_A_NONEMPTY_STRING",
+      "MORE_THAN_ONE_SEMANTIC_COORDINATE_CHANGED",
+      "RECORD_IDENTITY_NOT_RECOMPUTED",
+      "ANY_UNRELATED_IDENTITY_RECOMPUTED",
+      "PROVENANCE_BINDING_NOT_AUTHENTICATED",
+      "DECLARED_VECTOR_OR_MUTATION_CLASS_CHANGED"
+    ],
+    "mutation_rule": {
+      "allowed_differing_record_fields": [
+        "contract_identity",
+        "record_identity"
+      ],
+      "dependent_recomputation": "record_identity",
+      "semantic_mutation_count": 1,
+      "source_object": "canonical P11 bounded-consumer input record authenticated against an otherwise-valid historical source act/input pair",
+      "target_field": "contract_identity",
+      "target_object": "supplied canonical P11 bounded-consumer input record"
+    },
+    "operational_counters": {
+      "authority_consumption": 0,
+      "e05_credit": 0,
+      "fm_operational_launcher_invocation": 0,
+      "human_operational_authority": 0,
+      "operation_attempt": 0,
+      "p11_entry": 0,
+      "pre": 0,
+      "protected_effect": 0,
+      "protected_invocation": 0,
+      "qemu": 0,
+      "request": 0,
+      "vm_boot": 0,
+      "vm_creation": 0
+    },
+    "preserved_non_target_dimensions": [
+      "schema_id",
+      "schema_version",
+      "record_kind",
+      "attempt_identity",
+      "input_identity",
+      "provenance_identity",
+      "contract_version",
+      "contract_content_sha256",
+      "authorization_reference",
+      "caller_identity_reference",
+      "preflight_binding_identity",
+      "preflight_status",
+      "p10_inventory_identity",
+      "comparator_outcome_identity",
+      "comparator_outcome",
+      "replay_context_identity"
+    ],
+    "selected_vector": "P11-E05/NEGATIVE_AUTHORITY/WRONG_CONTRACT",
+    "source_fixture": {
+      "authority_status": "HISTORICAL_EVIDENCE_ONLY__NOT_CURRENT_AUTHORITY",
+      "path": ".github/governance/evidence/g77_256hp_wrong_input_operational_v1/operation_state/runtime_export/G77_256HP_RAW_EXECUTION_EVIDENCE_V1.jsonl",
+      "raw_record_sequence": 16,
+      "raw_record_type": "human_operational_act_created",
+      "sha256": "116f694f80e95d88104df7d8b01ed0458212ae0b5d0222cd86419443c8d0f189"
+    },
+    "terminal_acceptance": {
+      "canonical_candidate_bytes_required": true,
+      "duplicate_json_keys_rejected": true,
+      "exact_differing_fields": [
+        "contract_identity",
+        "record_identity"
+      ],
+      "fresh_valid_act_required_for_later_operation": true,
+      "repository_vector_accepted_is_operationally_proven": false,
+      "source_provenance_reauthenticated": true
+    }
+  },
+  "specification_sha256": "f376752ee8c77879a96a5e05a25e6dee3a064477da051c2fa67d456627396228"
+}

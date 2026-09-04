@@ -1,0 +1,358 @@
+{
+  "reduction": {
+    "capability_status": {
+      "binding_status": "NOT_PROVEN",
+      "formal_spec_status": "VERIFIED",
+      "operational_capability": "NOT_PROVEN",
+      "preoperational_readiness": "NOT_PROVEN",
+      "producer_status": "VERIFIED",
+      "reducer_status": "VERIFIED",
+      "repository_capability": "VERIFIED",
+      "semantic_firewall_status": "VERIFIED"
+    },
+    "ccwim": {
+      "authenticated_repository_continuation": {
+        "result": "YES",
+        "status": "VERIFIED"
+      },
+      "authority_state_recovery": {
+        "result": "NO_LIVE_AUTHORITY_REQUIRED_OR_RECOVERED",
+        "status": "NOT_APPLICABLE"
+      },
+      "ccwim_maturity_level": {
+        "result": "L4_LIKE_REPOSITORY_AUTHENTICATED_CONTINUATION__L5_NOT_CLAIMED",
+        "status": "ESTIMATED"
+      },
+      "cognition_assisted_handoff": {
+        "result": "DURABLE_SPEC_PRODUCER_REDUCER_TESTS_AND_TERMINAL_EVIDENCE",
+        "status": "VERIFIED"
+      },
+      "cross_worker_constitutional_drift": {
+        "result": "ZERO_OBSERVED",
+        "status": "VERIFIED"
+      },
+      "cross_worker_state_recovery_level": {
+        "result": "COMMITTED_HQ_PLUS_AUTHENTICATED_ANCESTRY_AND_NESTED_AUTHORITY",
+        "status": "VERIFIED"
+      },
+      "handoff_ambiguity_count": {
+        "result": 0,
+        "status": "VERIFIED"
+      },
+      "handoff_reconstruction_required": {
+        "result": "YES",
+        "status": "VERIFIED"
+      },
+      "handoff_reconstruction_success": {
+        "result": "YES",
+        "status": "VERIFIED"
+      },
+      "handoff_state_completeness": {
+        "result": "COMPLETE_FOR_REPOSITORY_ONLY_HR_SCOPE",
+        "status": "VERIFIED"
+      },
+      "handoff_sufficiency_status": {
+        "result": "SUFFICIENT_AFTER_INDEPENDENT_REPOSITORY_AUTHENTICATION",
+        "status": "VERIFIED"
+      },
+      "human_handoff_information_required": {
+        "result": "SCOPE_CHECKPOINT_PROHIBITIONS_AND_EXPECTED_LOCATORS_ONLY",
+        "status": "VERIFIED"
+      },
+      "inter_generation_cross_worker_continuation": {
+        "result": "YES",
+        "status": "VERIFIED"
+      },
+      "intra_generation_cross_worker_continuation": {
+        "result": "NO_WORKER_TRANSITION",
+        "status": "NOT_APPLICABLE"
+      },
+      "previous_worker_conversation_required": {
+        "result": "NO",
+        "status": "VERIFIED"
+      },
+      "previous_worker_identity_required": {
+        "result": "NO",
+        "status": "VERIFIED"
+      },
+      "previous_worker_memory_required": {
+        "result": "NO",
+        "status": "VERIFIED"
+      },
+      "repository_derived_context_ratio": {
+        "result": "DOMINANT__NO_GOVERNED_NUMERIC_INSTRUMENT",
+        "status": "ESTIMATED"
+      },
+      "unauthenticated_handoff_assumption_count": {
+        "result": 0,
+        "status": "VERIFIED"
+      },
+      "uncommitted_delta_recovery": {
+        "result": "NO_PREEXISTING_DELTA",
+        "status": "NOT_APPLICABLE"
+      }
+    },
+    "cognition_provenance": {
+      "primary_sources": [
+        "GIT_OBJECTS",
+        "HQ",
+        "HP",
+        "CD",
+        "DX",
+        "EM",
+        "GX",
+        "P11",
+        "EX",
+        "GY",
+        "HA",
+        "CHE",
+        "FK",
+        "DU",
+        "EB",
+        "EE",
+        "FM",
+        "GN",
+        "GL",
+        "GOVERNANCE",
+        "LAYER_0",
+        "NESTED_AUTHORITY",
+        "HR_ARTIFACTS_AND_TESTS"
+      ],
+      "prompt_role": "SCOPE_AND_EXPECTED_LOCATORS_ONLY",
+      "status": "VERIFIED",
+      "worker_memory_is_source_of_truth": false
+    },
+    "e05": {
+      "after": "8/18",
+      "before": "8/18",
+      "credit": 0
+    },
+    "entry": {
+      "branch": "g77-256fl-wrong-attempt-preboot-blocker",
+      "head": "fb5c7c5e32e41e19abae4fe1290951ee37ca0648",
+      "remote_equal": true,
+      "subject": "G77-256HQ select WRONG_CONTRACT E05 frontier",
+      "tree": "16e740679ded2a34919f9e1257d33374856852e6"
+    },
+    "ex": {
+      "reconstructed": 0,
+      "reused": "17/17",
+      "status": "VERIFIED"
+    },
+    "generation_identity": "G77_256HR_REPOSITORY_ONLY_WRONG_CONTRACT_FORMALIZATION_V1",
+    "minimum_legal_next_delta": "AFTER_HUMAN_REVIEW_AND_OPTIONAL_COMMIT__ONE_SEPARATELY_COMMISSIONED_REPOSITORY_ONLY_BINDING_AND_READINESS_GENERATION__NO_OPERATION_WITHOUT_LATER_SEPARATE_HUMAN_AUTHORIZATION",
+    "minimum_missing_binding_capability": "CURRENT_COMMITTED_HR_IDENTITY_BOUND_CANDIDATE_PLUS_WRONG_CONTRACT_CONTEXT_ADAPTER_PROJECTION_BOOTSTRAP_DU_EB_EE_AND_PREAUTHORIZATION_READINESS_CHAIN",
+    "operational_counters": {
+      "authority_consumption": 0,
+      "e05_credit": 0,
+      "fm_operational_launcher_invocation": 0,
+      "human_operational_authority": 0,
+      "operation_attempt": 0,
+      "p11_entry": 0,
+      "pre": 0,
+      "protected_effect": 0,
+      "protected_invocation": 0,
+      "qemu": 0,
+      "request": 0,
+      "vm_boot": 0,
+      "vm_creation": 0
+    },
+    "overengineering_and_amortization": {
+      "did_hr_require_new_authority_layer": false,
+      "did_hr_require_new_common_infrastructure": false,
+      "did_hr_require_new_generic_framework": false,
+      "did_hr_require_new_production_route": false,
+      "did_hr_require_new_runtime_owner": false,
+      "is_8_to_9_infrastructure_amortization_signal_still_positive": {
+        "result": "YES__SUPPORTED_BY_ZERO_COMMON_INFRASTRUCTURE_AND_SUBSTANTIAL_REUSE__OPERATIONAL_CREDIT_REMAINS_UNPROVEN",
+        "status": "ESTIMATED"
+      },
+      "is_wrong_contract_formalization_primarily_vector_specific": {
+        "result": "YES",
+        "status": "VERIFIED"
+      },
+      "was_ex_reused_17_of_17": {
+        "result": "YES",
+        "status": "VERIFIED"
+      },
+      "was_gy_ha_hp_semantic_architecture_reusable": {
+        "result": "YES__ISOLATED_COORDINATE_DEPENDENT_RECORD_IDENTITY_FIREWALL_AND_INDEPENDENT_REDUCTION",
+        "status": "VERIFIED"
+      }
+    },
+    "required_metrics": {
+      "AIGOL_CODEX_WORK_SHARE": {
+        "result": "NO_GOVERNED_ATTRIBUTION_INSTRUMENT",
+        "status": "NOT_MEASURED"
+      },
+      "ARCHITECTURAL_GOVERNANCE_EFFICIENCE": {
+        "result": "SOLE_ROUTE_PRESERVED_WITH_ZERO_NEW_OWNER_OR_AUTHORITY_LAYER",
+        "status": "VERIFIED"
+      },
+      "CANDIDATE_CAPABILITY": {
+        "result": "DETERMINISTIC_REPOSITORY_VECTOR",
+        "status": "VERIFIED"
+      },
+      "COGNITION_ASSISTED_HANDOFF": {
+        "result": "DURABLE_REPLAY_SAFE_HR_ARTIFACT_SET",
+        "status": "VERIFIED"
+      },
+      "COGNITION_PROVENANCE": {
+        "result": "AUTHENTICATED_REPOSITORY_PRIMARY",
+        "status": "VERIFIED"
+      },
+      "CONSTITUTIONAL_CONTINUATION_PROGRESS": {
+        "result": "FORMALIZE_COMPLETE__BIND_AND_VERIFY_REMAIN",
+        "status": "VERIFIED"
+      },
+      "CONSTITUTIONAL_FRONTIER_DISTANCE": {
+        "result": "NO_GOVERNED_UNIVERSAL_SCALAR",
+        "status": "NOT_MEASURED"
+      },
+      "CONSTITUTIONAL_HEALTH_EVIDENCE": {
+        "result": "FAIL_CLOSED_LIMITATIONS_VISIBLE__ZERO_OPERATIONAL_DRIFT",
+        "status": "VERIFIED"
+      },
+      "E05_FRONTIER_DISTANCE": {
+        "result": "10_REMAINING",
+        "status": "VERIFIED"
+      },
+      "E05_GENERATIONS_PER_CREDIT": {
+        "result": "HR_AWARDS_NO_CREDIT_AND_NO_GOVERNED_MARGINAL_DENOMINATOR",
+        "status": "NOT_MEASURED"
+      },
+      "GOVERNANCE_EFFICIENCE": {
+        "result": "SMALL_VECTOR_SPECIFIC_DELTA__ZERO_COMMON_RECONSTRUCTION",
+        "status": "ESTIMATED"
+      },
+      "INFRASTRUCTURE_AMORTIZATION_SIGNAL": {
+        "result": "POSITIVE__ZERO_NEW_COMMON_INFRASTRUCTURE_WITH_GY_HA_HP_EX_REUSE",
+        "status": "ESTIMATED"
+      },
+      "LCRR": {
+        "result": "NO_GOVERNED_COST_BASELINE",
+        "status": "NOT_MEASURED"
+      },
+      "LLM_COST_REDUCTION_RATIO": {
+        "result": "NO_GOVERNED_COST_BASELINE",
+        "status": "NOT_MEASURED"
+      },
+      "MARGINAL_E05_GENERATION_COST": {
+        "result": "NO_GOVERNED_COST_INSTRUMENT",
+        "status": "NOT_MEASURED"
+      },
+      "OPERATIONAL_ATTEMPTS_PER_CREDIT": {
+        "result": "ZERO_ATTEMPTS_ZERO_CREDIT__RATIO_UNDEFINED",
+        "status": "NOT_MEASURED"
+      },
+      "OVERENGINEERING_RISK": {
+        "result": "LOW_BUT_NONZERO__NO_GENERIC_FRAMEWORK_CREATED",
+        "status": "ESTIMATED"
+      },
+      "PROJECT_PROGRESS_ESTIMATE": {
+        "result": "NO_GOVERNED_TOTAL_PROJECT_DENOMINATOR",
+        "status": "NOT_MEASURED"
+      },
+      "PROMPT_CONTEXT_REUSE_RATIO": {
+        "result": "NO_GOVERNED_TOKEN_ATTRIBUTION_INSTRUMENT",
+        "status": "NOT_MEASURED"
+      },
+      "PROOF_PROCESS_OVERHEAD_RISK": {
+        "result": "BOUNDED_BY_ONE_SPEC_ONE_PRODUCER_ONE_REDUCER_ONE_SUITE_ONE_TERMINAL_ARTIFACT",
+        "status": "ESTIMATED"
+      },
+      "PROOF_REUSE_EFFICIENCY": {
+        "result": "EX_17_OF_17_REUSED__ZERO_RECONSTRUCTED",
+        "status": "VERIFIED"
+      },
+      "SELECTED_E05_LOCAL_FRONTIER_DISTANCE": {
+        "result": "POST_COMMIT_BINDING_PREOPERATIONAL_READINESS_AND_SEPARATE_OPERATIONAL_PROOF_REMAIN",
+        "status": "ESTIMATED"
+      },
+      "SHADOW_AUTOMATION_STATUS": {
+        "result": "DISABLED__AUTO_CONTINUABLE_NO",
+        "status": "VERIFIED"
+      },
+      "SHADOW_DESIGN_TARGET": {
+        "result": "FORMALIZE_REUSE_BIND_VERIFY",
+        "status": "VERIFIED"
+      },
+      "TOKEN_BENCHMARK": {
+        "result": "PROVIDER_CONTEXT_TELEMETRY_EXCLUDED",
+        "status": "NOT_MEASURED"
+      },
+      "WRONG_CONTRACT_CANDIDATE_CAPABILITY": {
+        "result": "EXACT_CONTRACT_IDENTITY_VECTOR_ACCEPTED_BY_REPOSITORY_REDUCER",
+        "status": "VERIFIED"
+      },
+      "WRONG_CONTRACT_OPERATIONAL_CAPABILITY": {
+        "result": "NO_OPERATIONAL_EVIDENCE",
+        "status": "NOT_PROVEN"
+      },
+      "WRONG_CONTRACT_REPOSITORY_CAPABILITY": {
+        "result": "FORMAL_SPEC_PRODUCER_REDUCER_AND_FIREWALL",
+        "status": "VERIFIED"
+      }
+    },
+    "reuse_classification": {
+      "adapter_architecture": "NOT_PROVEN",
+      "candidate_representation": "VERIFIED",
+      "context_binding_architecture": "NOT_PROVEN",
+      "dependent_record_identity_recomputation": "VERIFIED",
+      "deterministic_producer_architecture": "VERIFIED",
+      "deterministic_reducer_architecture": "VERIFIED",
+      "evidence_vocabulary": "VERIFIED",
+      "fm_route": "VERIFIED",
+      "gl_admission": "VERIFIED",
+      "gn_presentation": "VERIFIED",
+      "independent_reduction_pattern": "VERIFIED",
+      "isolated_single_coordinate_mutation": "VERIFIED",
+      "normalization_pattern": "NOT_APPLICABLE",
+      "post_commit_binding_architecture": "NOT_PROVEN",
+      "qemu_no_network_route": "VERIFIED",
+      "semantic_firewall": "VERIFIED"
+    },
+    "reuse_impact": {
+      "ex_reconstructed": 0,
+      "ex_reused": "17/17",
+      "new_authority_layer_count": 0,
+      "new_capability_set": [
+        "WRONG_CONTRACT_FORMAL_SPECIFICATION",
+        "WRONG_CONTRACT_DETERMINISTIC_REPOSITORY_PRODUCER",
+        "WRONG_CONTRACT_INDEPENDENT_REDUCER",
+        "WRONG_CONTRACT_SEMANTIC_FIREWALL"
+      ],
+      "new_generic_framework_count": 0,
+      "new_production_route_count": 0,
+      "new_runtime_owner_count": 0,
+      "production_route_after": 1,
+      "production_route_before": 1,
+      "production_route_delta": 0,
+      "reused_certified_capability_set": [
+        "EX_17_OF_17",
+        "P11_D2_AND_CANONICAL_INPUT_BINDING",
+        "CHE",
+        "FK",
+        "DU",
+        "EB",
+        "EE",
+        "GY_ISOLATED_MUTATION",
+        "HA_SEMANTIC_FIREWALL",
+        "HP_NORMALIZATION_AND_DUAL_REDUCTION",
+        "FM_SOLE_ROUTE",
+        "GN",
+        "GL",
+        "G48"
+      ],
+      "unreachable_preexisting_capability_set": []
+    },
+    "schema_id": "G77_256HR_SPCE_TERMINAL_REDUCTION_V1",
+    "terminal_control": {
+      "auto_continuable": false,
+      "human_review_required": true
+    },
+    "terminal_verdict": "VERIFIED__G77_256HR_WRONG_CONTRACT_REPOSITORY_FORMALIZATION__ONE_ISOLATED_CONTRACT_MUTATION__DEPENDENT_RECORD_IDENTITY_RECOMPUTATION__EX_REUSED__GY_HA_HP_PATTERN_REUSED__ONE_PRODUCTION_ROUTE_PRESERVED__ZERO_OPERATION__E05_REMAINS_8_OF_18__HUMAN_REVIEW_REQUIRED"
+  },
+  "reduction_sha256": "cbb6d7620c59e527aa5fcae420cb579a5e2a4b7b01ff15e659f94c760af43cba",
+  "schema_id": "G77_256HR_SPCE_TERMINAL_REDUCTION_ENVELOPE_V1"
+}
