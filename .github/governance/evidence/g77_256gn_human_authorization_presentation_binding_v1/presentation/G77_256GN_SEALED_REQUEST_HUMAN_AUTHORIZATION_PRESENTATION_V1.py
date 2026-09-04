@@ -29,7 +29,12 @@ REQUEST_SCHEMA_RE = re.compile(
 )
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 GIT_ID_RE = re.compile(r"^[0-9a-f]{40}$")
-SUPPORTED_VECTORS = frozenset({"WRONG_ATTEMPT", "WRONG_INPUT", "WRONG_CONTRACT"})
+SUPPORTED_VECTORS = frozenset({
+    "WRONG_ATTEMPT",
+    "WRONG_INPUT",
+    "WRONG_CONTRACT",
+    "WRONG_PROVENANCE",
+})
 
 PRESENTATION_HEADER = "SAPIANTA SEALED AUTHORIZATION REQUEST HUMAN PRESENTATION V1"
 PRESENTATION_NOTICE = (
@@ -320,6 +325,11 @@ def _validate_request_semantics(envelope: dict[str, Any]) -> None:
     if (
         request["authorized_vector_requested"] == "WRONG_CONTRACT"
         and "WRONG_CONTRACT" not in request["generation_identity"]
+    ):
+        _fail("SEALED_REQUEST_VECTOR_GENERATION_BINDING_INVALID")
+    if (
+        request["authorized_vector_requested"] == "WRONG_PROVENANCE"
+        and "WRONG_PROVENANCE" not in request["generation_identity"]
     ):
         _fail("SEALED_REQUEST_VECTOR_GENERATION_BINDING_INVALID")
     if preauthorization["complete_deterministic_readiness"] != "PASS":

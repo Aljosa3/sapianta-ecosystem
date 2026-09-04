@@ -82,6 +82,13 @@ WRONG_CONTRACT_CLOUD_INIT = (
 WRONG_CONTRACT_CLOUD_INIT_SHA256 = (
     "c3f7f93a55f2c3a76fe73bccb9aa0b54fed2f5011c326c0f8774a8ca72c7442f"
 )
+WRONG_PROVENANCE_CLOUD_INIT = (
+    ".github/governance/evidence/g77_256ia_wrong_provenance_route_extension_v1/"
+    "static/G77_256IA_CLOUD_INIT_USER_DATA_TEMPLATE_V1.yaml"
+)
+WRONG_PROVENANCE_CLOUD_INIT_SHA256 = (
+    "f8ef81f6390fad84f59aa54532a982b21a2804f25866a6d89196a979716e8983"
+)
 FK_ADAPTER = ".github/governance/evidence/g77_256fc_wrong_attempt_operational_v1/harness/G77_256FC_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py"
 CANONICAL_CHE = "aigol/runtime/canonical_che_evidence_correlation_contract_v1.py"
 ER_HARNESS_RELATIVE = (
@@ -118,6 +125,11 @@ WRONG_CONTRACT_SEED = (
     "g77_256ht_wrong_contract_route_extension_v1/static/"
     "SAPIANTA_WRONG_CONTRACT_NOCLOUD_SEED_TEMPLATE_V1.img"
 )
+WRONG_PROVENANCE_SEED = (
+    "/home/pisarna/work/sapianta-fl/.github/governance/evidence/"
+    "g77_256ia_wrong_provenance_route_extension_v1/static/"
+    "SAPIANTA_WRONG_PROVENANCE_NOCLOUD_SEED_TEMPLATE_V1.img"
+)
 CHECKOUT = "/tmp/g77_256fm/checkout"
 LEGACY_CHECKOUT_HEAD = "7dce67ec18696ba0bad73130f3f7a84168f25277"
 LEGACY_CHECKOUT_TREE = "3cb61ec34e9593efb711dce61014dc8fdf0f6dd9"
@@ -131,7 +143,7 @@ FRESH_OPERATION_CONTEXT_OWNER = (
 )
 FRESH_OPERATION_CONTEXT_OWNER_HASH_KEY = "fresh_operation_context_owner"
 FRESH_OPERATION_CONTEXT_OWNER_SHA256 = (
-    "3c24621ec9f0bd67e5e3468d728446069f54628f4150ee02b677a973f24972e4"
+    "ff3f7b01090743b3deb10dc44147eb5820f13b4e443158758b64b69ea2bb489c"
 )
 ER_HARNESS_SHA256 = "4a2a84ff83c61bfec013b4bcd20eb16905eeb240869182edd6c0d948444bae89"
 QEMU_EXECUTABLE_SHA256 = "8a35ccba41582fc6c38b9df85fc9e35fa1d42f414d2d7d8090ee9b2f5e7c0854"
@@ -158,6 +170,7 @@ EXPECTED_ASSET_SHA256 = {
     CLOUD_INIT: CLOUD_INIT_SHA256,
     WRONG_ATTEMPT_CLOUD_INIT: WRONG_ATTEMPT_CLOUD_INIT_SHA256,
     WRONG_CONTRACT_CLOUD_INIT: WRONG_CONTRACT_CLOUD_INIT_SHA256,
+    WRONG_PROVENANCE_CLOUD_INIT: WRONG_PROVENANCE_CLOUD_INIT_SHA256,
     FK_ADAPTER: FK_ADAPTER_SHA256,
     CANONICAL_CHE: "75801995214e81419aab9a02326499c771ec0039658fb49598aa54bd033e13c5",
     CANONICALIZER: CANONICALIZER_SHA256,
@@ -166,6 +179,7 @@ EXPECTED_ASSET_SHA256 = {
     SEED: "e9aeac9135ecbf92bffbb8798a90bd61e39e49e15fa5dff0a4c0e6974e6bf731",
     WRONG_ATTEMPT_SEED: "6346b9f02b236d71f2698b01a0d607549ad4d9d779a72b5168658994c519913d",
     WRONG_CONTRACT_SEED: "fc98a62a1b3bd813b7f570438fc48151c378aeba4389de13d4e532d3f7979b21",
+    WRONG_PROVENANCE_SEED: "090e2a7ef210104a03aad21656348cdd8739f71214f1fe8d7b0097eda5e54fbc",
     LEGACY_CLOUD_INIT: LEGACY_CLOUD_INIT_SHA256,
     LEGACY_SEED: "966f1910bbffe20fa18c4cee56ff61dcbb069348e2929bfda74e029a9dc0ec58",
 }
@@ -225,6 +239,13 @@ def current_bootstrap_asset_bindings(vector: str) -> dict[str, str]:
             "seed_path": WRONG_CONTRACT_SEED,
             "seed_sha256": EXPECTED_ASSET_SHA256[WRONG_CONTRACT_SEED],
         }
+    if vector == fresh_context.WRONG_PROVENANCE:
+        return {
+            "cloud_init_path": WRONG_PROVENANCE_CLOUD_INIT,
+            "cloud_init_sha256": WRONG_PROVENANCE_CLOUD_INIT_SHA256,
+            "seed_path": WRONG_PROVENANCE_SEED,
+            "seed_sha256": EXPECTED_ASSET_SHA256[WRONG_PROVENANCE_SEED],
+        }
     raise RuntimeError("bootstrap operation vector unsupported")
 
 
@@ -248,6 +269,9 @@ WRONG_INPUT_AUTHORIZATION_FIELDS = (
 WRONG_CONTRACT_AUTHORIZATION_FIELDS = (
     AUTHORIZATION_FIELDS - {"wrong_attempt_operational_attempt_limit"}
 ) | {"wrong_contract_operational_attempt_limit"}
+WRONG_PROVENANCE_AUTHORIZATION_FIELDS = (
+    AUTHORIZATION_FIELDS - {"wrong_attempt_operational_attempt_limit"}
+) | {"wrong_provenance_operational_attempt_limit"}
 
 
 def context_vector(context: dict[str, Any]) -> str:
@@ -268,6 +292,8 @@ def authorization_fields(value: dict[str, Any]) -> set[str]:
         return WRONG_INPUT_AUTHORIZATION_FIELDS
     if vector == fresh_context.WRONG_CONTRACT:
         return WRONG_CONTRACT_AUTHORIZATION_FIELDS
+    if vector == fresh_context.WRONG_PROVENANCE:
+        return WRONG_PROVENANCE_AUTHORIZATION_FIELDS
     raise RuntimeError("execution authority vector unsupported")
 
 
@@ -278,6 +304,7 @@ def operation_attempt_limit_field(vector: str) -> str:
         fresh_context.WRONG_ATTEMPT: "wrong_attempt_operational_attempt_limit",
         fresh_context.WRONG_INPUT: "wrong_input_operational_attempt_limit",
         fresh_context.WRONG_CONTRACT: "wrong_contract_operational_attempt_limit",
+        fresh_context.WRONG_PROVENANCE: "wrong_provenance_operational_attempt_limit",
     }
     try:
         return fields[vector]
@@ -616,7 +643,11 @@ def fc_guest_consumer_path(
     ]:
         raise RuntimeError("FC guest adapter consumer path missing or ambiguous")
     fresh_context._validate_prefix(prefix)
-    if vector in {fresh_context.WRONG_INPUT, fresh_context.WRONG_CONTRACT}:
+    if vector in {
+        fresh_context.WRONG_INPUT,
+        fresh_context.WRONG_CONTRACT,
+        fresh_context.WRONG_PROVENANCE,
+    }:
         return f"{fresh_context.GUEST_HARNESS_ROOT}/{fresh_context.ADAPTER_BOOTSTRAP_FILENAME}"
     if vector != fresh_context.WRONG_ATTEMPT:
         raise RuntimeError("guest adapter vector unsupported")
