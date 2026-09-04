@@ -16,7 +16,7 @@ runcmd:
     mount -t 9p -o trans=virtio,version=9p2000.L g77_evidence /mnt/g77-evidence
     echo G77_256FM_BOOT_MARKER=PASS
     set +e
-    /usr/bin/python3 /mnt/dp-harness/G77_256FM_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py bb9c917947d317319c9502e44c2d5dca6d423380e67f71a14db1b63eb11acc34 95ca9b753b2e4256b6530652d5a6e2a8220fed68c52f774928e1e39721f4ca67 842a0f2cccd53222d11daa698bdeab17f0aac043 414a5f940e3b5027b6dd86c38d7a134f5c8ab0c4 4e5d01699796d4bb451818408f7cd6a080b6d55fde518df8a9dd2acd3f1a73bb
+    /usr/bin/python3 /mnt/dp-harness/G77_256FM_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py bb9c917947d317319c9502e44c2d5dca6d423380e67f71a14db1b63eb11acc34 95ca9b753b2e4256b6530652d5a6e2a8220fed68c52f774928e1e39721f4ca67 af44f0afd02be7e21a24e962309e28f6edd17ae0 fc949a2bbaa0a507edbc25811563dc5e13d18315 4e5d01699796d4bb451818408f7cd6a080b6d55fde518df8a9dd2acd3f1a73bb
     fm_status=$?
     set -e
     echo G77_256FM_HARNESS_EXIT_STATUS=$fm_status
