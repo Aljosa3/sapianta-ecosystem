@@ -1,0 +1,177 @@
+{
+  "schema_id": "G77_256IE_FUTURE_FORMAL_SPECIFICATION_ENVELOPE_V1",
+  "specification": {
+    "authoritative_semantics": {
+      "current_time_injection_status": "VERIFIED__EXPLICIT_OPTIONAL_INTEGER_INPUT_WITH_NO_WALL_CLOCK_USE_WHEN_SUPPLIED",
+      "current_time_input_owner": "tests/p11_da_operational_consumer_v1.py::P11BoundedConsumerV1.submit_human_act(now_unix_ns)",
+      "currentness_validation_owner": "tests/p11_da_operational_consumer_v1.py::validate_operational_act_payload",
+      "future_definition": "AN_OTHERWISE_COHERENT_OPERATIONAL_HUMAN_ACT_PAYLOAD_WHOSE_VALID_FROM_UNIX_NS_IS_STRICTLY_AFTER_THE_AUTHENTICATED_EVALUATION_TIME_WHILE_VALID_FROM_UNIX_NS_REMAINS_STRICTLY_BEFORE_VALID_UNTIL_UNIX_NS",
+      "temporal_validity_owner": "tests/p11_da_operational_consumer_v1.py::OPERATIONAL_ACT_PAYLOAD_FIELDS_AND_validate_operational_act_payload",
+      "validity_relation": "valid_from_unix_ns <= now_unix_ns < valid_until_unix_ns"
+    },
+    "case_id": "G77_256IE_E05_FUTURE_REPOSITORY_VECTOR_001",
+    "dependent_recomputation": {
+      "dependent_recomputation_count": 1,
+      "dependent_recomputation_is_second_independent_mutation": false,
+      "fields": [
+        "human_authority_act.payload_digest"
+      ],
+      "later_live_binding_dependencies_not_created_by_ie": [
+        "che_correlation.authority_payload_digest",
+        "che_correlation.source_act_digest",
+        "che_correlation.correlation_identity"
+      ]
+    },
+    "distinctions": {
+      "expired": {
+        "definition": "AN_ACT_THAT_WAS_SUBMITTED_AS_CURRENT_BUT REACHES PRECLAIM_AT_OR_AFTER_VALID_UNTIL_UNIX_NS_AND TRANSITIONS FROM AVAILABLE TO EXPIRED",
+        "owner": "tests/p11_da_operational_consumer_v1.py::P11BoundedConsumerV1.claim_and_invoke_once",
+        "owner_state_transition_required": true
+      },
+      "future": {
+        "definition": "AT_SUBMISSION_EVALUATION_TIME_NOW_UNIX_NS_IS_STRICTLY_BEFORE_VALID_FROM_UNIX_NS",
+        "owner_state_transition_required": false,
+        "protected_owner_state_initialized": false
+      },
+      "stale": {
+        "definition": "TARGET_REVISION_OR_COMMISSIONING_BINDING_DOES_NOT_EQUAL_THE_CURRENT_AUTHORITATIVE_OWNER_REVISION",
+        "owner": "tests/p11_da_operational_consumer_v1.py::_validate_authority_sources_AND_P11BoundedConsumerV1.__init__",
+        "revision_or_history_dependency": true
+      }
+    },
+    "expected_denial": {
+      "claim_ledger_append_count": 0,
+      "error_reason": "operational Human act is not current",
+      "error_type": "FailClosedRuntimeError",
+      "expected_denial_stage": "D2_SUBMISSION_AUTHORITY_CURRENTNESS_VALIDATION_BEFORE_PROTECTED_OWNER_STATE_INITIALIZATION_PRECLAIM_CLAIM_ENTRY_INVOCATION_OR_EFFECT",
+      "owner_state_initialization_count": 0,
+      "p11_entry_count": 0,
+      "protected_effect_count": 0,
+      "protected_invocation_count": 0,
+      "replay_count": 0,
+      "retry_count": 0
+    },
+    "formalization_boundary": {
+      "e05_after": "10/18",
+      "e05_before": "10/18",
+      "e05_credit": 0,
+      "future_operational_capability": "NOT_PROVEN",
+      "future_preoperational_readiness": "NOT_PROVEN",
+      "future_repository_formalization": "VERIFIED",
+      "future_route_binding": "NOT_PROVEN"
+    },
+    "generation_identity": "G77_256IE_REPOSITORY_ONLY_FUTURE_FORMALIZATION_V1",
+    "later_contract_design": {
+      "expected_denial_cardinality": 1,
+      "expected_independent_reducer_contract": "INDEPENDENTLY_RECONSTRUCT_EXACT_TIME_RELATION_MUTATION_PRESERVATION_DENIAL_COUNTERS_AND_ZERO_CREDIT_FROM_RAW_EVIDENCE_WITHOUT_AUTHORITATIVE_REDUCER_OUTPUT",
+      "expected_operation_cardinality": 1,
+      "expected_protected_effect_cardinality": 0,
+      "expected_reducer_acceptance_contract": "ACCEPT_ONLY_ONE_COMPLETE_D2_FUTURE_CURRENTNESS_DENIAL_WITH_EXACT_RAW_COUNTERS_AND_ZERO_PROTECTED_STATE_OR_EFFECT",
+      "expected_reducer_agreement_contract": "AUTHORITATIVE_ACCEPT_AND_INDEPENDENT_ACCEPT_WITH_IDENTICAL_CASE_TIME_RELATION_DENIAL_AND_COUNTERS",
+      "expected_request_cardinality": 1,
+      "future_vector_producer": "REUSE_ONE_NEGATIVE_VECTOR_PRODUCER_PATTERN_TO_BIND_ONE_FRESH_ACT_AND_CHE_TO_THE_IE_TIME_FIXTURE_WITH_VALID_FROM_AS_THE_ONLY_INDEPENDENT_MUTATION",
+      "future_vector_reducer": "REUSE_DUAL_FAIL_CLOSED_NEGATIVE_VECTOR_REDUCTION_PATTERN_WITH_FUTURE_SPECIFIC_TIME_RELATION_AND_DENIAL_ASSERTIONS"
+    },
+    "mutation_rule": {
+      "allowed_differing_payload_fields": [
+        "valid_from_unix_ns"
+      ],
+      "baseline_valid_from_unix_ns": 100,
+      "dependent_recomputation_count": 1,
+      "dependent_recomputed_coordinates": [
+        "human_authority_act.payload_digest"
+      ],
+      "future_valid_from_unix_ns": 600,
+      "independent_mutated_coordinate": "valid_from_unix_ns",
+      "independent_mutation_count": 1,
+      "preserve_valid_until_unix_ns": 1000,
+      "source_object": "CANONICAL_NONAUTHORITY_P11_OPERATIONAL_ACT_PAYLOAD_FIXTURE",
+      "target_object": "CANONICAL_NONAUTHORITY_P11_E05_FUTURE_PAYLOAD_FIXTURE"
+    },
+    "operational_counters": {
+      "authority_consumption": 0,
+      "e05_credit": 0,
+      "fm_operational_launcher_invocation": 0,
+      "human_operational_authority": 0,
+      "operation_attempt": 0,
+      "p11_entry": 0,
+      "pre": 0,
+      "protected_effect": 0,
+      "protected_invocation": 0,
+      "qemu": 0,
+      "repair_retry": 0,
+      "replay": 0,
+      "request": 0,
+      "retry": 0,
+      "vm_boot": 0,
+      "vm_creation": 0
+    },
+    "preserved_coordinate_set": [
+      "allowed_operation",
+      "attempt_identity",
+      "authority_effect_outside_bound_attempt",
+      "automatic_retries",
+      "caller_role",
+      "caller_uid",
+      "case_id",
+      "cd_plan_identity",
+      "cd_plan_sha256",
+      "cf_source_tree_identity",
+      "cg_checkpoint",
+      "cg_report_identity",
+      "contract_content_sha256",
+      "contract_identity",
+      "contract_version",
+      "custody_role",
+      "custody_uid",
+      "decision_package_identity",
+      "decision_package_sha256",
+      "evidence_obligation_id",
+      "evidence_run_identity",
+      "fixed_endpoint_identity",
+      "input_payload_identity",
+      "input_record_identity",
+      "materialization_identity",
+      "maximum_attempts",
+      "maximum_duration_ns",
+      "minimum_retention",
+      "production_routing_effect",
+      "protected_owner_state_revision",
+      "protected_owner_state_root_identity",
+      "required_disposal",
+      "terminal_consumption_and_non_reuse",
+      "valid_until_unix_ns"
+    ],
+    "repository_owners": [
+      {
+        "path": "tests/p11_da_operational_consumer_v1.py",
+        "sha256": "220e41ee3ea8fa6b21ecebe62aa4436b816d9b7678d251e18979fa87b160fc4e"
+      },
+      {
+        "path": "tests/p11_da_disposable_substrate_v1.py",
+        "sha256": "a1b58fa8ddedb5058393aa23d815262c92c8b185c0b193764f77420313af0bab"
+      },
+      {
+        "path": "aigol/runtime/canonical_human_authority_act_contract_v1.py",
+        "sha256": "905ce577c31c2c538033455d1633470a34e9f7a94edd6190d50932e97ba8ebc8"
+      },
+      {
+        "path": "aigol/runtime/canonical_che_evidence_correlation_contract_v1.py",
+        "sha256": "75801995214e81419aab9a02326499c771ec0039658fb49598aa54bd033e13c5"
+      }
+    ],
+    "selected_vector": "P11-E05/NEGATIVE_AUTHORITY/FUTURE",
+    "time_fixture": {
+      "authenticity": "VERIFIED__CANONICAL_IE_FIXTURE_HASH_BOUND_TO_COMMITTED_P11_OWNER",
+      "determinism": "VERIFIED__FIXED_INTEGERS_NO_WALL_CLOCK_SLEEP_MTIME_OR_PROVIDER_TIME",
+      "evaluation_time_unix_ns": 500,
+      "fixture_type": "VECTOR_SPECIFIC_CANONICAL_JSON",
+      "future_relation": "500 < 600 < 1000",
+      "new_clock_infrastructure_count": 0,
+      "owner": "G77_256IE_FUTURE_TIME_FIXTURE_V1",
+      "valid_from_unix_ns": 600,
+      "valid_until_unix_ns": 1000
+    }
+  },
+  "specification_sha256": "368894ef96e89b032f55216b3ee8a97bd3028da8391ae0fe31398d6f52b4a438"
+}

@@ -1,0 +1,209 @@
+{
+  "reduction": {
+    "ccwim": {
+      "authenticated_repository_continuation": "VERIFIED__YES",
+      "authority_state_recovery": "VERIFIED__IC_CONSUMED_AUTHORITY_RECONSTRUCTED_AS_HISTORICAL_NONREUSABLE_STATE__IE_CREATED_NONE",
+      "ccwim_maturity_level": "ESTIMATED__L4_LIKE__NO_L5_CLAIM",
+      "cross_worker_constitutional_drift": "VERIFIED__0",
+      "cross_worker_state_recovery_level": "VERIFIED__COMMITTED_ID_SELECTION_AND_IC_TERMINAL_STATE_RECONSTRUCTED",
+      "handoff_ambiguity_count": "VERIFIED__0",
+      "handoff_reconstruction_required": "VERIFIED__YES",
+      "handoff_reconstruction_success": "VERIFIED__YES",
+      "handoff_state_completeness": "VERIFIED__COMPLETE_FOR_IE_REPOSITORY_FORMALIZATION",
+      "handoff_sufficiency_status": "VERIFIED",
+      "human_handoff_information_required": "VERIFIED__SCOPE_PROHIBITIONS_AND_REPOSITORY_LOCATORS_ONLY",
+      "inter_generation_cross_worker_continuation": "VERIFIED__ID_TO_IE",
+      "intra_generation_cross_worker_continuation": "NOT_APPLICABLE__SINGLE_WORKER_IE_GENERATION",
+      "operation_replay_prevention": "VERIFIED__IE_OPERATIONAL_COUNTERS_ZERO",
+      "previous_worker_conversation_required": "VERIFIED__NO",
+      "previous_worker_identity_required": "VERIFIED__NO",
+      "previous_worker_memory_required": "VERIFIED__NO",
+      "repository_derived_context_ratio": "ESTIMATED__DOMINANT__NO_NUMERIC_INSTRUMENT",
+      "unauthenticated_handoff_assumption_count": "VERIFIED__0",
+      "uncommitted_delta_recovery": "NOT_APPLICABLE__CLEAN_COMMITTED_ID_ENTRY"
+    },
+    "cognition_provenance": {
+      "primary_sources": "VERIFIED__GIT_ID_SELECTION_IC_P11_TEMPORAL_AND_EXPIRY_OWNERS_EM_HY_HZ_IA_IB_HX_HP_FM_GN_GL_DU_EB_EE_CHE_FK_EX_GOVERNANCE_LAYER_0_PINNED_NESTED_AUTHORITY_CURRENT_TESTS",
+      "prompt_is_system_state": false,
+      "prompt_role": "VERIFIED__BOUNDED_INSTRUCTION_AND_LOCATORS_ONLY",
+      "worker_memory_is_source_of_truth": false
+    },
+    "e05": {
+      "after": "10/18",
+      "before": "10/18",
+      "credit": 0,
+      "frontier_distance": "VERIFIED__8_OF_18_OBLIGATIONS_REMAIN",
+      "selected_vector": "VERIFIED__FUTURE"
+    },
+    "entry": {
+      "branch": "g77-256fl-wrong-attempt-preboot-blocker",
+      "head": "559deecb226b66d626e45e6f607b0aab6df81f1c",
+      "index": "VERIFIED__EMPTY",
+      "nested_head": "3183bab71f8f30397c0309dd2e6d846d14a11f66",
+      "nested_state": "VERIFIED__CLEAN_DETACHED_PINNED",
+      "nested_tree": "7c32ec05efc2be43297849bc38ec8766514a523d",
+      "origin": "git@github.com:Aljosa3/sapianta-ecosystem.git",
+      "remote_equal": "VERIFIED__YES",
+      "subject": "G77-256ID select FUTURE as next E05 frontier",
+      "tree": "2b7617318f402f5148e9ea8dd033870946d17ef7",
+      "worktree_at_entry": "VERIFIED__CLEAN"
+    },
+    "ex": {
+      "proof_reuse_efficiency": "VERIFIED__EX_17_OF_17_REUSED__0_RECONSTRUCTED",
+      "reconstructed": 0,
+      "reused": "17/17"
+    },
+    "future_formalization": {
+      "baseline_relation": "VERIFIED__100_LE_500_LT_1000",
+      "dependent_recomputation_count": 1,
+      "dependent_recomputed_coordinates": [
+        "human_authority_act.payload_digest"
+      ],
+      "evaluation_time_unix_ns": 500,
+      "expected_denial_reason": "operational Human act is not current",
+      "expected_denial_stage": "D2_SUBMISSION_AUTHORITY_CURRENTNESS_VALIDATION_BEFORE_PROTECTED_OWNER_STATE_INITIALIZATION_PRECLAIM_CLAIM_ENTRY_INVOCATION_OR_EFFECT",
+      "expired_distinction": "VERIFIED__EXPIRED_IS_AVAILABLE_TO_EXPIRED_PRECLAIM_TRANSITION_AT_OR_AFTER_VALID_UNTIL",
+      "future_relation": "VERIFIED__500_LT_600_LT_1000",
+      "future_requires_owner_state_transition": "VERIFIED__NO",
+      "future_valid_from_unix_ns": 600,
+      "independent_mutated_coordinate": "valid_from_unix_ns",
+      "independent_mutation_count": 1,
+      "new_clock_infrastructure_count": 0,
+      "repository_capability_reducer_result": "ACCEPT",
+      "stale_distinction": "VERIFIED__STALE_IS_CURRENT_OWNER_REVISION_OR_COMMISSIONING_BINDING_MISMATCH_NOT_WALL_CLOCK_TIME",
+      "time_fixture_authenticity": "VERIFIED__CANONICAL_IE_FIXTURE_HASH_BOUND_TO_COMMITTED_P11_OWNER",
+      "time_fixture_determinism": "VERIFIED__FIXED_INTEGER_NO_WALL_CLOCK",
+      "time_fixture_owner": "G77_256IE_FUTURE_TIME_FIXTURE_V1",
+      "time_fixture_type": "VECTOR_SPECIFIC_CANONICAL_JSON",
+      "valid_until_unix_ns": 1000
+    },
+    "generation_identity": "G77_256IE_REPOSITORY_ONLY_FUTURE_FORMALIZATION_V1",
+    "infrastructure_amortization": {
+      "e05_generations_per_credit": "VERIFIED__5__HISTORICAL_WRONG_PROVENANCE_LIFECYCLE_ONLY",
+      "expected_future_binding_readiness_delta": "ESTIMATED__ONE_BOUNDED_POST_COMMIT_LIVE_BINDING_AND_CLOSED_ROUTE_MEMBERSHIP_DELTA",
+      "expected_future_operational_delta": "ESTIMATED__ONE_SEPARATELY_HUMAN_AUTHORIZED_ONE_SHOT_OPERATION_AFTER_READINESS",
+      "expected_next_credit_generation_count": "ESTIMATED__AT_LEAST_TWO_ADDITIONAL_GENERATIONS__NO_UNIVERSAL_CYCLE_CLAIM",
+      "future_e05_credit_so_far": "VERIFIED__0",
+      "future_generations_so_far": "VERIFIED__1__IE_REPOSITORY_FORMALIZATION_ONLY",
+      "future_operational_attempts_so_far": "VERIFIED__0",
+      "new_common_infrastructure_for_future": "VERIFIED__0",
+      "new_vector_specific_infrastructure_for_future": "VERIFIED__ONE_SPECIFICATION_ONE_TIME_FIXTURE_ONE_PRODUCER_ONE_REPOSITORY_REDUCER"
+    },
+    "metrics": {
+      "aigol_codex_work_share": "NOT_MEASURED",
+      "architectural_governance_efficience": "VERIFIED__ONE_ROUTE_AND_EXISTING_TEMPORAL_OWNER_RETAINED",
+      "candidate_capability": "VERIFIED__FUTURE_REPOSITORY_VECTOR_FORMALIZED__LIVE_ACT_AND_ROUTE_NOT_BOUND",
+      "cognition_assisted_handoff": "VERIFIED__AUTHENTICATED_ID_TO_IE_REPOSITORY_CONTINUATION",
+      "cognition_provenance": "VERIFIED__REPOSITORY_AND_AUTHENTICATED_EVIDENCE_PRIMARY",
+      "constitutional_continuation_progress": "VERIFIED__FUTURE_SELECTED_TO_FUTURE_REPOSITORY_FORMALIZED__NOT_BOUND_OR_OPERATED",
+      "constitutional_frontier_distance": "NOT_MEASURED__NO_GOVERNED_UNIVERSAL_SCALAR",
+      "constitutional_health_evidence": "VERIFIED__EXISTING_TEMPORAL_OWNER_REUSED_ZERO_OPERATION_ZERO_CREDIT",
+      "e05_frontier_distance": "VERIFIED__8_OF_18_OBLIGATIONS_REMAIN",
+      "e05_generations_per_credit": "VERIFIED__5__HISTORICAL_WRONG_PROVENANCE_LIFECYCLE_ONLY",
+      "expected_next_credit_generation_count": "ESTIMATED__AT_LEAST_TWO_ADDITIONAL_GENERATIONS__NO_UNIVERSAL_CYCLE_CLAIM",
+      "governance_efficience": "ESTIMATED__ONE_VECTOR_SPECIFIC_FORMALIZATION_WITH_ZERO_COMMON_INFRASTRUCTURE",
+      "infrastructure_amortization_signal": "ESTIMATED__POSITIVE_TEMPORAL_OWNER_AND_EX_REUSE_SIGNAL__NO_COST_INFERENCE",
+      "lcrr": "NOT_MEASURED",
+      "llm_cost_reduction_ratio": "NOT_MEASURED",
+      "marginal_e05_generation_cost": "NOT_MEASURED__NO_GOVERNED_COST_INSTRUMENT",
+      "marginal_new_infrastructure_per_e05_credit": "NOT_MEASURED__FUTURE_CREDIT_NOT_YET_EARNED",
+      "operational_attempts_per_credit": "VERIFIED__1__HISTORICAL_WRONG_PROVENANCE_ONLY",
+      "overengineering_risk": "ESTIMATED__LOW__VECTOR_SPECIFIC_FIXTURE_NO_CLOCK_FRAMEWORK",
+      "project_progress_estimate": "NOT_MEASURED__NO_CERTIFIED_TOTAL_PROJECT_DENOMINATOR",
+      "prompt_context_reuse_ratio": "NOT_MEASURED",
+      "proof_process_overhead_risk": "ESTIMATED__MODERATE",
+      "proof_reuse_efficiency": "VERIFIED__EX_17_OF_17_REUSED__0_RECONSTRUCTED",
+      "selected_e05_local_frontier_distance": "ESTIMATED__ONE_POST_COMMIT_REPOSITORY_ONLY_LIVE_BINDING_AND_READINESS_GENERATION_BEFORE_ANY_OPERATION",
+      "shadow_automation_status": "VERIFIED__ABSENT",
+      "shadow_design_target": "VERIFIED__BIND_FRESH_ACT_AND_CHE_TO_FORMALIZED_TIME_FIXTURE_VERIFY_STOP",
+      "token_benchmark": "NOT_MEASURED"
+    },
+    "operational_counters": {
+      "authority_consumption": 0,
+      "e05_credit": 0,
+      "fm_operational_launcher_invocation": 0,
+      "human_operational_authority": 0,
+      "operation_attempt": 0,
+      "p11_entry": 0,
+      "pre": 0,
+      "protected_effect": 0,
+      "protected_invocation": 0,
+      "qemu": 0,
+      "repair_retry": 0,
+      "replay": 0,
+      "request": 0,
+      "retry": 0,
+      "vm_boot": 0,
+      "vm_creation": 0
+    },
+    "repository_capability_result": {
+      "e05_credit": 0,
+      "future_operational_capability": "NOT_PROVEN",
+      "future_preoperational_readiness": "NOT_PROVEN",
+      "future_repository_formalization": "VERIFIED",
+      "future_route_binding": "NOT_PROVEN",
+      "terminal_acceptance": "PASS__FUTURE_SEMANTICS_TIME_FIXTURE_AND_PRESERVATION_FORMALIZED"
+    },
+    "reuse_impact": {
+      "new_authority_layer_count": "VERIFIED__0",
+      "new_capability_set": "VERIFIED__FUTURE_REPOSITORY_FORMALIZATION_SPECIFICATION_TIME_FIXTURE_PRODUCER_AND_REPOSITORY_REDUCER_ONLY",
+      "new_clock_infrastructure_count": "VERIFIED__0",
+      "new_generic_framework_count": "VERIFIED__0",
+      "new_production_route_count": "VERIFIED__0",
+      "new_runtime_owner_count": "VERIFIED__0",
+      "p11_core_change_count": "VERIFIED__0",
+      "production_route_after": "VERIFIED__1",
+      "production_route_before": "VERIFIED__1",
+      "production_route_delta": "VERIFIED__0",
+      "reused_certified_capability_set": "VERIFIED__ID_IC_P11_TEMPORAL_CURRENTNESS_AND_EXPIRY_OWNERS_CANONICAL_HUMAN_ACT_DIGEST_HZ_IA_IB_HX_HP_FM_GN_GL_DU_EB_EE_CHE_FK_EX_17_OF_17_GOVERNANCE_LAYER_0_G48",
+      "unreachable_preexisting_capability_set": "VERIFIED__EMPTY"
+    },
+    "sources": [
+      {
+        "path": ".github/governance/evidence/g77_256id_post_ic_e05_frontier_selection_v1/G77_256ID_E05_FRONTIER_SELECTION_V1.json",
+        "sha256": "86d222ecdd10b856ad30f9ab462a4f23c53b472f7021715d3ea8bc166781807b"
+      },
+      {
+        "path": ".github/governance/evidence/g77_256ic_wrong_provenance_operational_v1/G77_256IC_SPCE_FINAL_EXECUTION_SEAL_V1.json",
+        "sha256": "9b794fc1f2fc7fdc82b13195e27b73a71244f0f56a87201e172cd9f0a1ca8a72"
+      },
+      {
+        "path": ".github/governance/evidence/g77_256ex_common_substrate_certification_v1/G77_256EX_P11_SPCE_COMMON_SUBSTRATE_CERTIFICATION_V1.json",
+        "sha256": "91c477171147c56516c0f473ab887c12173c4bab225f2733c274b32467824b2f"
+      },
+      {
+        "path": ".github/governance/evidence/g77_256ie_future_formalization_v1/G77_256IE_FUTURE_FORMAL_SPECIFICATION_V1.json",
+        "sha256": "778bae4207fd79f936b540274aec3ea5e63cee380a1616ffc707569c5c736af0"
+      },
+      {
+        "path": ".github/governance/evidence/g77_256ie_future_formalization_v1/G77_256IE_FUTURE_TIME_FIXTURE_V1.json",
+        "sha256": "398d04a19dc65836721d02e2ba2c960a5b2836e8724435d3489d6e5063e3375e"
+      },
+      {
+        "path": ".github/governance/evidence/g77_256ie_future_formalization_v1/producer/G77_256IE_FUTURE_VECTOR_PRODUCER_V1.py",
+        "sha256": "a683e65b8f2a84f67851e2516bf50d5d7fc3d0fe25a5b0fecc82bf1c244f9fbc"
+      },
+      {
+        "path": ".github/governance/evidence/g77_256ie_future_formalization_v1/reducer/G77_256IE_FUTURE_REPOSITORY_CAPABILITY_REDUCER_V1.py",
+        "sha256": "5816e62bca2017672415fd98f5627d23d7481486c0f479a084298a4fa8a16142"
+      },
+      {
+        "path": "docs/governance/G48_00_CONSTITUTIONAL_EVIDENCE_REPORTING_STANDARD_V1.md",
+        "sha256": "16508d1a77c4b3f07d37861e74d85f77896be16da01ca26cbc07a658ddf2c0eb"
+      }
+    ],
+    "terminal_control": {
+      "auto_continuable": "VERIFIED__NO",
+      "first_broken_edge": "VERIFIED__POST_COMMIT_LIVE_BINDING_OF_ONE_FRESH_FUTURE_ACT_CHE_CORRELATION_CANDIDATE_AND_EXISTING_CLOSED_ROUTE_MEMBERSHIP_ABSENT",
+      "human_authorization_required": "VERIFIED__NO",
+      "human_review_required": "VERIFIED__YES",
+      "last_verified_edge": "VERIFIED__FUTURE_VECTOR_SEMANTICS_AND_DETERMINISTIC_TIME_FIXTURE_FORMALIZED",
+      "minimum_legal_next_delta": "ESTIMATED__AFTER_HUMAN_REVIEW_AND_COMMIT_OF_IE_ONLY__ONE_REPOSITORY_ONLY_POST_COMMIT_FUTURE_LIVE_BINDING_AND_READINESS_GENERATION__NO_AUTHORITY_NO_OPERATION",
+      "minimum_missing_capability": "VERIFIED__COMMITTED_HEAD_BOUND_FRESH_FUTURE_ACT_CHE_CANDIDATE_AND_CLOSED_ROUTE_MEMBERSHIP_WITH_ZERO_OPERATION",
+      "next_generation_started": "VERIFIED__NO",
+      "verdict": "VERIFIED__G77_256IE_REPOSITORY_ONLY_FUTURE_FORMALIZATION__ONE_VALID_FROM_MUTATION__DETERMINISTIC_TIME_FIXTURE__EX_17_OF_17_REUSED__ZERO_OPERATION_ZERO_CREDIT__HUMAN_REVIEW_REQUIRED"
+    }
+  },
+  "reduction_sha256": "158ae00958cd021b3df75a8008ec867d35a4c1d3b3c8432ec0da7eec919cbfd9",
+  "schema_id": "G77_256IE_SPCE_TERMINAL_REDUCTION_ENVELOPE_V1"
+}
