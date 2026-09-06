@@ -15,6 +15,7 @@
         "receipt_version",
         "generation_identity",
         "candidate_binding",
+        "runtime_target_selection_binding",
         "validator_binding",
         "canonical_v2_contract_validator_binding",
         "candidate_manifest_schema_binding",
@@ -44,6 +45,9 @@
             "file_sha256": {"$ref": "#/$defs/sha256"},
             "canonical_serialization_state": {"const": "CANONICAL_V2_JSON"}
           }
+        },
+        "runtime_target_selection_binding": {
+          "$ref": "#/$defs/runtimeTargetSelectionBinding"
         },
         "validator_binding": {"$ref": "#/$defs/implementationBinding"},
         "canonical_v2_contract_validator_binding": {"$ref": "#/$defs/implementationBinding"},
@@ -106,6 +110,27 @@
       "properties": {
         "head": {"$ref": "#/$defs/gitObject"},
         "tree": {"$ref": "#/$defs/gitObject"}
+      }
+    },
+    "runtimeTargetSelectionBinding": {
+      "type": "object",
+      "required": ["head", "tree", "launcher_binding", "context_binding"],
+      "additionalProperties": false,
+      "properties": {
+        "head": {"$ref": "#/$defs/gitObject"},
+        "tree": {"$ref": "#/$defs/gitObject"},
+        "launcher_binding": {"$ref": "#/$defs/implementationBinding"},
+        "context_binding": {
+          "type": "object",
+          "required": ["identity", "path", "file_sha256", "inner_sha256"],
+          "additionalProperties": false,
+          "properties": {
+            "identity": {"$ref": "#/$defs/nonempty"},
+            "path": {"$ref": "#/$defs/repositoryPath"},
+            "file_sha256": {"$ref": "#/$defs/sha256"},
+            "inner_sha256": {"$ref": "#/$defs/sha256"}
+          }
+        }
       }
     },
     "implementationBinding": {

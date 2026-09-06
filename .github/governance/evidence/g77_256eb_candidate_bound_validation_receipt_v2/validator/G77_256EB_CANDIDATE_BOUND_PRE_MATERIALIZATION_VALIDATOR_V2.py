@@ -2,6 +2,7 @@
 """Candidate-bound successor for the immutable DU Canonical V2 validator."""
 from __future__ import annotations
 import argparse
+import ast
 from copy import deepcopy
 import hashlib
 import importlib.util
@@ -43,8 +44,18 @@ RECEIPT_SCHEMA_RELATIVE_PATH = (
     ".github/governance/evidence/g77_256eb_candidate_bound_validation_receipt_v2/"
     "G77_256EB_CANDIDATE_BOUND_VALIDATION_RECEIPT_SCHEMA_V2.json"
 )
-DU_VALIDATOR_SHA256 = "23249bcde9de90d2dd94949f718a235a9c71352ddc12c92d1e608fee9dc593be"
+DU_VALIDATOR_SHA256 = "b7ac6207173cdf8d448db676ac9452a5df60cb695bba1379f6ab3a54df89734c"
 DU_SCHEMA_SHA256 = "09a9124bba387903ec80778e515cf87d8277de6effba8a5715c0c0b1d0d2d57f"
+FM_LAUNCHER_IDENTITY = "G77_256FM_ONE_SHOT_QEMU_LAUNCHER_V1"
+FM_LAUNCHER_RELATIVE_PATH = (
+    ".github/governance/evidence/g77_256fm_wrong_attempt_preboot_v1/"
+    "launcher/G77_256FM_ONE_SHOT_QEMU_LAUNCHER_V1.py"
+)
+IF_CONTEXT_IDENTITY = "G77_256IH_AUTHENTICATED_IF_RUNTIME_TARGET_CONTEXT_V1"
+IF_CONTEXT_RELATIVE_PATH = (
+    ".github/governance/evidence/g77_256ih_future_if_identity_rebind_v1/"
+    "live_binding/SAPIANTA_FRESH_OPERATION_CONTEXT_V1.json"
+)
 GATE_FIELDS = (
     "manifest_authenticity_gate",
     "manifest_schema_validity_gate",
@@ -56,6 +67,7 @@ RECEIPT_FIELDS = frozenset({
     "receipt_version",
     "generation_identity",
     "candidate_binding",
+    "runtime_target_selection_binding",
     "validator_binding",
     "canonical_v2_contract_validator_binding",
     "candidate_manifest_schema_binding",
@@ -178,6 +190,86 @@ def _authenticate_git_baseline(
     if value != actual:
         _fail("CERTIFICATION_BASELINE_STALE", "receipt baseline is not the current certification repository")
     return head, tree
+def _literal_assignment(tree: ast.Module, name: str) -> str:
+    values = [
+        node.value.value
+        for node in tree.body
+        if isinstance(node, ast.Assign)
+        and any(isinstance(target, ast.Name) and target.id == name for target in node.targets)
+        and isinstance(node.value, ast.Constant)
+        and isinstance(node.value.value, str)
+    ]
+    if len(values) != 1:
+        _fail("RUNTIME_TARGET_LAUNCHER_BINDING_INVALID", f"launcher {name} is not unique")
+    return values[0]
+def _authenticated_runtime_target(repository_root: Path) -> dict[str, Any]:
+    launcher = repository_root / FM_LAUNCHER_RELATIVE_PATH
+    context_path = repository_root / IF_CONTEXT_RELATIVE_PATH
+    for relative in (FM_LAUNCHER_RELATIVE_PATH, IF_CONTEXT_RELATIVE_PATH):
+        try:
+            committed_blob = _git(repository_root, "rev-parse", f"HEAD:{relative}")
+            worktree_blob = _git(repository_root, "hash-object", relative)
+        except ReceiptError as exc:
+            raise ReceiptError(
+                "RUNTIME_TARGET_SELECTION_GIT_PROVENANCE_INVALID",
+                f"target-selection owner is not committed: {relative}",
+            ) from exc
+        if worktree_blob != committed_blob:
+            _fail(
+                "RUNTIME_TARGET_SELECTION_WORKTREE_DRIFT",
+                f"target-selection owner differs from committed bytes: {relative}",
+            )
+    try:
+        launcher_tree = ast.parse(launcher.read_text(encoding="utf-8"))
+        context_raw = context_path.read_bytes()
+        context = json.loads(context_raw, object_pairs_hook=_duplicate_free_object)
+    except (OSError, UnicodeDecodeError, SyntaxError, json.JSONDecodeError) as exc:
+        raise ReceiptError(
+            "RUNTIME_TARGET_SELECTION_EVIDENCE_INVALID",
+            "FM launcher or IF context could not be authenticated",
+        ) from exc
+    if context_raw != canonical_bytes(context):
+        _fail("RUNTIME_TARGET_CONTEXT_NONCANONICAL", "IF context is not canonical JSON")
+    inner = context.get("context_sha256")
+    unsealed = {key: value for key, value in context.items() if key != "context_sha256"}
+    if not isinstance(inner, str) or inner != sha256_bytes(canonical_bytes(unsealed)):
+        _fail("RUNTIME_TARGET_CONTEXT_SEAL_INVALID", "IF context inner seal differs")
+    head = _literal_assignment(launcher_tree, "CHECKOUT_HEAD")
+    tree = _literal_assignment(launcher_tree, "CHECKOUT_TREE")
+    checkout = context.get("qemu_executable_base_seed_checkout_bindings", {}).get("checkout", {})
+    if (
+        context.get("repository_head") != head
+        or context.get("repository_tree") != tree
+        or checkout.get("head") != head
+        or checkout.get("tree") != tree
+        or checkout.get("clean") is not True
+        or checkout.get("detached") is not True
+        or checkout.get("read_only_mount") is not True
+    ):
+        _fail("RUNTIME_TARGET_SELECTION_DISAGREEMENT", "FM launcher and IF context differ")
+    if GIT_OBJECT_RE.fullmatch(head or "") is None or GIT_OBJECT_RE.fullmatch(tree or "") is None:
+        _fail("RUNTIME_TARGET_FORMAT_INVALID", "runtime target is not a Git pair")
+    try:
+        observed_tree = _git(repository_root, "rev-parse", f"{head}^{{tree}}")
+    except ReceiptError as exc:
+        raise ReceiptError("RUNTIME_TARGET_COMMIT_NONEXISTENT", "runtime target is unavailable") from exc
+    if observed_tree != tree:
+        _fail("RUNTIME_TARGET_TREE_MISMATCH", "runtime target tree does not belong to head")
+    return {
+        "head": head,
+        "tree": tree,
+        "launcher_binding": {
+            "identity": FM_LAUNCHER_IDENTITY,
+            "path": FM_LAUNCHER_RELATIVE_PATH,
+            "file_sha256": sha256_path(launcher),
+        },
+        "context_binding": {
+            "identity": IF_CONTEXT_IDENTITY,
+            "path": IF_CONTEXT_RELATIVE_PATH,
+            "file_sha256": sha256_bytes(context_raw),
+            "inner_sha256": inner,
+        },
+    }
 def _candidate_canonical_bytes(du: ModuleType, candidate_path: Path) -> bytes:
     raw = candidate_path.read_bytes()
     value = du.load_json_bytes(raw)
@@ -223,14 +315,17 @@ def validate_candidate(
     if validation_profile != VALIDATION_PROFILE:
         _fail("VALIDATION_PROFILE_INVALID", "only the canonical EB profile is admissible")
     certification_baseline = _current_certification_baseline(repository_root)
-    required_head, _ = _authenticate_git_baseline(repository_root, certification_baseline)
+    _authenticate_git_baseline(repository_root, certification_baseline)
+    runtime_target = _authenticated_runtime_target(repository_root)
     candidate_relative = _relative_path(repository_root, candidate)
     _, candidate_path = _repository_path(
         repository_root, candidate_relative, "candidate_binding.path"
     )
     du = _load_du_validator(repository_root)
     raw = _candidate_canonical_bytes(du, candidate_path)
-    du_result = _run_du_validation(du, candidate_path, repository_root, required_head)
+    du_result = _run_du_validation(
+        du, candidate_path, repository_root, runtime_target["head"]
+    )
     gates = _gate_results(du_result)
     argument_vector = _command_vector(candidate_relative)
     receipt = {
@@ -242,6 +337,7 @@ def validate_candidate(
             "file_sha256": sha256_bytes(raw),
             "canonical_serialization_state": "CANONICAL_V2_JSON",
         },
+        "runtime_target_selection_binding": runtime_target,
         "validator_binding": {
             "identity": VALIDATOR_IDENTITY,
             "path": VALIDATOR_RELATIVE_PATH,
@@ -344,9 +440,15 @@ def verify_receipt_envelope(
     gates = _require_exact_fields(receipt["gate_results"], frozenset(GATE_FIELDS), "gate_results")
     if any(gates[gate] != "PASS" for gate in GATE_FIELDS):
         _fail("OVERALL_PASS_WITH_NON_PASS_GATE", "overall PASS requires all four gates PASS")
-    required_head, _ = _authenticate_git_baseline(
+    _authenticate_git_baseline(
         repository_root, receipt["certification_baseline"]
     )
+    runtime_target = _authenticated_runtime_target(repository_root)
+    if receipt["runtime_target_selection_binding"] != runtime_target:
+        _fail(
+            "RUNTIME_TARGET_SELECTION_BINDING_MISMATCH",
+            "receipt runtime target differs from authenticated FM/IF selection",
+        )
     _verify_implementation_binding(
         repository_root,
         receipt["validator_binding"],
@@ -407,7 +509,7 @@ def verify_receipt_envelope(
     du = _load_du_validator(repository_root)
     _candidate_canonical_bytes(du, candidate_path)
     observed_gates = _gate_results(
-        _run_du_validation(du, candidate_path, repository_root, required_head)
+        _run_du_validation(du, candidate_path, repository_root, runtime_target["head"])
     )
     if observed_gates != gates:
         _fail("GATE_REAUTHENTICATION_MISMATCH", "recomputed gates differ")
@@ -416,6 +518,7 @@ def verify_receipt_envelope(
         "validator_binding_authenticity": "PASS",
         "schema_binding_authenticity": "PASS",
         "git_head_tree_binding_authenticity": "PASS",
+        "runtime_target_selection_binding_authenticity": "PASS",
         "receipt_inner_authenticity": "PASS",
         "four_gate_reexecution": "PASS",
         "overall_result": "PASS",

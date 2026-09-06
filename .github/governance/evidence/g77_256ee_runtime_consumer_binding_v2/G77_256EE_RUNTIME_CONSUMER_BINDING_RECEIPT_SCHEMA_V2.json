@@ -13,7 +13,8 @@
         "schema_id", "receipt_version", "generation_identity", "validation_mode",
         "validation_profile", "validated_candidate", "candidate_bound_eb_receipt",
         "runtime_consumer", "harness_binding", "identity_results",
-        "implementation_bindings", "certification_baseline",
+        "implementation_bindings", "runtime_target_selection_binding",
+        "certification_baseline",
         "pre_materialization_runtime_path_binding_result", "prohibited_actions",
         "receipt_is_authority", "auto_continuable"
       ],
@@ -83,6 +84,9 @@
           "minItems": 5,
           "items": {"$ref": "#/$defs/namedFileBinding"}
         },
+        "runtime_target_selection_binding": {
+          "$ref": "#/$defs/runtimeTargetSelectionBinding"
+        },
         "certification_baseline": {
           "type": "object",
           "required": ["head", "tree"],
@@ -126,6 +130,28 @@
         "identity": {"$ref": "#/$defs/nonempty"},
         "path": {"$ref": "#/$defs/nonempty"},
         "file_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "gitObject": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "runtimeTargetSelectionBinding": {
+      "type": "object",
+      "required": ["head", "tree", "launcher_binding", "context_binding"],
+      "additionalProperties": false,
+      "properties": {
+        "head": {"$ref": "#/$defs/gitObject"},
+        "tree": {"$ref": "#/$defs/gitObject"},
+        "launcher_binding": {"$ref": "#/$defs/namedFileBinding"},
+        "context_binding": {
+          "type": "object",
+          "required": ["identity", "path", "file_sha256", "inner_sha256"],
+          "additionalProperties": false,
+          "properties": {
+            "identity": {"$ref": "#/$defs/nonempty"},
+            "path": {"$ref": "#/$defs/nonempty"},
+            "file_sha256": {"$ref": "#/$defs/sha256"},
+            "inner_sha256": {"$ref": "#/$defs/sha256"}
+          }
+        }
       }
     }
   }

@@ -2,6 +2,7 @@
 """Fail-closed SPCE continuation-manifest V2 producer/consumer validator."""
 from __future__ import annotations
 import argparse
+import ast
 from copy import deepcopy
 import hashlib
 import importlib.util
@@ -123,6 +124,14 @@ TEARDOWN_STATES = frozenset({"NOT_APPLICABLE", "PENDING", "COMPLETE", "FAILED"})
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 GIT_OBJECT_RE = re.compile(r"^[0-9a-f]{40}$")
 CASE_COUNTER_RE = re.compile(r"^[a-z][a-z0-9_]*_count$")
+FM_LAUNCHER_RELATIVE_PATH = (
+    ".github/governance/evidence/g77_256fm_wrong_attempt_preboot_v1/"
+    "launcher/G77_256FM_ONE_SHOT_QEMU_LAUNCHER_V1.py"
+)
+IF_CONTEXT_RELATIVE_PATH = (
+    ".github/governance/evidence/g77_256ih_future_if_identity_rebind_v1/"
+    "live_binding/SAPIANTA_FRESH_OPERATION_CONTEXT_V1.json"
+)
 class CompatibilityError(ValueError):
     """One deterministic pre-materialization compatibility rejection."""
     def __init__(self, code: str, message: str) -> None:
@@ -524,6 +533,66 @@ def validate_file(
     )
 def _git(cwd: Path, *args: str) -> str:
     return subprocess.check_output(["git", *args], cwd=cwd, text=True).strip()
+def _authenticated_runtime_target(repository_root: Path) -> tuple[str, str]:
+    launcher = repository_root / FM_LAUNCHER_RELATIVE_PATH
+    context_path = repository_root / IF_CONTEXT_RELATIVE_PATH
+    for relative in (FM_LAUNCHER_RELATIVE_PATH, IF_CONTEXT_RELATIVE_PATH):
+        try:
+            committed_blob = _git(repository_root, "rev-parse", f"HEAD:{relative}")
+            worktree_blob = _git(repository_root, "hash-object", relative)
+        except subprocess.CalledProcessError as exc:
+            raise CompatibilityError(
+                "RUNTIME_TARGET_SELECTION_GIT_PROVENANCE_INVALID",
+                f"target-selection owner is not committed: {relative}",
+            ) from exc
+        if worktree_blob != committed_blob:
+            _fail(
+                "RUNTIME_TARGET_SELECTION_WORKTREE_DRIFT",
+                f"target-selection owner differs from committed bytes: {relative}",
+            )
+    try:
+        tree = ast.parse(launcher.read_text(encoding="utf-8"))
+        context_raw = context_path.read_bytes()
+        context = load_json_bytes(context_raw)
+    except (OSError, UnicodeDecodeError, SyntaxError) as exc:
+        raise CompatibilityError(
+            "RUNTIME_TARGET_SELECTION_EVIDENCE_INVALID",
+            "FM launcher or IF context is unavailable",
+        ) from exc
+    if context_raw != canonical_bytes(context):
+        _fail("RUNTIME_TARGET_CONTEXT_NONCANONICAL", "IF context is not canonical")
+    values: dict[str, str] = {}
+    for name in ("CHECKOUT_HEAD", "CHECKOUT_TREE"):
+        matches = [
+            node.value.value
+            for node in tree.body
+            if isinstance(node, ast.Assign)
+            and any(isinstance(target, ast.Name) and target.id == name for target in node.targets)
+            and isinstance(node.value, ast.Constant)
+            and isinstance(node.value.value, str)
+        ]
+        if len(matches) != 1:
+            _fail("RUNTIME_TARGET_LAUNCHER_BINDING_INVALID", f"launcher {name} is not unique")
+        values[name] = matches[0]
+    head, source_tree = values["CHECKOUT_HEAD"], values["CHECKOUT_TREE"]
+    inner = context.get("context_sha256")
+    unsealed = {key: value for key, value in context.items() if key != "context_sha256"}
+    checkout = context.get("qemu_executable_base_seed_checkout_bindings", {}).get("checkout", {})
+    if inner != sha256_bytes(canonical_bytes(unsealed)):
+        _fail("RUNTIME_TARGET_CONTEXT_SEAL_INVALID", "IF context seal differs")
+    if (
+        context.get("repository_head") != head
+        or context.get("repository_tree") != source_tree
+        or checkout.get("head") != head
+        or checkout.get("tree") != source_tree
+        or checkout.get("clean") is not True
+        or checkout.get("detached") is not True
+        or checkout.get("read_only_mount") is not True
+    ):
+        _fail("RUNTIME_TARGET_SELECTION_DISAGREEMENT", "FM launcher and IF context differ")
+    if _git(repository_root, "rev-parse", f"{head}^{{tree}}") != source_tree:
+        _fail("RUNTIME_TARGET_TREE_MISMATCH", "target tree does not belong to target head")
+    return head, source_tree
 def _lineage_binding(repository_root: Path, identity: str, relative: str) -> dict[str, str]:
     path = repository_root / relative
     return {
@@ -584,8 +653,7 @@ def build_du_fixture(repository_root: Path) -> dict[str, Any]:
             "docs/governance/G48_00_CONSTITUTIONAL_EVIDENCE_REPORTING_STANDARD_V1.md",
         ),
     ]
-    head = _git(repository_root, "rev-parse", "HEAD")
-    tree = _git(repository_root, "rev-parse", "HEAD^{tree}")
+    head, tree = _authenticated_runtime_target(repository_root)
     manifest = {
         "schema_id": MANIFEST_SCHEMA_ID,
         "manifest_version": MANIFEST_VERSION,
@@ -666,7 +734,18 @@ def build_du_fixture(repository_root: Path) -> dict[str, Any]:
             "DP_PERSISTED_SPCE_SEALS_WITHOUT_A_CONTINUATION_MANIFEST_DIALECT",
             "CLREC_REMAINS_CANDIDATE_ONLY",
         ],
-        "extension_bindings": [],
+        "extension_bindings": [
+            {
+                "identity": "G77_256FM_AUTHENTICATED_RUNTIME_TARGET_SELECTOR_V1",
+                "path": FM_LAUNCHER_RELATIVE_PATH,
+                "sha256": sha256_path(repository_root / FM_LAUNCHER_RELATIVE_PATH),
+            },
+            {
+                "identity": "G77_256IH_AUTHENTICATED_IF_RUNTIME_TARGET_CONTEXT_V1",
+                "path": IF_CONTEXT_RELATIVE_PATH,
+                "sha256": sha256_path(repository_root / IF_CONTEXT_RELATIVE_PATH),
+            },
+        ],
     }
     return {
         "schema_id": ENVELOPE_SCHEMA_ID,

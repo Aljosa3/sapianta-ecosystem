@@ -36,13 +36,13 @@ EB_VALIDATOR_RELATIVE_PATH = (
     ".github/governance/evidence/g77_256eb_candidate_bound_validation_receipt_v2/"
     "validator/G77_256EB_CANDIDATE_BOUND_PRE_MATERIALIZATION_VALIDATOR_V2.py"
 )
-EB_VALIDATOR_SHA256 = "39dc04a3e4808094b25c328fe5a726c7dc497b164bd51dede460940557588aa2"
+EB_VALIDATOR_SHA256 = "a0f2440333bd2f704afde404d43697f03a889d55736f3496b9134d0c30716d10"
 DU_VALIDATOR_IDENTITY = "G77_256DU_PRE_MATERIALIZATION_CONSUMER_VALIDATOR_V2"
 DU_VALIDATOR_RELATIVE_PATH = (
     ".github/governance/evidence/g77_256du_continuation_manifest_contract_v2/"
     "validator/G77_256DU_CONTINUATION_MANIFEST_COMPATIBILITY_VALIDATOR_V2.py"
 )
-DU_VALIDATOR_SHA256 = "23249bcde9de90d2dd94949f718a235a9c71352ddc12c92d1e608fee9dc593be"
+DU_VALIDATOR_SHA256 = "b7ac6207173cdf8d448db676ac9452a5df60cb695bba1379f6ab3a54df89734c"
 DU_SCHEMA_IDENTITY = "SAPIANTA_SPCE_CONTINUATION_MANIFEST_SCHEMA_V2"
 DU_SCHEMA_RELATIVE_PATH = (
     ".github/governance/evidence/g77_256du_continuation_manifest_contract_v2/"
@@ -297,9 +297,11 @@ def validate_binding(
         "head": _git(repository_root, "rev-parse", "HEAD"),
         "tree": _git(repository_root, "rev-parse", "HEAD^{tree}"),
     }
-    required_head = certification_baseline["head"]
-    required_tree = certification_baseline["tree"]
-    _authenticate_git(repository_root, required_head, required_tree)
+    _authenticate_git(
+        repository_root,
+        certification_baseline["head"],
+        certification_baseline["tree"],
+    )
     eb, du = _load_implementations(repository_root)
     candidate_relative, candidate = _repo_file(
         repository_root, candidate_path, "validated_candidate.path"
@@ -321,6 +323,12 @@ def validate_binding(
     if eb_result.get("overall_result") != "PASS":
         _fail("EB_RECEIPT_REAUTHENTICATION_FAILED", "EB receipt result is not PASS")
     _, eb_envelope = _load_json_canonical(eb_receipt, "EB_RECEIPT_CANONICAL_INVALID")
+    if eb_envelope["receipt"]["certification_baseline"] != certification_baseline:
+        _fail("EB_EE_CERTIFICATION_BASELINE_DISAGREEMENT", "EB and EE baselines differ")
+    runtime_target = eb._authenticated_runtime_target(repository_root)
+    if eb_envelope["receipt"]["runtime_target_selection_binding"] != runtime_target:
+        _fail("EB_RUNTIME_TARGET_BINDING_MISMATCH", "EB runtime target is not authenticated")
+    required_head = runtime_target["head"]
     eb_candidate = eb_envelope["receipt"]["candidate_binding"]
     if eb_candidate.get("path") != candidate_relative:
         _fail("EB_CANDIDATE_PATH_MISMATCH", "candidate argument differs from EB receipt")
@@ -394,6 +402,7 @@ def validate_binding(
             "harness_expected_path_identity": "PASS",
         },
         "implementation_bindings": _implementation_bindings(repository_root),
+        "runtime_target_selection_binding": runtime_target,
         "certification_baseline": certification_baseline,
         "pre_materialization_runtime_path_binding_result": "PASS",
         "prohibited_actions": PROHIBITED_ACTIONS,
@@ -438,6 +447,12 @@ def verify_receipt_envelope(
     if receipt["implementation_bindings"] != _implementation_bindings(repository_root):
         _fail("IMPLEMENTATION_BINDING_MISMATCH", "validator or schema bytes differ")
     eb, du = _load_implementations(repository_root)
+    runtime_target = eb._authenticated_runtime_target(repository_root)
+    if receipt["runtime_target_selection_binding"] != runtime_target:
+        _fail(
+            "RUNTIME_TARGET_SELECTION_BINDING_MISMATCH",
+            "EE runtime target differs from authenticated FM/IF selection",
+        )
     candidate_binding = receipt["validated_candidate"]
     candidate_relative, candidate = _repo_file(
         repository_root,
@@ -449,7 +464,7 @@ def verify_receipt_envelope(
     candidate_raw, candidate_envelope, candidate_inner = _manifest_binding(
         candidate,
         du,
-        expected_head=certification_baseline["head"],
+        expected_head=runtime_target["head"],
         runtime=False,
     )
     if sha256_bytes(candidate_raw) != candidate_binding["file_sha256"]:
@@ -476,6 +491,10 @@ def verify_receipt_envelope(
         _fail("EB_RECEIPT_REAUTHENTICATION_FAILED", "EB result differs")
     if eb_envelope["receipt"]["candidate_binding"]["path"] != candidate_binding["path"]:
         _fail("EB_CANDIDATE_PATH_MISMATCH", "EB receipt names a different candidate")
+    if eb_envelope["receipt"]["certification_baseline"] != certification_baseline:
+        _fail("EB_EE_CERTIFICATION_BASELINE_DISAGREEMENT", "EB and EE baselines differ")
+    if eb_envelope["receipt"]["runtime_target_selection_binding"] != runtime_target:
+        _fail("EB_EE_RUNTIME_TARGET_DISAGREEMENT", "EB and EE runtime targets differ")
     harness_binding = receipt["harness_binding"]
     harness_relative, harness = _repo_file(
         repository_root,
@@ -518,7 +537,7 @@ def verify_receipt_envelope(
     runtime_raw, runtime_envelope, runtime_inner = _manifest_binding(
         runtime,
         du,
-        expected_head=certification_baseline["head"],
+        expected_head=runtime_target["head"],
         runtime=True,
     )
     if sha256_bytes(runtime_raw) != runtime_binding["file_sha256"]:
