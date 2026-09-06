@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "SAPIANTA_CANDIDATE_BOUND_PRE_MATERIALIZATION_VALIDATION_RECEIPT_SCHEMA_V2",
+  "title": "SAPIANTA Candidate-Bound Pre-Materialization Validation Receipt V2",
+  "type": "object",
+  "required": ["schema_id", "receipt", "receipt_inner_sha256"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_id": {"const": "SAPIANTA_CANDIDATE_BOUND_VALIDATION_RECEIPT_ENVELOPE_V2"},
+    "receipt_inner_sha256": {"$ref": "#/$defs/sha256"},
+    "receipt": {
+      "type": "object",
+      "required": [
+        "schema_id",
+        "receipt_version",
+        "generation_identity",
+        "candidate_binding",
+        "validator_binding",
+        "canonical_v2_contract_validator_binding",
+        "candidate_manifest_schema_binding",
+        "receipt_schema_binding",
+        "validation_mode",
+        "validation_profile",
+        "canonical_argument_vector",
+        "validation_command_identity_sha256",
+        "process_exit_status",
+        "gate_results",
+        "overall_result",
+        "certification_baseline",
+        "receipt_is_authority",
+        "auto_continuable"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema_id": {"const": "SAPIANTA_CANDIDATE_BOUND_VALIDATION_RECEIPT_V2"},
+        "receipt_version": {"const": "2.0.0"},
+        "generation_identity": {"const": "G77_256EB_CANDIDATE_BOUND_PRE_MATERIALIZATION_VALIDATION_RECEIPT_HARDENING_V2"},
+        "candidate_binding": {
+          "type": "object",
+          "required": ["path", "file_sha256", "canonical_serialization_state"],
+          "additionalProperties": false,
+          "properties": {
+            "path": {"$ref": "#/$defs/repositoryPath"},
+            "file_sha256": {"$ref": "#/$defs/sha256"},
+            "canonical_serialization_state": {"const": "CANONICAL_V2_JSON"}
+          }
+        },
+        "validator_binding": {"$ref": "#/$defs/implementationBinding"},
+        "canonical_v2_contract_validator_binding": {"$ref": "#/$defs/implementationBinding"},
+        "candidate_manifest_schema_binding": {"$ref": "#/$defs/implementationBinding"},
+        "receipt_schema_binding": {"$ref": "#/$defs/implementationBinding"},
+        "validation_mode": {"const": "CANDIDATE_VALIDATION"},
+        "validation_profile": {"const": "CANONICAL_V2_PRE_MATERIALIZATION_FOUR_GATE_CANDIDATE_BOUND_V2"},
+        "canonical_argument_vector": {
+          "type": "array",
+          "prefixItems": [
+            {"const": "--mode"},
+            {"const": "CANDIDATE_VALIDATION"},
+            {"const": "--candidate"},
+            {"$ref": "#/$defs/repositoryPath"},
+            {"const": "--certification-baseline-current"},
+            {"const": "--profile"},
+            {"const": "CANONICAL_V2_PRE_MATERIALIZATION_FOUR_GATE_CANDIDATE_BOUND_V2"}
+          ],
+          "minItems": 7,
+          "maxItems": 7
+        },
+        "validation_command_identity_sha256": {"$ref": "#/$defs/sha256"},
+        "process_exit_status": {"const": 0},
+        "gate_results": {
+          "type": "object",
+          "required": [
+            "manifest_authenticity_gate",
+            "manifest_schema_validity_gate",
+            "manifest_semantic_compatibility_gate",
+            "manifest_constitutional_admissibility_gate"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "manifest_authenticity_gate": {"const": "PASS"},
+            "manifest_schema_validity_gate": {"const": "PASS"},
+            "manifest_semantic_compatibility_gate": {"const": "PASS"},
+            "manifest_constitutional_admissibility_gate": {"const": "PASS"}
+          }
+        },
+        "overall_result": {"const": "PASS"},
+        "certification_baseline": {"$ref": "#/$defs/certificationBaseline"},
+        "receipt_is_authority": {"const": false},
+        "auto_continuable": {"const": false}
+      }
+    }
+  },
+  "$defs": {
+    "nonempty": {"type": "string", "minLength": 1},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "gitObject": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "repositoryPath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
+    },
+    "certificationBaseline": {
+      "type": "object",
+      "required": ["head", "tree"],
+      "additionalProperties": false,
+      "properties": {
+        "head": {"$ref": "#/$defs/gitObject"},
+        "tree": {"$ref": "#/$defs/gitObject"}
+      }
+    },
+    "implementationBinding": {
+      "type": "object",
+      "required": ["identity", "path", "file_sha256"],
+      "additionalProperties": false,
+      "properties": {
+        "identity": {"$ref": "#/$defs/nonempty"},
+        "path": {"$ref": "#/$defs/repositoryPath"},
+        "file_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    }
+  }
+}
