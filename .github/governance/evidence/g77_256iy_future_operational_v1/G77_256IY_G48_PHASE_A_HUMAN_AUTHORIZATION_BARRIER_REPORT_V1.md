@@ -1,0 +1,359 @@
+# 1. Implementation Summary
+
+Generation: G77-256IY — ONE FRESH HUMAN-AUTHORIZED FUTURE OPERATIONAL
+COMMISSIONING V1
+
+Report identity: G77_256IY_G48_PHASE_A_HUMAN_AUTHORIZATION_BARRIER_REPORT_V1
+
+Reporting date: 2026-09-07
+
+Phase A authenticated the exact pushed and remote-ratified IX checkpoint,
+reconstructed the certified FUTURE frontier from committed evidence, derived a
+fresh IY operation envelope through the existing single production route, and
+stopped at the Human authorization barrier. The commissioning prompt was not
+treated as authority.
+
+The first authority-free authoring invocation stopped before materialization
+on an IX evidence-reader path mismatch. The bounded reader was corrected and
+the nonoperational materializer was rerun. This created no authority, PRE/FM
+operational invocation, QEMU, VM boot, operation attempt, REQUEST, repair-retry,
+or replay; all operational counters remained zero.
+
+```text
+TERMINAL = HUMAN_AUTHORIZATION_REQUIRED
+GENERATION_ID = G77_256IY_ONE_FRESH_HUMAN_AUTHORIZED_FUTURE_OPERATIONAL_COMMISSIONING_V1
+OPERATION_ID = G77_256IY_E05_FUTURE_DENIAL_BEFORE_ENTRY_001
+SEALED_REQUEST_SHA256 = c1efbf64e20376e28c67addec55afc1e365a0bf4125f8af2997e945d207e2100
+INNER_REQUEST_SHA256 = 34ff5f440aed0d2add6dbf194fa160eaa44dafef5a75defc634c3af131dcc4b2
+CANDIDATE_SHA256 = ad5d204ec6ace09f18b83fd5f868e73dac5e36dad81149f9f335c87f68cf42f7
+CONTEXT_SHA256 = bf44f090cf5eb27012143187771f66c0c3d7a81518a74fbaf4e5b40a10c9a8e1
+CANONICAL_ARGV_SHA256 = 439ebb23c145717cae77f121067a5ecbc94923b44747e271addd11222ef32e07
+PREAUTHORIZATION_CHECKPOINT_SHA256 = e8dd861b67da8b61e3bdbed14a5cb5b008aa7099f2e98b50f0cc13e66f84f7e8
+AUTHORIZATION_PRESENTATION_SHA256 = 2b86bfc04ef66306948d6447f1b272366c14152234ad6fe7c6bea214b3fcab3b
+AUTO_CONTINUABLE = NO
+HUMAN_REVIEW_REQUIRED = YES
+PHASE_B_STARTED = NO
+```
+
+No Human operational authority exists. Authority consumption, PRE, FM
+operational invocation, QEMU, VM boot, operation attempt, REQUEST, P11 entry,
+protected invocation/effect, retry, repair-retry, replay, and E05 credit are all
+zero. `CERTIFIED != AUTHORIZED`, `READY != AUTHORIZED`, and
+`PROVIDER_CAPABILITY != EXECUTION_AUTHORITY` remain enforced.
+
+# 2. Code Evidence
+
+The IY Phase A materializer reuses the committed FM context/materialization and
+static-readiness owner, GN presentation owner, GL receipt-parent equivalence,
+DU/EB/EE V2 validators, EX substrate, and the existing IF FUTURE adapter. The
+IY authority controller contains no launcher or QEMU call; it can authenticate
+and consume only the exact future Human sentence in a later Phase B.
+
+Authenticated repository identities:
+
+| Role | HEAD | TREE |
+|---|---|---|
+| IX certification baseline/current repository | `0d36155469c7d2fe043678a82652132c2878ff0e` | `1a8b2f988704dfc5c11df81450ebe487355d1450` |
+| IF protected runtime target | `699fcdce794ff49b6c8735602936355724ed1c90` | `7c773d4b2acdf013f1b8238eabfc8eced4dd6866` |
+| nested authority | `3183bab71f8f30397c0309dd2e6d846d14a11f66` | `7c32ec05efc2be43297849bc38ec8766514a523d` |
+
+```text
+TARGET_RUNTIME_IDENTITY = REPOSITORY_DERIVED__IF
+CURRENT_REPOSITORY_IDENTITY = REPOSITORY_DERIVED__IX
+CERTIFICATION_BASELINE_IDENTITY = REPOSITORY_DERIVED__IX
+CHECKOUT_IDENTITY = REPOSITORY_DERIVED__IF
+RUNTIME_TARGET_EQUALS_CERTIFICATION_BASELINE = VERIFIED__NO
+ROLE_COLLAPSE = VERIFIED__NO
+```
+
+The IX terminal was reconstructed as
+`A__FUTURE_POST_COMMIT_IMPORT_ROOT_FULL_STATIC_READINESS_VERIFIED`. Its terminal
+frontier is preserved:
+
+```text
+LAST_VERIFIED_EDGE = FUTURE_POST_COMMIT_IMPORT_ROOT_FULL_STATIC_PREOPERATIONAL_READINESS
+FIRST_BROKEN_EDGE = FRESH_HUMAN_OPERATIONAL_AUTHORIZATION_NOT_YET_ISSUED
+```
+
+The existing FM selector binds the IW correction exactly:
+
+```text
+IW_CLOUD_INIT_SHA256 = 10092e4d10327c0bef42608e3125ca4b04b82b8e91a0c5e88a5148ee1a14fee2
+IW_NOCLOUD_SEED_SHA256 = 655b8b4122f89acbf0e4d3a670ee3b4fb38fb37600eeb6c8745c0a13cdc57eab
+FM_SELECTOR_POST_IW_SHA256 = ee06a8b77870aecd1621ab9fb2af1c412cea525ea55b6367e3bae9dd1e6d5ab6
+GUEST_SEQUENCE = AUTHENTICATED_IF_CHECKOUT__READ_ONLY_/mnt/aigol__PYTHONPATH_/mnt/aigol__FM_BOOT_MARKER__FUTURE_ADAPTER__TOP_LEVEL_AIGOL_IMPORTS
+```
+
+FUTURE semantics remain deterministic:
+
+```text
+evaluation = 500
+valid_from = 600
+valid_until = 1000
+relation = 500 < 600 < 1000
+payload digest = 9568e0c248ad488cabcf6bde6b490c544077862d10e3fda13bcdc8ed9953f547
+source act = 7167b0725d2c84bafde1d0060f512b0fa358d777ec1beff8b7c68d22ee6502e8
+CHE correlation = CHE-CORRELATION-15b2680b5577da169cecf9efb3231e2e6f6467e6f409fa2594b04128f998e454
+FUTURE_SEMANTIC_MUTATION_COUNT = VERIFIED__0
+WALL_CLOCK_DEPENDENCY_COUNT = VERIFIED__0
+```
+
+The GN presentation validates as an exact projection of the canonical sealed
+request. The Human action made available for separate review is exactly:
+
+```text
+I explicitly authorize G77-256IY request 34ff5f440aed0d2add6dbf194fa160eaa44dafef5a75defc634c3af131dcc4b2 for operation G77_256IY_E05_FUTURE_DENIAL_BEFORE_ENTRY_001, candidate ad5d204ec6ace09f18b83fd5f868e73dac5e36dad81149f9f335c87f68cf42f7, context bf44f090cf5eb27012143187771f66c0c3d7a81518a74fbaf4e5b40a10c9a8e1, and canonical argv 439ebb23c145717cae77f121067a5ecbc94923b44747e271addd11222ef32e07, starting from E05 10/18, subject to exactly one authority consumption, PRE, FM invocation, no-network QEMU, VM boot, and operation attempt, with zero retry, repair, replay, or protected effect.
+```
+
+Displaying this sentence is not authorization. No authorization source or
+handoff artifact exists in Phase A.
+
+# 3. Constitutional Self-Assessment
+
+## Reuse Impact Assessment
+
+1. Katere obstoječe certificirane zmogljivosti se ponovno uporabijo?
+
+   Ponovno se uporabijo IX, IW, IV, IU, IT, IS, IR, IQ, IP, IO, IN, IF, IE,
+   FM, GN, GL, Human-act, DU/EB/EE V2, P11/DI, CHE/FK, EX 17/17, governance,
+   Layer 0 in pripeta ugnezdena avtoriteta. Porabljena IV avtoriteta se ne
+   uporabi.
+
+2. Katere nove zmogljivosti (če sploh) nastanejo?
+
+   Nastanejo samo sveži IY operacijski ovoj, neavtoritativna zahteva,
+   predstavitev, mejna dokazila in generacijsko vezan enkratni krmilnik za
+   morebitno fazo B. Nova produkcijska zmogljivost ne nastane.
+
+3. Ali katera obstoječa zmogljivost postane nedosegljiva?
+
+   Ne. Obstoječe certificirane zmogljivosti in zgodovinska dokazila ostanejo
+   dosegljivi in nespremenjeni.
+
+4. Ali implementacija ustvarja vzporedni tok?
+
+   Ne. IY uporablja obstoječo enojno FM/GN/GL/P11 pot.
+
+5. Ali zmanjšuje ali povečuje število produkcijskih poti?
+
+   Ne. Pred IY je ena produkcijska pot, po IY Phase A je ena, delta je nič.
+
+```text
+REUSED_CERTIFIED_CAPABILITY_SET = VERIFIED__IX_IW_IV_IU_IT_IS_IR_IQ_IP_IO_IN_IF_IE_FM_GN_GL_HUMAN_ACT_DU_EB_EE_V2_P11_DI_CHE_FK_EX_GOVERNANCE_LAYER_0_NESTED_AUTHORITY
+NEW_CAPABILITY_SET = VERIFIED__IY_FRESH_OPERATION_ENVELOPE_AND_PHASE_A_BARRIER_EVIDENCE_ONLY
+UNREACHABLE_PREEXISTING_CAPABILITY_SET = VERIFIED__EMPTY
+PARALLEL_FLOW_CREATED = VERIFIED__NO
+PRODUCTION_ROUTE_BEFORE = VERIFIED__1
+PRODUCTION_ROUTE_AFTER = VERIFIED__1
+PRODUCTION_ROUTE_DELTA = VERIFIED__0
+NEW_LAUNCHER_COUNT = VERIFIED__0
+NEW_GENERIC_ADAPTER_COUNT = VERIFIED__0
+NEW_DISPATCHER_COUNT = VERIFIED__0
+NEW_GLOBAL_REGISTRY_COUNT = VERIFIED__0
+P11_MUTATION_COUNT = VERIFIED__0
+```
+
+## Infrastructure Amortization
+
+```text
+FUTURE_GENERATIONS_SO_FAR = VERIFIED__21__IE_THROUGH_IY
+FUTURE_E05_CREDIT_SO_FAR = VERIFIED__0
+FUTURE_OPERATIONAL_ATTEMPTS_SO_FAR = VERIFIED__1__IV_ONLY
+NEW_COMMON_INFRASTRUCTURE_FOR_FUTURE = VERIFIED__0
+NEW_VECTOR_SPECIFIC_INFRASTRUCTURE_FOR_FUTURE = VERIFIED__0
+MARGINAL_NEW_INFRASTRUCTURE_FOR_IY = VERIFIED__PHASE_A_EVIDENCE_AND_GENERATION_BOUND_ONE_SHOT_CONTROLLER_ONLY
+MARGINAL_NEW_INFRASTRUCTURE_PER_E05_CREDIT = NOT_APPLICABLE__PHASE_A_ZERO_CREDIT
+INFRASTRUCTURE_AMORTIZATION_SIGNAL = ESTIMATED__HIGH_REUSE__OPERATIONAL_YIELD_PENDING_HUMAN_GRANT
+EXPECTED_NEXT_CREDIT_GENERATION_COUNT = NOT_PROVEN
+E05_GENERATIONS_PER_CREDIT = NOT_APPLICABLE__ZERO_FUTURE_CREDIT
+OPERATIONAL_ATTEMPTS_PER_CREDIT = NOT_APPLICABLE__ONE_FUTURE_ATTEMPT_ZERO_FUTURE_CREDIT
+MARGINAL_E05_GENERATION_COST = NOT_MEASURED__NO_GOVERNED_COST_INSTRUMENT
+```
+
+## CCWIM
+
+```text
+CCWIM_MATURITY_LEVEL = ESTIMATED__L4_LIKE__NO_L5_CLAIM
+CROSS_WORKER_STATE_RECOVERY_LEVEL = VERIFIED__AUTHENTICATED_REPOSITORY_HANDOFF
+REPOSITORY_DERIVED_CONTEXT_RATIO = ESTIMATED__DOMINANT__NO_NUMERIC_INSTRUMENT
+HUMAN_HANDOFF_INFORMATION_REQUIRED = VERIFIED__EXACT_PRESENTED_AUTHORIZATION_SENTENCE_ONLY
+PREVIOUS_WORKER_CONVERSATION_REQUIRED = VERIFIED__NO
+PREVIOUS_WORKER_IDENTITY_REQUIRED = VERIFIED__NO
+PREVIOUS_WORKER_MEMORY_REQUIRED = VERIFIED__NO
+AUTHENTICATED_REPOSITORY_CONTINUATION = VERIFIED__YES
+INTER_GENERATION_CROSS_WORKER_CONTINUATION = VERIFIED__IX_TO_IY
+INTRA_GENERATION_CROSS_WORKER_CONTINUATION = NOT_APPLICABLE__NO_DELEGATION
+UNCOMMITTED_DELTA_RECOVERY = NOT_APPLICABLE__CLEAN_ENTRY
+AUTHORITY_STATE_RECOVERY = VERIFIED__IV_CONSUMED__IW_IX_ZERO__IY_NOT_GRANTED
+CONSUMED_AUTHORITY_RECOVERY = VERIFIED__IV_AUTHORITY_CONSUMED_AND_NOT_REUSABLE
+POST_OPERATION_STATE_RECOVERY = VERIFIED__IV_FAIL_CLOSED_TERMINAL_RECONSTRUCTED
+OPERATION_REPLAY_PREVENTION = VERIFIED__IY_ZERO_OPERATION_AND_IV_AUTHORITY_NOT_REUSED
+CROSS_WORKER_CONSTITUTIONAL_DRIFT = NOT_PROVEN__NO_GOVERNED_WORKER_IDENTITY_DRIFT_INSTRUMENT
+OBSERVED_ARTIFACT_LEVEL_CROSS_WORKER_DRIFT = VERIFIED__0
+HANDOFF_SUFFICIENCY_STATUS = VERIFIED__COMPLETE_FOR_HUMAN_BARRIER
+HANDOFF_STATE_COMPLETENESS = VERIFIED__COMPLETE_FOR_IY_PHASE_A
+HANDOFF_RECONSTRUCTION_REQUIRED = VERIFIED__YES
+HANDOFF_RECONSTRUCTION_SUCCESS = VERIFIED__YES
+HANDOFF_AMBIGUITY_COUNT = VERIFIED__0
+UNAUTHENTICATED_HANDOFF_ASSUMPTION_COUNT = VERIFIED__0
+```
+
+## Cognition Provenance and Cognition-Assisted Handoff
+
+```text
+COGNITION_PROVENANCE = VERIFIED__RATIFIED_IX_GIT_CHECKPOINT_AND_COMMITTED_EVIDENCE_PRIMARY
+COGNITION_ASSISTED_HANDOFF = VERIFIED__REPOSITORY_DERIVED_IX_TO_IY_CONTINUATION
+WORKER_MEMORY != SOURCE_OF_TRUTH
+PROMPT != STORAGE_OF_SYSTEM_STATE
+PREVIOUS_WORKER_REPORT != MACHINE_PROOF
+```
+
+## Prompt Context Reuse, Repository-Derived Execution Context, and Constitutional Prompt Externalization
+
+```text
+PROMPT_CONTEXT_REUSE_RATIO = NOT_MEASURED__NO_GOVERNED_NUMERIC_INSTRUMENT
+REPOSITORY_DERIVED_EXECUTION_CONTEXT_RATIO = NOT_MEASURED__NO_GOVERNED_NUMERIC_INSTRUMENT
+CONSTITUTIONAL_PROMPT_EXTERNALIZATION_RATIO = NOT_MEASURED__NO_GOVERNED_NUMERIC_INSTRUMENT
+```
+
+## Token Benchmark and LLM Cost Reduction Ratio / LCRR
+
+```text
+TOKEN_BENCHMARK = NOT_MEASURED
+LLM_COST_REDUCTION_RATIO = NOT_MEASURED
+LCRR = NOT_MEASURED
+AIGOL_CODEX_WORK_SHARE = NOT_MEASURED
+```
+
+## Constitutional Health Evidence
+
+```text
+IV = VERIFIED__ONE_HUMAN_AUTHORITY__ONE_CONSUMPTION__ONE_ATTEMPT__ZERO_RETRY_REPLAY__FAIL_CLOSED_BEFORE_REQUEST
+IW = VERIFIED__REPOSITORY_ONLY_IMPORT_ROOT_REPAIR__ZERO_OPERATION
+IX = VERIFIED__POST_COMMIT_READINESS__ZERO_OPERATION
+IY = VERIFIED__FRESH_NONAUTHORITY_PRESENTATION__ZERO_CONSUMPTION__ZERO_OPERATION__ZERO_RETRY_REPAIR_REPLAY
+CONSTITUTIONAL_HEALTH_EVIDENCE = VERIFIED__ACTUAL_IV_IW_IX_IY_CHAIN_PRESERVES_HUMAN_BARRIER_AND_ONE_SHOT_BOUNDARIES
+```
+
+## Shadow Automation
+
+Automatic authority, authority reuse, automatic retry, repair-retry, replay,
+automatic successor operation, implicit second QEMU/VM/operation, and automatic
+E05 credit were inspected and are absent.
+
+```text
+SHADOW_AUTOMATION_STATUS = VERIFIED__ABSENT
+```
+
+## Required Constitutional Metrics
+
+```text
+PROJECT_PROGRESS_ESTIMATE = NOT_MEASURED__NO_CERTIFIED_TOTAL_PROJECT_DENOMINATOR
+CONSTITUTIONAL_FRONTIER_DISTANCE = NOT_MEASURED__NO_GOVERNED_UNIVERSAL_SCALAR
+CONSTITUTIONAL_FRONTIER_DISTANCe = NOT_MEASURED__NO_GOVERNED_UNIVERSAL_SCALAR
+E05_FRONTIER_DISTANCE = VERIFIED__8_UNSATISFIED_OF_18
+SELECTED_E05_LOCAL_FRONTIER_DISTANCE = VERIFIED__ONE_EXACT_HUMAN_GRANT_THEN_AT_MOST_ONE_GOVERNED_OPERATION
+GOVERNANCE_EFFICIENCE = ESTIMATED__HIGH_REUSE_WITH_HARD_PREOPERATIONAL_STOP
+ARCHITECTURAL_GOVERNANCE_EFFICIENCE = VERIFIED__ONE_ROUTE_ZERO_ROUTE_DELTA
+PROOF_REUSE_EFFICIENCY = VERIFIED__EX_17_OF_17_REUSED__0_RECONSTRUCTED
+OVERENGINEERING_RISK = ESTIMATED__LOW__EXISTING_ROUTE_REUSED
+PROOF_PROCESS_OVERHEAD_RISK = ESTIMATED__MODERATE
+CANDIDATE_CAPABILITY = VERIFIED__FUTURE_POST_COMMIT_FULL_STATIC_PREOPERATIONAL_READINESS__OPERATIONAL_DENIAL_NOT_PROVEN
+SHADOW_DESIGN_TARGET = VERIFIED__FAMILY_LOCAL_DU_EB_EE_V2_OPTION_B_WITH_COLOCATED_FAIL_CLOSED_MAJOR_VERSION_DISPATCH
+CONSTITUTIONAL_CONTINUATION_PROGRESS = VERIFIED__IV_AUTHORIZED_OPERATION_TO_IMPORT_FAILURE__IW_IMPORT_ROOT_REPOSITORY_REPAIR__IX_POST_COMMIT_FULL_STATIC_READINESS__IY_PHASE_A_HUMAN_BARRIER
+```
+
+## Historical Failure Firewall
+
+The firewall checked future-commit self-reference, precommit HEAD dependency,
+checkout/tree mismatch, checkout alternates escape, checkout destination
+collision, host/guest path mismatch, adapter/launcher/bootstrap/seed mismatch,
+stale projection, historical wrapper binding, runtime/current and
+runtime/certification collapse, caller-selected target/vector/version/import
+root, generic registry/dispatcher, weak generation binding, parallel route,
+P11 bypass, automatic authority, authority replay, automatic retry,
+repair-retry, manual hash patching, host-sys.path false positive,
+network/package dependency, absent guest import root, cross-generation Human
+authorization, second consumption, second QEMU, and second operation.
+
+```text
+CHECKED_FAILURE_CLASS_COUNT = VERIFIED__35
+REINTRODUCED_HISTORICAL_FAILURE_COUNT = VERIFIED__0
+EX_REUSED = VERIFIED__17_OF_17
+EX_RECONSTRUCTED = VERIFIED__0
+EX_IS_AUTHORITY = VERIFIED__NO
+```
+
+# 4. Validation Matrix
+
+| Classification | Validation | Phase A result |
+|---|---|---|
+| CURRENT_APPLICABLE_ASSERTIONS | exact IX local/remote checkpoint and pinned nested authority | PASS |
+| CURRENT_APPLICABLE_ASSERTIONS | focused IY Phase A suite, including IX committed-object reconstruction, IW binding, DU/EB/EE V2, canonical JSON, seals, AST, NoCloud and G48 | PASS__7_OF_7 |
+| CURRENT_APPLICABLE_ASSERTIONS | retained GN/GL, Human-act, P11/DI and CHE/FK suites | PASS__110_OF_110 |
+| CURRENT_APPLICABLE_ASSERTIONS | EX common substrate | PASS__12_OF_12__17_COMPONENTS_REUSED |
+| CURRENT_APPLICABLE_ASSERTIONS | governance and Layer 0 | PASS__9_OF_9 |
+| CURRENT_APPLICABLE_ASSERTIONS | governance conformance engine | PASS__20_OF_20__CONFORMANT__0_WARNINGS__0_VIOLATIONS |
+| CURRENT_APPLICABLE_ASSERTIONS | canonical JSON, duplicate keys, inner seals, AST, NoCloud projection, G48 six headings | PASS |
+| CURRENT_APPLICABLE_ASSERTIONS | `git diff --check` and empty index | PASS |
+| HISTORICAL_OR_SUPERSEDED_SNAPSHOT_ASSERTIONS | IX authoring suite requiring exact IW entry | DESELECTED__FAILS_CLOSED_AT_RATIFIED_IX_HEAD__PRESERVED_UNEDITED |
+
+The table records the completed validation run for this Phase A terminal.
+Operational evidence validation is not applicable before an exact Human grant.
+Static materialization is not an operational attempt.
+
+# 5. Repository Mutation Summary
+
+Only bounded IY evidence exists under
+`.github/governance/evidence/g77_256iy_future_operational_v1/`, with transient
+operation-scoped checkout/overlay state under `/tmp/g77_256iy_future_operational_v1`.
+No historical IV/IW/IX evidence, consumed authority, P11 owner, production
+owner, nested authority, FM launcher, adapter, seed, dispatcher, or registry
+was modified. No stage, commit, push, reset, clean, stash, merge, rebase, or tag
+occurred. All IY changes are unstaged for Human review; the index is empty.
+
+```text
+IY_PHASE_A_FILE_COUNT = VERIFIED__24
+PRODUCTION_OWNER_MUTATION_COUNT = VERIFIED__0
+HISTORICAL_EVIDENCE_MUTATION_COUNT = VERIFIED__0
+P11_MUTATION_COUNT = VERIFIED__0
+INDEX = VERIFIED__EMPTY
+```
+
+# 6. Certification Verdict
+
+```text
+TERMINAL = HUMAN_AUTHORIZATION_REQUIRED
+PHASE_A = VERIFIED__COMPLETE
+HUMAN_AUTHORIZATION_PRESENTATION = VERIFIED__1_NONAUTHORITY_PRESENTATION_MATERIALIZED_AS_GOVERNED
+HUMAN_OPERATIONAL_AUTHORITY = VERIFIED__0
+AUTHORITY_CONSUMPTION = VERIFIED__0
+SECOND_AUTHORITY_CONSUMPTION = VERIFIED__0
+PRE_OPERATIONAL_INVOCATION = VERIFIED__0
+FM_OPERATIONAL_INVOCATION = VERIFIED__0
+QEMU = VERIFIED__0
+VM_BOOT = VERIFIED__0
+OPERATION_ATTEMPT = VERIFIED__0
+REQUEST = VERIFIED__0
+FUTURE_DENIAL = VERIFIED__0
+P11_ENTRY = VERIFIED__0
+PROTECTED_INVOCATION = VERIFIED__0
+PROTECTED_EFFECT = VERIFIED__0
+RETRY = VERIFIED__0
+REPAIR_RETRY = VERIFIED__0
+REPLAY = VERIFIED__0
+FUTURE_E05_CREDIT = VERIFIED__0
+E05_CREDIT = VERIFIED__0
+E05 = VERIFIED__10_OF_18
+AUTO_CONTINUABLE = NO
+HUMAN_REVIEW_REQUIRED = YES
+PHASE_B_STARTED = NO
+NEXT_GENERATION_STARTED = NO
+LAST_VERIFIED_EDGE = IY_PHASE_A_EXACT_GN_DERIVED_HUMAN_AUTHORIZATION_PRESENTATION
+FIRST_BROKEN_EDGE = FRESH_HUMAN_OPERATIONAL_AUTHORIZATION_NOT_YET_SUPPLIED
+MINIMUM_MISSING_CAPABILITY = ONE_EXACT_HUMAN_AUTHORIZATION_SENTENCE_FOR_THIS_IY_ENVELOPE
+MINIMUM_LEGAL_NEXT_DELTA = HUMAN_SUPPLIES_EXACT_PRESENTED_SENTENCE_OR_REJECTS
+```
+
+Phase B has not started and cannot continue automatically across this Human
+barrier.
