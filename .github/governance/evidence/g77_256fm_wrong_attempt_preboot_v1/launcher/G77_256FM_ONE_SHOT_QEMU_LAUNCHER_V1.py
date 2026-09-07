@@ -90,11 +90,11 @@ WRONG_PROVENANCE_CLOUD_INIT_SHA256 = (
     "4725543bab299d1e153b2c40f9fcd0791ce9c2af318e88c41deeba9e6c69ed84"
 )
 FUTURE_CLOUD_INIT = (
-    ".github/governance/evidence/g77_256it_future_bootstrap_seed_binding_v1/"
-    "static/G77_256IT_CLOUD_INIT_USER_DATA_V1.yaml"
+    ".github/governance/evidence/g77_256iw_future_guest_import_root_binding_v1/"
+    "static/G77_256IW_CLOUD_INIT_USER_DATA_V1.yaml"
 )
 FUTURE_CLOUD_INIT_SHA256 = (
-    "85fff3ed0a764c2e0a26acc5d08778b21bec9fe925c2eb69e931b410f906eaff"
+    "10092e4d10327c0bef42608e3125ca4b04b82b8e91a0c5e88a5148ee1a14fee2"
 )
 FK_ADAPTER = ".github/governance/evidence/g77_256fc_wrong_attempt_operational_v1/harness/G77_256FC_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py"
 CANONICAL_CHE = "aigol/runtime/canonical_che_evidence_correlation_contract_v1.py"
@@ -139,7 +139,7 @@ WRONG_PROVENANCE_SEED = (
 )
 FUTURE_SEED = (
     "/home/pisarna/work/sapianta-fl/.github/governance/evidence/"
-    "g77_256it_future_bootstrap_seed_binding_v1/static/"
+    "g77_256iw_future_guest_import_root_binding_v1/static/"
     "SAPIANTA_FUTURE_NOCLOUD_SEED_V1.img"
 )
 CHECKOUT = "/tmp/g77_256fm/checkout"
@@ -193,7 +193,7 @@ EXPECTED_ASSET_SHA256 = {
     WRONG_ATTEMPT_SEED: "6346b9f02b236d71f2698b01a0d607549ad4d9d779a72b5168658994c519913d",
     WRONG_CONTRACT_SEED: "fc98a62a1b3bd813b7f570438fc48151c378aeba4389de13d4e532d3f7979b21",
     WRONG_PROVENANCE_SEED: "4154ec58b7ebf46299ccc495a0a1232b7e31f67221f987b6fe7959f8d5593c7c",
-    FUTURE_SEED: "58b880d7011a9a781968139f212eef8f6b913f0efadf86df1ee98ac05b0f3369",
+    FUTURE_SEED: "655b8b4122f89acbf0e4d3a670ee3b4fb38fb37600eeb6c8745c0a13cdc57eab",
     LEGACY_CLOUD_INIT: LEGACY_CLOUD_INIT_SHA256,
     LEGACY_SEED: "966f1910bbffe20fa18c4cee56ff61dcbb069348e2929bfda74e029a9dc0ec58",
 }
