@@ -1,0 +1,23 @@
+#cloud-config
+# Repository-only IZ successor. Live use requires a later fresh Human-authorized generation.
+users: []
+disable_root: false
+ssh_pwauth: false
+runcmd:
+  - |
+    set -eu
+    export PYTHONDONTWRITEBYTECODE=1
+    mkdir -p /mnt/aigol /mnt/dp-harness /mnt/g77-harness /mnt/g77-evidence
+    mount -t 9p -o trans=virtio,version=9p2000.L,ro aigol_checkout /mnt/aigol
+    mount -t 9p -o trans=virtio,version=9p2000.L,ro fm_harness /mnt/dp-harness
+    mount -t 9p -o trans=virtio,version=9p2000.L,ro g77_harness /mnt/g77-harness
+    mount -t 9p -o trans=virtio,version=9p2000.L g77_evidence /mnt/g77-evidence
+    export PYTHONPATH=/mnt/aigol
+    echo G77_256FM_BOOT_MARKER=PASS
+    set +e
+    /usr/bin/python3 /mnt/dp-harness/G77_256FM_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py e7babafc2a85ebcb59ef3b7aaa70cf220a5a6fb6833dc2f85f8377be5c3c8533 95ca9b753b2e4256b6530652d5a6e2a8220fed68c52f774928e1e39721f4ca67 699fcdce794ff49b6c8735602936355724ed1c90 7c773d4b2acdf013f1b8238eabfc8eced4dd6866 4e5d01699796d4bb451818408f7cd6a080b6d55fde518df8a9dd2acd3f1a73bb
+    fm_status=$?
+    set -e
+    echo G77_256FM_HARNESS_EXIT_STATUS=$fm_status
+    sync
+    poweroff -f
