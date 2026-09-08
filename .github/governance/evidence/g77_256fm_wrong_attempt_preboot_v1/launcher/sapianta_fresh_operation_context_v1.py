@@ -23,6 +23,8 @@ GUEST_MOUNT_ROOT = "/mnt/g77-evidence"
 GUEST_CONTEXT_FILENAME = "SAPIANTA_FRESH_OPERATION_CONTEXT_V1.json"
 GUEST_HARNESS_MOUNT_TAG = "fm_harness"
 GUEST_HARNESS_ROOT = "/mnt/dp-harness"
+GUEST_CONTEXT_OWNER_FILENAME = "sapianta_fresh_operation_context_v1.py"
+GUEST_CONTEXT_OWNER_PATH = Path(GUEST_HARNESS_ROOT) / GUEST_CONTEXT_OWNER_FILENAME
 GUEST_REPOSITORY_ROOT = Path("/mnt/aigol")
 REPOSITORY_EVIDENCE_MARKER = (".github", "governance", "evidence")
 DN_HARNESS_RELATIVE_PATH = Path(
@@ -45,8 +47,8 @@ WRONG_PROVENANCE_ADAPTER_SOURCE_RELATIVE_PATH = (
     "adapter/G77_256IA_WRONG_PROVENANCE_VECTOR_ADAPTER_V1.py"
 )
 FUTURE_ADAPTER_SOURCE_RELATIVE_PATH = (
-    ".github/governance/evidence/g77_256iz_future_operational_entrypoint_v1/"
-    "adapter/G77_256IZ_FUTURE_VECTOR_ADAPTER_V1.py"
+    ".github/governance/evidence/g77_256jc_future_guest_context_owner_projection_v1/"
+    "adapter/G77_256JC_FUTURE_VECTOR_ADAPTER_V1.py"
 )
 ADAPTER_BOOTSTRAP_FILENAME = "G77_256FM_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py"
 ADAPTER_IDENTITY_SUFFIX = "_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py"
@@ -675,12 +677,17 @@ def validate_context(context: dict[str, Any], *, repository_root: Path) -> dict[
     adapter = context["guest_adapter_binding"]
     if not isinstance(adapter, dict):
         raise ContextError("guest adapter binding missing or malformed")
+    resolved_repository_root = repository_root.resolve()
+    adapter_source = (
+        Path(adapter["bootstrap_guest_path"])
+        if resolved_repository_root == GUEST_REPOSITORY_ROOT
+        else resolved_repository_root
+        / adapter_source_relative_path(context["generation_identity"])
+    )
     expected_adapter = derive_guest_adapter_binding(
         prefix,
         paths["operation_evidence_root"],
-        sha256_path(repository_root.resolve() / adapter_source_relative_path(
-            context["generation_identity"]
-        )),
+        sha256_path(adapter_source),
         vector=vector,
     )
     if adapter != expected_adapter:
@@ -829,6 +836,7 @@ def validate_freshness(
         expected = {
             Path(adapter["projected_path"]),
             Path(adapter["bootstrap_projected_path"]),
+            projection_root / GUEST_CONTEXT_OWNER_FILENAME,
         }
         actual = set(projection_root.iterdir())
         if actual != expected:

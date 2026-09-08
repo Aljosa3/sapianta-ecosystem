@@ -90,11 +90,11 @@ WRONG_PROVENANCE_CLOUD_INIT_SHA256 = (
     "4725543bab299d1e153b2c40f9fcd0791ce9c2af318e88c41deeba9e6c69ed84"
 )
 FUTURE_CLOUD_INIT = (
-    ".github/governance/evidence/g77_256iz_future_operational_entrypoint_v1/"
-    "static/G77_256IZ_CLOUD_INIT_USER_DATA_V1.yaml"
+    ".github/governance/evidence/g77_256jc_future_guest_context_owner_projection_v1/"
+    "static/G77_256JC_CLOUD_INIT_USER_DATA_V1.yaml"
 )
 FUTURE_CLOUD_INIT_SHA256 = (
-    "7f82b2dbb480af92b54b3e85e06e06af55b1623d51f8a541db195fa970a028e4"
+    "2a7a5dbe1e8bf17aec4a9199ac8609d40d71a1e7726211ed0d6a9faf719f6ff4"
 )
 FK_ADAPTER = ".github/governance/evidence/g77_256fc_wrong_attempt_operational_v1/harness/G77_256FC_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py"
 CANONICAL_CHE = "aigol/runtime/canonical_che_evidence_correlation_contract_v1.py"
@@ -139,8 +139,8 @@ WRONG_PROVENANCE_SEED = (
 )
 FUTURE_SEED = (
     "/home/pisarna/work/sapianta-fl/.github/governance/evidence/"
-    "g77_256iz_future_operational_entrypoint_v1/static/"
-    "SAPIANTA_FUTURE_NOCLOUD_SEED_V2.img"
+    "g77_256jc_future_guest_context_owner_projection_v1/static/"
+    "SAPIANTA_FUTURE_NOCLOUD_SEED_V3.img"
 )
 CHECKOUT = "/tmp/g77_256fm/checkout"
 LEGACY_CHECKOUT_HEAD = "7dce67ec18696ba0bad73130f3f7a84168f25277"
@@ -153,9 +153,12 @@ FRESH_OPERATION_CONTEXT_OWNER = (
     ".github/governance/evidence/g77_256fm_wrong_attempt_preboot_v1/launcher/"
     "sapianta_fresh_operation_context_v1.py"
 )
+FRESH_OPERATION_CONTEXT_OWNER_PROJECTION_FILENAME = (
+    "sapianta_fresh_operation_context_v1.py"
+)
 FRESH_OPERATION_CONTEXT_OWNER_HASH_KEY = "fresh_operation_context_owner"
 FRESH_OPERATION_CONTEXT_OWNER_SHA256 = (
-    "da09342d92f2a8d8310987aa0104bd6bd6ad7a3d009b51b8d710443c4884e9c7"
+    "9a5b0c5a542b00352cfde6aef399c72f589ce1b2fffae1911983854e378fdbb1"
 )
 ER_HARNESS_SHA256 = "4a2a84ff83c61bfec013b4bcd20eb16905eeb240869182edd6c0d948444bae89"
 QEMU_EXECUTABLE_SHA256 = "8a35ccba41582fc6c38b9df85fc9e35fa1d42f414d2d7d8090ee9b2f5e7c0854"
@@ -193,7 +196,7 @@ EXPECTED_ASSET_SHA256 = {
     WRONG_ATTEMPT_SEED: "6346b9f02b236d71f2698b01a0d607549ad4d9d779a72b5168658994c519913d",
     WRONG_CONTRACT_SEED: "fc98a62a1b3bd813b7f570438fc48151c378aeba4389de13d4e532d3f7979b21",
     WRONG_PROVENANCE_SEED: "4154ec58b7ebf46299ccc495a0a1232b7e31f67221f987b6fe7959f8d5593c7c",
-    FUTURE_SEED: "456a6e5187cb77be474dbc37cd052d24c9367e49604bd12ab9a8c19b08897cbd",
+    FUTURE_SEED: "6998d4cdaff3617b9e2c29f17318a220619fc718d0d9f9168b08e614cfdf0418",
     LEGACY_CLOUD_INIT: LEGACY_CLOUD_INIT_SHA256,
     LEGACY_SEED: "966f1910bbffe20fa18c4cee56ff61dcbb069348e2929bfda74e029a9dc0ec58",
 }
@@ -719,6 +722,9 @@ def prove_guest_adapter_binding(
     projection_root = Path(binding["projection_root"])
     projected = Path(binding["projected_path"])
     bootstrap = Path(binding["bootstrap_projected_path"])
+    context_owner_projection = (
+        projection_root / FRESH_OPERATION_CONTEXT_OWNER_PROJECTION_FILENAME
+    )
     if source.is_symlink() or not source.is_file():
         raise RuntimeError("adapter source absent or unsafe")
     source_sha = sha256_path(source)
@@ -726,14 +732,28 @@ def prove_guest_adapter_binding(
         raise RuntimeError("adapter source SHA-256 mismatch")
     if projection_root.is_symlink() or not projection_root.is_dir():
         raise RuntimeError("adapter projection root absent or unsafe")
-    expected_entries = {projected, bootstrap}
+    expected_entries = {projected, bootstrap, context_owner_projection}
     if set(projection_root.iterdir()) != expected_entries:
         raise RuntimeError("adapter projection stale, duplicate, or ambiguous")
-    for path in expected_entries:
+    for path in {projected, bootstrap}:
         if path.is_symlink() or not path.is_file():
             raise RuntimeError("adapter projection entry absent or unsafe")
         if sha256_path(path) != source_sha or path.read_bytes() != source.read_bytes():
             raise RuntimeError("adapter source/projected exact bytes differ")
+    context_owner_source = repository_root / FRESH_OPERATION_CONTEXT_OWNER
+    if (
+        context_owner_projection.is_symlink()
+        or not context_owner_projection.is_file()
+        or context_owner_source.is_symlink()
+        or not context_owner_source.is_file()
+        or sha256_path(context_owner_projection)
+        != context["wrapper_fc_er_che_schema_hashes"][
+            FRESH_OPERATION_CONTEXT_OWNER_HASH_KEY
+        ]
+        or context_owner_projection.read_bytes()
+        != context_owner_source.read_bytes()
+    ):
+        raise RuntimeError("FM context owner source/projected exact bytes differ")
 
     qemu_argument = guest_harness_virtfs_argument(context["canonical_argv"])
     expected_argument = (
@@ -1071,6 +1091,7 @@ def context_asset_expectations(
     if Path(candidate_key).is_absolute() or ".." in Path(candidate_key).parts:
         raise RuntimeError("candidate asset key must be repository-relative")
     checkout_root = Path(bindings["checkout"]["path"])
+    projection_root = Path(context["guest_adapter_binding"]["projection_root"])
     adapter_path = active_adapter_path(context)
     bootstrap_assets = bootstrap_asset_bindings(context)
     expectations = {
@@ -1091,9 +1112,12 @@ def context_asset_expectations(
     }
     owner_sha256 = hashes.get(FRESH_OPERATION_CONTEXT_OWNER_HASH_KEY)
     if owner_sha256 is not None:
-        expectations[str(checkout_root / FRESH_OPERATION_CONTEXT_OWNER)] = (
-            owner_sha256
-        )
+        expectations[
+            str(
+                projection_root
+                / FRESH_OPERATION_CONTEXT_OWNER_PROJECTION_FILENAME
+            )
+        ] = owner_sha256
     return expectations
 
 
@@ -1756,6 +1780,12 @@ def materialize_operation_state(
     adapter_bytes = adapter_source.read_bytes()
     Path(adapter_binding["projected_path"]).write_bytes(adapter_bytes)
     Path(adapter_binding["bootstrap_projected_path"]).write_bytes(adapter_bytes)
+    context_owner_source = repository_root / FRESH_OPERATION_CONTEXT_OWNER
+    context_owner_projection = (
+        adapter_projection_root
+        / FRESH_OPERATION_CONTEXT_OWNER_PROJECTION_FILENAME
+    )
+    context_owner_projection.write_bytes(context_owner_source.read_bytes())
     _, candidate = resolve_candidate_source(repository_root, candidate_source_path)
     runtime_manifest = Path(context["runtime_manifest_path"])
     runtime_manifest.write_bytes(candidate.read_bytes())
@@ -2214,7 +2244,7 @@ def prove_guest_fresh_operation_context_owner_binding(
     repository_root: Path,
     context: dict[str, Any],
 ) -> dict[str, Any]:
-    """Prove one source -> checkout -> read-only guest owner identity."""
+    """Prove one current source -> operation projection -> read-only guest owner."""
 
     hashes = context["wrapper_fc_er_che_schema_hashes"]
     expected_sha256 = hashes.get(FRESH_OPERATION_CONTEXT_OWNER_HASH_KEY)
@@ -2228,53 +2258,53 @@ def prove_guest_fresh_operation_context_owner_binding(
     if source_sha256 != expected_sha256:
         raise RuntimeError("authoritative FM context owner SHA-256 mismatch")
 
-    checkout = Path(
-        context["qemu_executable_base_seed_checkout_bindings"]["checkout"]["path"]
-    )
+    projection_root = Path(context["guest_adapter_binding"]["projection_root"])
     try:
-        resolved_checkout = checkout.resolve(strict=True)
+        resolved_projection_root = projection_root.resolve(strict=True)
     except (FileNotFoundError, RuntimeError) as exc:
-        raise RuntimeError("FM context owner checkout root is not canonical") from exc
-    if checkout.absolute() != resolved_checkout:
-        raise RuntimeError("FM context owner checkout root is not canonical")
-    projected = checkout / FRESH_OPERATION_CONTEXT_OWNER
+        raise RuntimeError("FM context owner projection root is not canonical") from exc
+    if projection_root.absolute() != resolved_projection_root:
+        raise RuntimeError("FM context owner projection root is not canonical")
+    projected = (
+        projection_root / FRESH_OPERATION_CONTEXT_OWNER_PROJECTION_FILENAME
+    )
     if projected.is_symlink() or not projected.is_file():
-        raise RuntimeError("materialized checkout FM context owner absent or unsafe")
+        raise RuntimeError("projected FM context owner absent or unsafe")
     if projected.resolve() != projected.absolute():
-        raise RuntimeError("materialized checkout FM context owner path is not canonical")
-    checkout_sha256 = sha256_path(projected)
-    if checkout_sha256 != expected_sha256 or projected.read_bytes() != source.read_bytes():
-        raise RuntimeError("materialized checkout FM context owner identity mismatch")
+        raise RuntimeError("projected FM context owner path is not canonical")
+    projection_sha256 = sha256_path(projected)
+    if projection_sha256 != expected_sha256 or projected.read_bytes() != source.read_bytes():
+        raise RuntimeError("projected FM context owner identity mismatch")
 
     expected_argument = (
-        f"local,path={checkout},mount_tag={GUEST_CHECKOUT_MOUNT_TAG},"
+        f"local,path={projection_root},"
+        f"mount_tag={fresh_context.GUEST_HARNESS_MOUNT_TAG},"
         "security_model=none,readonly=on"
     )
     arguments = [
         context["canonical_argv"][index + 1]
         for index, value in enumerate(context["canonical_argv"][:-1])
         if value == "-virtfs"
-        and f"mount_tag={GUEST_CHECKOUT_MOUNT_TAG}" in (
+        and f"mount_tag={fresh_context.GUEST_HARNESS_MOUNT_TAG}" in (
             context["canonical_argv"][index + 1]
         )
     ]
     if arguments != [expected_argument]:
         raise RuntimeError("FM context owner guest presentation binding mismatch")
-    guest_path = str(
-        Path(GUEST_CHECKOUT_DESTINATION) / FRESH_OPERATION_CONTEXT_OWNER
-    )
+    guest_path = str(fresh_context.GUEST_CONTEXT_OWNER_PATH)
     return {
         "result": "PREAUTH_GUEST_FM_CONTEXT_OWNER_BINDING_PASS",
         "authoritative_source_path": FRESH_OPERATION_CONTEXT_OWNER,
         "authoritative_source_sha256": source_sha256,
-        "checkout_path": str(projected),
-        "checkout_sha256": checkout_sha256,
+        "projection_path": str(projected),
+        "projection_sha256": projection_sha256,
         "guest_visible_path": guest_path,
         "guest_expected_owner_sha256": expected_sha256,
-        "host_checkout_guest_byte_identity": "PASS",
-        "host_checkout_guest_hash_identity": "PASS",
+        "host_projection_guest_byte_identity": "PASS",
+        "host_projection_guest_hash_identity": "PASS",
         "qemu_virtfs_argument": expected_argument,
         "read_only_guest_presentation": True,
+        "detached_checkout_owner_identity": "PRESERVED_AS_RUNTIME_PROVENANCE",
     }
 
 
