@@ -74,6 +74,9 @@ HEX_40 = re.compile(r"^[0-9a-f]{40}$")
 HEX_64 = re.compile(r"^[0-9a-f]{64}$")
 IDENTITY = re.compile(r"^G77_256[A-Z0-9]{2,32}(?:_[A-Z0-9]+)+$")
 PREFIX = re.compile(r"^G77_256[A-Z0-9]{2,32}$")
+GOVERNED_OPERATION_NAMESPACE = re.compile(
+    r"^[a-z0-9]+(?:_[a-z0-9]+)+_v[1-9][0-9]*$"
+)
 FORBIDDEN_HISTORICAL_PREFIXES = frozenset({
     "G77_256FM", "G77_256FW", "G77_256FY", "G77_256FZ",
     "G77_256GA", "G77_256GB", "G77_256GC",
@@ -494,7 +497,12 @@ def _absolute_canonical_path(value: Any, field: str) -> Path:
     if not isinstance(value, str) or not value:
         raise ContextError(f"{field} missing or malformed")
     path = Path(value)
-    if not path.is_absolute() or ".." in path.parts or str(path) != os.path.normpath(value):
+    if (
+        not path.is_absolute()
+        or ".." in path.parts
+        or value != os.path.normpath(value)
+        or str(path) != value
+    ):
         raise ContextError(f"{field} is not a canonical safe absolute path")
     return path
 
@@ -548,9 +556,21 @@ def _derive_sealed_host_repository_root(
     suffix = parts[marker_index + marker_size:]
     prefix = str(context["identity_namespace_prefix"]).lower()
     vector = operation_vector(context["generation_identity"]).lower()
-    expected_suffix = (f"{prefix}_{vector}_operational_v1", "operation_state")
-    if tuple(suffix) != expected_suffix:
+    if len(suffix) != 2 or suffix[1] != "operation_state":
+        raise ContextError("sealed operation projection has noncanonical shape")
+    operation_namespace = suffix[0]
+    if GOVERNED_OPERATION_NAMESPACE.fullmatch(operation_namespace) is None:
+        raise ContextError("sealed operation namespace is noncanonical")
+    namespace_lead = f"{prefix}_{vector}_"
+    if not operation_namespace.startswith(namespace_lead):
         raise ContextError("sealed operation projection is not namespace-bound")
+    context_major = context["context_schema_version"].split(".", 1)[0]
+    namespace_body = operation_namespace[len(namespace_lead):]
+    if (
+        not namespace_body.endswith(f"_v{context_major}")
+        or namespace_body == f"v{context_major}"
+    ):
+        raise ContextError("sealed operation namespace schema is unknown")
 
     seed_path = Path(
         context["qemu_executable_base_seed_checkout_bindings"]["seed"]["path"]
