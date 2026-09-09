@@ -31,8 +31,8 @@ CANDIDATE_SHA256 = "8af5ba1cbf9e396aa2f4f981a6f20b821c5fd1c38e091ed1cb3646c76c95
 MATERIALIZATION_SHA256 = "bad42f1361aac5e45a773242fb6a00445282f8d996ad592d15d363019eaa6baf"
 MATERIALIZATION_INNER_SHA256 = "e0452f63fbbf0cc890623b63a273973914852c7e24dad11b5b95f5ed0159a1d5"
 CANONICAL_ARGV_SHA256 = "40a0c1382725a68f33beb0a351e2661cec5c1851041b4fb1058626a1d1da818e"
-ADAPTER_SHA256 = "f2808a148bc9839f083ea9e59903674fe0dcd2a7587eee342fca44066ee9ad2b"
-FK_ADAPTER_SHA256 = "7ae104802f49613ca60836913d2c68269b59728bc35bb677fdb3637aaf4b84c6"
+ADAPTER_SHA256 = "807f9e789f5fcd2358c3e9bc9b938f28a56f2c5c48d131450d9e0b15d15a5fe5"
+FK_ADAPTER_SHA256 = "b2e9f72d6b35b2db0021bf9bf1223350f570d1eaecda3379a8af013c705aa770"
 FM_ROOT = ".github/governance/evidence/g77_256fm_wrong_attempt_preboot_v1"
 FY_ROOT = ".github/governance/evidence/g77_256fy_runtime_export_preboot_visibility_v1"
 RUNTIME_EXPORT = f"{FY_ROOT}/runtime_export"
@@ -145,8 +145,12 @@ FUTURE_SEED = (
 CHECKOUT = "/tmp/g77_256fm/checkout"
 LEGACY_CHECKOUT_HEAD = "7dce67ec18696ba0bad73130f3f7a84168f25277"
 LEGACY_CHECKOUT_TREE = "3cb61ec34e9593efb711dce61014dc8fdf0f6dd9"
-CHECKOUT_HEAD = "699fcdce794ff49b6c8735602936355724ed1c90"
-CHECKOUT_TREE = "7c773d4b2acdf013f1b8238eabfc8eced4dd6866"
+HISTORICAL_IF_HEAD = "699fcdce794ff49b6c8735602936355724ed1c90"
+HISTORICAL_IF_TREE = "7c773d4b2acdf013f1b8238eabfc8eced4dd6866"
+P11_CONSUMER_RELATIVE = "tests/p11_da_operational_consumer_v1.py"
+COMMITTED_JM_P11_SHA256 = (
+    "38399ab9d1eb74dc2a231eb3a363064ba8b90077d6cdbf1d3494ca937b2127f5"
+)
 GUEST_CHECKOUT_DESTINATION = "/mnt/aigol"
 GUEST_CHECKOUT_MOUNT_TAG = "aigol_checkout"
 FRESH_OPERATION_CONTEXT_OWNER = (
@@ -160,7 +164,7 @@ FRESH_OPERATION_CONTEXT_OWNER_HASH_KEY = "fresh_operation_context_owner"
 FRESH_OPERATION_CONTEXT_OWNER_SHA256 = (
     "0c85aa41f87fb2e3e744a68b8b71778977a988c5ded0a30101d7f2313d719cd7"
 )
-ER_HARNESS_SHA256 = "4a2a84ff83c61bfec013b4bcd20eb16905eeb240869182edd6c0d948444bae89"
+ER_HARNESS_SHA256 = "c6539d1cc60940b1999956965bff43923a270598a982cd19f976eadec0a93152"
 QEMU_EXECUTABLE_SHA256 = "8a35ccba41582fc6c38b9df85fc9e35fa1d42f414d2d7d8090ee9b2f5e7c0854"
 
 MOUNT_TAG = "g77_evidence"
@@ -1081,6 +1085,27 @@ def git(repository_root: Path, *arguments: str) -> str:
     return subprocess.check_output(["git", *arguments], cwd=repository_root, text=True).strip()
 
 
+def authenticate_current_committed_jm_route(
+    repository_root: Path,
+    repository_head: str,
+    repository_tree: str,
+) -> None:
+    """Bind the sole checkout to current committed bytes containing JM P11."""
+
+    observed_head = git(repository_root, "rev-parse", "HEAD")
+    observed_tree = git(repository_root, "rev-parse", "HEAD^{tree}")
+    if repository_head != observed_head or repository_tree != observed_tree:
+        raise RuntimeError("sealed route target is not the current repository identity")
+    if git(repository_root, "rev-parse", f"{repository_head}^{{tree}}") != repository_tree:
+        raise RuntimeError("sealed route target HEAD/TREE mismatch")
+    committed_p11 = subprocess.check_output(
+        ["git", "show", f"{repository_head}:{P11_CONSUMER_RELATIVE}"],
+        cwd=repository_root,
+    )
+    if hashlib.sha256(committed_p11).hexdigest() != COMMITTED_JM_P11_SHA256:
+        raise RuntimeError("current route target does not contain committed JM P11")
+
+
 def context_asset_expectations(
     context: dict[str, Any],
     candidate_source_path: Path | None = None,
@@ -1135,7 +1160,7 @@ def validate_immutable_context_bindings(
     expected_hashes = {
         "wrapper": sha256_path(repository_root / active_adapter_path(context)),
         "fc_fk_adapter": FK_ADAPTER_SHA256,
-        "er_harness": "4a2a84ff83c61bfec013b4bcd20eb16905eeb240869182edd6c0d948444bae89",
+        "er_harness": ER_HARNESS_SHA256,
         "canonical_che": "75801995214e81419aab9a02326499c771ec0039658fb49598aa54bd033e13c5",
         "raw_evidence_schema": "95ca9b753b2e4256b6530652d5a6e2a8220fed68c52f774928e1e39721f4ca67",
         "canonicalizer": CANONICALIZER_SHA256,
@@ -1164,10 +1189,10 @@ def validate_immutable_context_bindings(
     elif checkout_path != str(Path(context["transient_root"]) / "checkout"):
         raise RuntimeError("operation-scoped context checkout lifecycle binding mismatch")
     expected_checkout_head = (
-        CHECKOUT_HEAD if owner_binding_present else LEGACY_CHECKOUT_HEAD
+        context["repository_head"] if owner_binding_present else LEGACY_CHECKOUT_HEAD
     )
     expected_checkout_tree = (
-        CHECKOUT_TREE if owner_binding_present else LEGACY_CHECKOUT_TREE
+        context["repository_tree"] if owner_binding_present else LEGACY_CHECKOUT_TREE
     )
     expected_bindings = {
         "qemu_executable": {"path": "/usr/bin/qemu-system-x86_64", "sha256": QEMU_EXECUTABLE_SHA256},
@@ -1620,7 +1645,7 @@ def build_operation_context(
     hashes = {
         "wrapper": sha256_path(repository_root / adapter_path),
         "fc_fk_adapter": FK_ADAPTER_SHA256,
-        "er_harness": "4a2a84ff83c61bfec013b4bcd20eb16905eeb240869182edd6c0d948444bae89",
+        "er_harness": ER_HARNESS_SHA256,
         "canonical_che": "75801995214e81419aab9a02326499c771ec0039658fb49598aa54bd033e13c5",
         "raw_evidence_schema": "95ca9b753b2e4256b6530652d5a6e2a8220fed68c52f774928e1e39721f4ca67",
         "canonicalizer": CANONICALIZER_SHA256,
@@ -1639,8 +1664,8 @@ def build_operation_context(
         },
         "checkout": {
             "path": str(checkout_path),
-            "head": CHECKOUT_HEAD,
-            "tree": CHECKOUT_TREE,
+            "head": repository_head,
+            "tree": repository_tree,
             "detached": True,
             "clean": True,
             "read_only_mount": True,
@@ -1739,6 +1764,11 @@ def materialize_operation_state(
 ) -> dict[str, Any]:
     """Explicit authority-free materialization; never called by governed main()."""
 
+    authenticate_current_committed_jm_route(
+        repository_root,
+        context["repository_head"],
+        context["repository_tree"],
+    )
     validate_immutable_context_bindings(
         repository_root, context, candidate_source_path
     )
@@ -2369,6 +2399,11 @@ def authority_free_static_readiness(
 ) -> dict[str, Any]:
     """Complete static determination with zero Human authorization objects."""
 
+    authenticate_current_committed_jm_route(
+        repository_root,
+        context["repository_head"],
+        context["repository_tree"],
+    )
     validate_immutable_context_bindings(
         repository_root, context, candidate_source_path
     )

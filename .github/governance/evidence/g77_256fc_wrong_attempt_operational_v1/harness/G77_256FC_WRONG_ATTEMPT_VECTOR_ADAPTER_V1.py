@@ -280,9 +280,14 @@ def fc_custody_process(er: Any, control: socket.socket, server: socket.socket, c
             fixed_principal_bindings_identity,
             fixture_root_identity,
             materialization_identity,
+            preclaim_temporal_binding_identity,
         )
         from p11_da_disposable_substrate_v1 import bind_record_identity, validate_input_record_bytes
 
+        fresh_operation_context = er.load_authenticated_fresh_operation_context()
+        temporal_binding_identity = preclaim_temporal_binding_identity(
+            fresh_operation_context["preclaim_temporal_binding"]
+        )
         bindings = FixedPrincipalBindings(1, 2, 3)
         store = ProtectedOwnerStateStoreV1(er.FIXTURE_ROOT, 3)
         fixture_identity = fixture_root_identity(er.FIXTURE_ROOT, 3)
@@ -309,10 +314,17 @@ def fc_custody_process(er: Any, control: socket.socket, server: socket.socket, c
             principal_bindings_identity=principal_identity,
             endpoint_identity=endpoint_identity,
             owner_state_root_identity=store.root_identity,
+            operation_context_sha256=fresh_operation_context["context_sha256"],
+            preclaim_temporal_binding_identity=temporal_binding_identity,
             condition_results=CH_PASS_CONJUNCTION,
             condition_evidence_identities=condition_evidence,
         )
-        consumer = P11BoundedConsumerV1(store=store, principal_bindings=bindings, commissioning_gate=gate)
+        consumer = P11BoundedConsumerV1(
+            store=store,
+            principal_bindings=bindings,
+            commissioning_gate=gate,
+            fresh_operation_context=fresh_operation_context,
+        )
         er.send_message(control, {
             "message_type": "GATE_READY",
             "gate": gate.identity_preimage() | {"gate_identity": gate.gate_identity},

@@ -24,12 +24,12 @@ FC_ADAPTER = Path(
     ".github/governance/evidence/g77_256fc_wrong_attempt_operational_v1/harness/"
     "G77_256FC_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py"
 )
-FC_ADAPTER_SHA256 = "7ae104802f49613ca60836913d2c68269b59728bc35bb677fdb3637aaf4b84c6"
+FC_ADAPTER_SHA256 = "b2e9f72d6b35b2db0021bf9bf1223350f570d1eaecda3379a8af013c705aa770"
 ER_HARNESS = Path(
     ".github/governance/evidence/g77_256er_p11_operational_v1/harness/"
     "G77_256ER_P11_OPERATIONAL_HARNESS_V1.py"
 )
-ER_HARNESS_SHA256 = "4a2a84ff83c61bfec013b4bcd20eb16905eeb240869182edd6c0d948444bae89"
+ER_HARNESS_SHA256 = "c6539d1cc60940b1999956965bff43923a270598a982cd19f976eadec0a93152"
 IE_PRODUCER = Path(
     ".github/governance/evidence/g77_256ie_future_formalization_v1/producer/"
     "G77_256IE_FUTURE_VECTOR_PRODUCER_V1.py"

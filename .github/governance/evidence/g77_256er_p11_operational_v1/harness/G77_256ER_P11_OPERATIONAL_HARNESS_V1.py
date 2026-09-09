@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import errno
 import hashlib
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -25,6 +26,14 @@ ACT_ID = "G77_256ER_EXACT_CURRENT_ONE_USE_HUMAN_OPERATIONAL_ACT_001"
 CASE_ID = "G77_256ER_E05_CONSUMED_AUTHORITY_REUSE_DENIAL_001"
 CHECKOUT = Path("/mnt/aigol")
 RAW_ROOT = Path("/mnt/g77-evidence")
+FRESH_OPERATION_CONTEXT_PATH = RAW_ROOT / "SAPIANTA_FRESH_OPERATION_CONTEXT_V1.json"
+FRESH_OPERATION_CONTEXT_OWNER_PATH = Path(
+    "/mnt/dp-harness/sapianta_fresh_operation_context_v1.py"
+)
+P11_CONSUMER_PATH = CHECKOUT / "tests/p11_da_operational_consumer_v1.py"
+COMMITTED_JM_P11_SHA256 = (
+    "38399ab9d1eb74dc2a231eb3a363064ba8b90077d6cdbf1d3494ca937b2127f5"
+)
 RAW_PATH = RAW_ROOT / "G77_256ER_RAW_EXECUTION_EVIDENCE_V1.jsonl"
 EN_HARNESS_PATH = Path("/mnt/dp-harness/G77_256ER_P11_OPERATIONAL_HARNESS_V1.py")
 DN_HARNESS_PATH = Path("/mnt/g77-harness/G77_256DN_P03_DIAGNOSTIC_HARNESS_V1.py")
@@ -48,6 +57,7 @@ ROLE_BINDINGS = {
 ACCEPTED_ERRNOS = {errno.EACCES, errno.EPERM, errno.EROFS}
 P04_EFFECTS = ("write", "unlink", "rename", "replace", "chmod", "chown")
 SEQUENCE = 0
+_AUTHENTICATED_FRESH_OPERATION_CONTEXT: dict[str, Any] | None = None
 
 
 def canonical_bytes(value: Any) -> bytes:
@@ -64,6 +74,51 @@ def sha256_path(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def load_authenticated_fresh_operation_context() -> dict[str, Any]:
+    """Reuse the FM owner and bind its sealed context to this checkout/P11."""
+
+    global _AUTHENTICATED_FRESH_OPERATION_CONTEXT
+    owner_path = FRESH_OPERATION_CONTEXT_OWNER_PATH
+    if owner_path.is_symlink() or not owner_path.is_file():
+        raise RuntimeError("fresh operation context owner absent or unsafe")
+    specification = importlib.util.spec_from_file_location(
+        "sapianta_er_fm_fresh_operation_context_owner_v1", owner_path
+    )
+    if specification is None or specification.loader is None:
+        raise RuntimeError("fresh operation context owner import failed")
+    owner = importlib.util.module_from_spec(specification)
+    specification.loader.exec_module(owner)
+    context = owner.load_context(
+        FRESH_OPERATION_CONTEXT_PATH,
+        repository_root=CHECKOUT,
+    )
+    checkout_binding = context["qemu_executable_base_seed_checkout_bindings"][
+        "checkout"
+    ]
+    observed_head = run_git("rev-parse", "HEAD")
+    observed_tree = run_git("rev-parse", "HEAD^{tree}")
+    if (
+        context["repository_head"] != observed_head
+        or context["repository_tree"] != observed_tree
+        or checkout_binding["head"] != observed_head
+        or checkout_binding["tree"] != observed_tree
+    ):
+        raise RuntimeError("sealed operation context checkout binding mismatch")
+    if context["wrapper_fc_er_che_schema_hashes"].get("er_harness") != (
+        sha256_path(Path(__file__))
+    ):
+        raise RuntimeError("sealed operation context ER harness binding mismatch")
+    if sha256_path(P11_CONSUMER_PATH) != COMMITTED_JM_P11_SHA256:
+        raise RuntimeError("runtime P11 is not the committed JM implementation")
+    if (
+        _AUTHENTICATED_FRESH_OPERATION_CONTEXT is not None
+        and context != _AUTHENTICATED_FRESH_OPERATION_CONTEXT
+    ):
+        raise RuntimeError("fresh operation context changed after authentication")
+    _AUTHENTICATED_FRESH_OPERATION_CONTEXT = context
+    return context
 
 
 def append_record(record_type: str, evidence_class: str, facts: dict[str, Any]) -> str:
@@ -642,6 +697,11 @@ def custody_process(
             fixed_principal_bindings_identity,
             fixture_root_identity,
             materialization_identity,
+            preclaim_temporal_binding_identity,
+        )
+        fresh_operation_context = load_authenticated_fresh_operation_context()
+        temporal_binding_identity = preclaim_temporal_binding_identity(
+            fresh_operation_context["preclaim_temporal_binding"]
         )
         bindings = FixedPrincipalBindings(1, 2, 3)
         store = ProtectedOwnerStateStoreV1(FIXTURE_ROOT, 3)
@@ -679,6 +739,8 @@ def custody_process(
             principal_bindings_identity=principal_identity,
             endpoint_identity=endpoint_identity,
             owner_state_root_identity=store.root_identity,
+            operation_context_sha256=fresh_operation_context["context_sha256"],
+            preclaim_temporal_binding_identity=temporal_binding_identity,
             condition_results=CH_PASS_CONJUNCTION,
             condition_evidence_identities=condition_evidence,
         )
@@ -686,6 +748,7 @@ def custody_process(
             store=store,
             principal_bindings=bindings,
             commissioning_gate=gate,
+            fresh_operation_context=fresh_operation_context,
         )
         send_message(control, {
             "message_type": "GATE_READY",
@@ -871,7 +934,28 @@ def custody_process(
 def main() -> int:
     if len(sys.argv) != 6:
         raise SystemExit("expected EN_HARNESS_SHA SCHEMA_SHA HEAD TREE DN_HARNESS_SHA")
-    expected_harness, schema_sha, expected_head, expected_tree, dn_harness_sha = sys.argv[1:]
+    bootstrap_harness, schema_sha, bootstrap_head, bootstrap_tree, dn_harness_sha = sys.argv[1:]
+    if not all(
+        len(value) in {40, 64}
+        and all(character in "0123456789abcdef" for character in value)
+        for value in (
+            bootstrap_harness,
+            schema_sha,
+            bootstrap_head,
+            bootstrap_tree,
+            dn_harness_sha,
+        )
+    ):
+        raise SystemExit("bootstrap identity argument malformed")
+    fresh_operation_context = load_authenticated_fresh_operation_context()
+    expected_harness = fresh_operation_context[
+        "wrapper_fc_er_che_schema_hashes"
+    ]["wrapper"]
+    checkout_binding = fresh_operation_context[
+        "qemu_executable_base_seed_checkout_bindings"
+    ]["checkout"]
+    expected_head = checkout_binding["head"]
+    expected_tree = checkout_binding["tree"]
     RAW_ROOT.mkdir(parents=True, exist_ok=True)
     expected_absent = (
         RAW_PATH, DN_RAW_PATH, DN_SEAL_PATH, PRE_ACT_SEAL_PATH,
