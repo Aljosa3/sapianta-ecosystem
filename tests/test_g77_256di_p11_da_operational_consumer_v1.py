@@ -8,6 +8,8 @@ real Human operational act, entering P11, or generating E01-E12 evidence.
 from __future__ import annotations
 
 import inspect
+import hashlib
+import json
 import os
 from pathlib import Path
 
@@ -46,6 +48,7 @@ from p11_da_operational_consumer_v1 import (
     fixed_principal_bindings_identity,
     fixture_root_identity,
     materialization_identity,
+    preclaim_temporal_binding_identity,
     validate_operational_act_payload,
 )
 
@@ -56,6 +59,31 @@ CF_SOURCE_SHA256 = "a1b58fa8ddedb5058393aa23d815262c92c8b185c0b193764f77420313af
 CUSTODY_UID = os.getuid()
 ISSUANCE_UID = CUSTODY_UID + 1
 CALLER_UID = CUSTODY_UID + 2
+
+
+def _fresh_context(coordinate: int = 1_000) -> dict[str, object]:
+    generation = "G77_256JM_REPOSITORY_ONLY_TEMPORAL_BINDING_V1"
+    operation = "G77_256JM_SYNTHETIC_OPERATION_001"
+    binding = {
+        "schema_id": "P11_DA_OPERATION_LOCAL_PRECLAIM_TEMPORAL_BINDING_V1",
+        "policy_owner": "P11_DA_AUTHORITY_CUSTODY_PROCESS_PRINCIPAL_TEMPORAL_POLICY_V1",
+        "producer_identity": "SAPIANTA_FRESH_OPERATION_CONTEXT_V1_FAMILY_LOCAL_PREAUTHORIZATION_MATERIALIZER",
+        "vector_specification_path": ".github/governance/evidence/g77_256jj_expired_vector_deterministic_repository_formalization_v1/G77_256JJ_SPCE_TERMINAL_REPOSITORY_ONLY_REDUCTION_V1.json",
+        "vector_specification_sha256": "35af335dba0b3e2e2aa7b5ec244ddbc08ff9c8bbc6e7a2e49296a93daecec8d7",
+        "vector_specification_identity": "A__EXPIRED_VECTOR_DETERMINISTIC_REPOSITORY_FORMALIZATION_VERIFIED",
+        "generation_identity": generation,
+        "operation_identity": operation,
+        "coordinate_unix_ns": coordinate,
+    }
+    context: dict[str, object] = {
+        "context_schema_version": "1.0.0",
+        "generation_identity": generation,
+        "operation_identity": operation,
+        "preclaim_temporal_binding": binding,
+    }
+    canonical = (json.dumps(context, sort_keys=True, separators=(",", ":")) + "\n").encode()
+    context["context_sha256"] = hashlib.sha256(canonical).hexdigest()
+    return context
 
 
 def _input_record() -> tuple[bytes, dict[str, object]]:
@@ -118,7 +146,9 @@ def _gate(
     bindings: FixedPrincipalBindings,
     *,
     conditions: tuple[tuple[str, str], ...] = CH_PASS_CONJUNCTION,
+    context: dict[str, object] | None = None,
 ):
+    context = _fresh_context() if context is None else context
     fixture_identity = fixture_root_identity(store.fixture_root, bindings.custody_uid)
     principal_identity = fixed_principal_bindings_identity(bindings)
     endpoint = fixed_endpoint_identity(store.fixture_root, bindings.custody_uid)
@@ -146,6 +176,10 @@ def _gate(
         principal_bindings_identity=principal_identity,
         endpoint_identity=endpoint,
         owner_state_root_identity=store.root_identity,
+        operation_context_sha256=context["context_sha256"],
+        preclaim_temporal_binding_identity=preclaim_temporal_binding_identity(
+            context["preclaim_temporal_binding"]
+        ),
         condition_results=conditions,
         condition_evidence_identities=tuple(
             (condition, f"synthetic-certification-evidence-{condition}")
@@ -232,10 +266,12 @@ def test_consumer_reuses_fixed_custody_and_existing_runtimeledger(
 ) -> None:
     store = _store(tmp_path)
     bindings = FixedPrincipalBindings(ISSUANCE_UID, CALLER_UID, CUSTODY_UID)
+    context = _fresh_context()
     consumer = P11BoundedConsumerV1(
         store=store,
         principal_bindings=bindings,
-        commissioning_gate=_gate(store, bindings),
+        commissioning_gate=_gate(store, bindings, context=context),
+        fresh_operation_context=context,
     )
     assert consumer.ledger_implementation is RuntimeLedger
     assert consumer.construction_adapter_reused_as_operational_consumer is False

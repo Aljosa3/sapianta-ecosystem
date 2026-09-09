@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from dataclasses import dataclass
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -97,6 +98,39 @@ INVOCATIONS_PER_CLAIM_V1 = 1
 OUTPUT_RECORD_COUNT_V1 = OUTPUT_RECORD_COUNT
 PRODUCTION_ROUTE_COUNT_V1 = PRODUCTION_ROUTE_COUNT
 
+FRESH_OPERATION_CONTEXT_SCHEMA_VERSION = "1.0.0"
+PRECLAIM_TEMPORAL_BINDING_SCHEMA_ID = (
+    "P11_DA_OPERATION_LOCAL_PRECLAIM_TEMPORAL_BINDING_V1"
+)
+PRECLAIM_TEMPORAL_POLICY_OWNER = (
+    "P11_DA_AUTHORITY_CUSTODY_PROCESS_PRINCIPAL_TEMPORAL_POLICY_V1"
+)
+PRECLAIM_TEMPORAL_PRODUCER = (
+    "SAPIANTA_FRESH_OPERATION_CONTEXT_V1_FAMILY_LOCAL_PREAUTHORIZATION_MATERIALIZER"
+)
+PRECLAIM_TEMPORAL_SPECIFICATION_PATH = (
+    ".github/governance/evidence/"
+    "g77_256jj_expired_vector_deterministic_repository_formalization_v1/"
+    "G77_256JJ_SPCE_TERMINAL_REPOSITORY_ONLY_REDUCTION_V1.json"
+)
+PRECLAIM_TEMPORAL_SPECIFICATION_SHA256 = (
+    "35af335dba0b3e2e2aa7b5ec244ddbc08ff9c8bbc6e7a2e49296a93daecec8d7"
+)
+PRECLAIM_TEMPORAL_SPECIFICATION_TERMINAL = (
+    "A__EXPIRED_VECTOR_DETERMINISTIC_REPOSITORY_FORMALIZATION_VERIFIED"
+)
+PRECLAIM_TEMPORAL_BINDING_FIELDS = frozenset({
+    "schema_id",
+    "policy_owner",
+    "producer_identity",
+    "vector_specification_path",
+    "vector_specification_sha256",
+    "vector_specification_identity",
+    "generation_identity",
+    "operation_identity",
+    "coordinate_unix_ns",
+})
+
 CH_PRECONDITION_IDS = tuple(f"P{number:02d}" for number in range(1, 13))
 CH_PASS_CONJUNCTION = tuple((condition, "PASS") for condition in CH_PRECONDITION_IDS)
 
@@ -167,6 +201,86 @@ def _sha256_identity(value: Any, field_name: str) -> str:
     if len(raw) != 64 or any(character not in "0123456789abcdef" for character in raw):
         _fail(f"{field_name} must be a SHA-256 identity")
     return text
+
+
+def _canonical_context_bytes(value: Any) -> bytes:
+    try:
+        return (
+            json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=False)
+            + "\n"
+        ).encode("utf-8")
+    except (TypeError, ValueError) as exc:
+        raise FailClosedRuntimeError("fresh operation context is not canonical JSON") from exc
+
+
+def authenticate_preclaim_temporal_binding(
+    context: Any,
+) -> tuple[Mapping[str, Any], str]:
+    """P11 custody reauthenticates the sealed operation-local policy output."""
+
+    if not isinstance(context, Mapping):
+        _fail("authenticated fresh operation context is required")
+    value = dict(context)
+    context_sha256 = value.get("context_sha256")
+    if not isinstance(context_sha256, str) or len(context_sha256) != 64:
+        _fail("fresh operation context SHA-256 is invalid")
+    unsealed = {key: item for key, item in value.items() if key != "context_sha256"}
+    if hashlib.sha256(_canonical_context_bytes(unsealed)).hexdigest() != context_sha256:
+        _fail("fresh operation context seal is invalid")
+    if value.get("context_schema_version") != FRESH_OPERATION_CONTEXT_SCHEMA_VERSION:
+        _fail("fresh operation context schema version is invalid")
+    for field_name in ("generation_identity", "operation_identity"):
+        _identity(value.get(field_name), f"fresh operation context {field_name}")
+    binding = value.get("preclaim_temporal_binding")
+    if not isinstance(binding, Mapping) or set(binding) != PRECLAIM_TEMPORAL_BINDING_FIELDS:
+        _fail("preclaim temporal binding fields are invalid")
+    binding_value = dict(binding)
+    expected = {
+        "schema_id": PRECLAIM_TEMPORAL_BINDING_SCHEMA_ID,
+        "policy_owner": PRECLAIM_TEMPORAL_POLICY_OWNER,
+        "producer_identity": PRECLAIM_TEMPORAL_PRODUCER,
+        "vector_specification_path": PRECLAIM_TEMPORAL_SPECIFICATION_PATH,
+        "vector_specification_sha256": PRECLAIM_TEMPORAL_SPECIFICATION_SHA256,
+        "vector_specification_identity": PRECLAIM_TEMPORAL_SPECIFICATION_TERMINAL,
+        "generation_identity": value["generation_identity"],
+        "operation_identity": value["operation_identity"],
+        "coordinate_unix_ns": 1000,
+    }
+    if binding_value != expected:
+        _fail("preclaim temporal binding is not the authenticated policy output")
+    return MappingProxyType(binding_value), context_sha256
+
+
+def preclaim_temporal_binding_identity(binding: Mapping[str, Any]) -> str:
+    return "sha256:" + hashlib.sha256(_canonical_context_bytes(dict(binding))).hexdigest()
+
+
+def preclaim_temporal_decision(
+    binding: Mapping[str, Any],
+    *,
+    valid_from_unix_ns: int,
+    valid_until_unix_ns: int,
+) -> str:
+    """Reduce the authenticated coordinate with the existing half-open interval."""
+
+    coordinate = _nonnegative_integer(
+        binding.get("coordinate_unix_ns"), "preclaim temporal coordinate"
+    )
+    valid_from = _nonnegative_integer(valid_from_unix_ns, "valid from")
+    valid_until = _nonnegative_integer(valid_until_unix_ns, "valid until")
+    if valid_until <= valid_from:
+        _fail("authority validity interval is invalid")
+    if coordinate < valid_from:
+        return "FUTURE"
+    if coordinate >= valid_until:
+        return "EXPIRED"
+    return "CURRENT"
+
+
+def _non_authoritative_observation_time_ns() -> int:
+    """Timestamp output evidence; never participates in a temporal decision."""
+
+    return time.time_ns()
 
 
 def _nonnegative_integer(value: Any, field_name: str) -> int:
@@ -483,6 +597,8 @@ class CommissioningGateV1:
     principal_bindings_identity: str
     endpoint_identity: str
     owner_state_root_identity: str
+    operation_context_sha256: str
+    preclaim_temporal_binding_identity: str
     condition_results: tuple[tuple[str, str], ...]
     condition_evidence_identities: tuple[tuple[str, str], ...]
     satisfying_evidence_effect: int = SATISFYING_EVIDENCE_EFFECT_OF_COMMISSIONING
@@ -502,11 +618,18 @@ class CommissioningGateV1:
             "principal_bindings_identity",
             "endpoint_identity",
             "owner_state_root_identity",
+            "operation_context_sha256",
+            "preclaim_temporal_binding_identity",
         ):
             _identity(getattr(self, field_name), field_name)
         _sha256_identity(self.ch_artifact_sha256, "CH artifact SHA-256")
         _sha256_identity(self.cd_plan_sha256, "CD plan SHA-256")
         _sha256_identity(self.cf_source_sha256, "CF source SHA-256")
+        _sha256_identity(self.operation_context_sha256, "operation context SHA-256")
+        _sha256_identity(
+            self.preclaim_temporal_binding_identity,
+            "preclaim temporal binding identity",
+        )
         if self.dh_checkpoint != DH_CHECKPOINT:
             _fail("commissioning gate DH checkpoint is invalid")
         if self.ch_decision_package_identity != CH_DECISION_PACKAGE_IDENTITY:
@@ -548,6 +671,10 @@ class CommissioningGateV1:
             "principal_bindings_identity": self.principal_bindings_identity,
             "endpoint_identity": self.endpoint_identity,
             "owner_state_root_identity": self.owner_state_root_identity,
+            "operation_context_sha256": self.operation_context_sha256,
+            "preclaim_temporal_binding_identity": (
+                self.preclaim_temporal_binding_identity
+            ),
             "condition_results": [list(item) for item in self.condition_results],
             "condition_evidence_identities": [
                 list(item) for item in self.condition_evidence_identities
@@ -707,6 +834,7 @@ class P11BoundedConsumerV1:
         store: ProtectedOwnerStateStoreV1,
         principal_bindings: FixedPrincipalBindings,
         commissioning_gate: CommissioningGateV1,
+        fresh_operation_context: Mapping[str, Any],
     ) -> None:
         if not isinstance(store, ProtectedOwnerStateStoreV1):
             _fail("protected owner-state store is required")
@@ -714,6 +842,15 @@ class P11BoundedConsumerV1:
             _fail("fixed principal bindings are required")
         if not isinstance(commissioning_gate, CommissioningGateV1):
             _fail("authenticated commissioning gate is required")
+        temporal_binding, context_sha256 = authenticate_preclaim_temporal_binding(
+            fresh_operation_context
+        )
+        if commissioning_gate.operation_context_sha256 != context_sha256:
+            _fail("commissioning gate operation context binding is invalid")
+        if commissioning_gate.preclaim_temporal_binding_identity != (
+            preclaim_temporal_binding_identity(temporal_binding)
+        ):
+            _fail("commissioning gate preclaim temporal binding is invalid")
         fixture_identity = fixture_root_identity(
             store.fixture_root, principal_bindings.custody_uid
         )
@@ -740,6 +877,7 @@ class P11BoundedConsumerV1:
         self._store = store
         self._bindings = principal_bindings
         self._gate = commissioning_gate
+        self._fresh_operation_context = fresh_operation_context
         self._peer_verifier = CustodyPeerCredentialVerifier(principal_bindings)
         self._ledger = RuntimeLedger(store.fixture_root)
 
@@ -783,6 +921,10 @@ class P11BoundedConsumerV1:
             _fail("operational Human act target identity is invalid")
         if validated_act.target_revision != owner_revision:
             _fail("operational Human act target revision is stale")
+        if validated_act.metadata.get("authorized_context_sha256") != (
+            self._gate.operation_context_sha256
+        ):
+            _fail("Human authorization does not bind the complete sealed context")
         payload = validate_operational_act_payload(
             validated_act.payload,
             input_record=input_record,
@@ -969,12 +1111,28 @@ class P11BoundedConsumerV1:
         )
         if role is not PrincipalRole.P11_ORCHESTRATION_CALLER_PRINCIPAL:
             _fail("only the fixed P11 caller principal may claim")
-        preclaim_time = time.time_ns()
+        temporal_binding, context_sha256 = authenticate_preclaim_temporal_binding(
+            self._fresh_operation_context
+        )
+        if context_sha256 != self._gate.operation_context_sha256:
+            _fail("preclaim operation context differs from commissioning gate")
+        if preclaim_temporal_binding_identity(temporal_binding) != (
+            self._gate.preclaim_temporal_binding_identity
+        ):
+            _fail("preclaim temporal binding differs from commissioning gate")
+        preclaim_time = temporal_binding["coordinate_unix_ns"]
         input_record = validate_input_record_bytes(input_record_canonical_bytes)
         available = self._store.current()
         if available is None or available.state is not OwnerStateName.AVAILABLE:
             _fail("one-use Human act is absent or no longer available")
-        if preclaim_time >= available.binding.valid_until_unix_ns:
+        temporal_decision = preclaim_temporal_decision(
+            temporal_binding,
+            valid_from_unix_ns=available.binding.valid_from_unix_ns,
+            valid_until_unix_ns=available.binding.valid_until_unix_ns,
+        )
+        if temporal_decision == "FUTURE":
+            _fail("one-use Human act is future at PRECLAIM")
+        if temporal_decision == "EXPIRED":
             self._store.terminate_unclaimed(available, OwnerStateName.EXPIRED)
             _fail("one-use Human act expired before PRECLAIM")
         binding = self._validate_authority_sources(
@@ -1013,12 +1171,12 @@ class P11BoundedConsumerV1:
                     "owner_state_revision": claimed.revision,
                 },
             )
-            started = time.time_ns()
+            started = _non_authoritative_observation_time_ns()
             serialized_output = self._build_one_output(
                 input_record,
                 authorization_identity=binding.authorization_identity,
                 started_at_unix_ns=started,
-                terminal_at_unix_ns=time.time_ns(),
+                terminal_at_unix_ns=_non_authoritative_observation_time_ns(),
             )
             output = validate_output_record_bytes(
                 serialized_output,
@@ -1099,9 +1257,12 @@ __all__ = [
     "PRODUCTION_ROUTING_AUTHORIZED_IN_G77_256DI",
     "ProtectedOwnerStateStoreV1",
     "create_commissioning_gate_v1",
+    "authenticate_preclaim_temporal_binding",
     "fixed_endpoint_identity",
     "fixed_principal_bindings_identity",
     "fixture_root_identity",
     "materialization_identity",
+    "preclaim_temporal_binding_identity",
+    "preclaim_temporal_decision",
     "validate_operational_act_payload",
 ]

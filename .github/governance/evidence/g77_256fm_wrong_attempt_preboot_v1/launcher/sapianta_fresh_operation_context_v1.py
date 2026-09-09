@@ -85,6 +85,38 @@ FORBIDDEN_HISTORICAL_PATH_MARKERS = tuple(
     value.lower() + "_" for value in FORBIDDEN_HISTORICAL_PREFIXES
 )
 
+PRECLAIM_TEMPORAL_BINDING_SCHEMA_ID = (
+    "P11_DA_OPERATION_LOCAL_PRECLAIM_TEMPORAL_BINDING_V1"
+)
+PRECLAIM_TEMPORAL_POLICY_OWNER = (
+    "P11_DA_AUTHORITY_CUSTODY_PROCESS_PRINCIPAL_TEMPORAL_POLICY_V1"
+)
+PRECLAIM_TEMPORAL_PRODUCER = (
+    "SAPIANTA_FRESH_OPERATION_CONTEXT_V1_FAMILY_LOCAL_PREAUTHORIZATION_MATERIALIZER"
+)
+PRECLAIM_TEMPORAL_SPECIFICATION_PATH = Path(
+    ".github/governance/evidence/"
+    "g77_256jj_expired_vector_deterministic_repository_formalization_v1/"
+    "G77_256JJ_SPCE_TERMINAL_REPOSITORY_ONLY_REDUCTION_V1.json"
+)
+PRECLAIM_TEMPORAL_SPECIFICATION_SHA256 = (
+    "35af335dba0b3e2e2aa7b5ec244ddbc08ff9c8bbc6e7a2e49296a93daecec8d7"
+)
+PRECLAIM_TEMPORAL_SPECIFICATION_TERMINAL = (
+    "A__EXPIRED_VECTOR_DETERMINISTIC_REPOSITORY_FORMALIZATION_VERIFIED"
+)
+PRECLAIM_TEMPORAL_BINDING_FIELDS = frozenset({
+    "schema_id",
+    "policy_owner",
+    "producer_identity",
+    "vector_specification_path",
+    "vector_specification_sha256",
+    "vector_specification_identity",
+    "generation_identity",
+    "operation_identity",
+    "coordinate_unix_ns",
+})
+
 CONTEXT_FIELDS = frozenset({
     "context_schema_version",
     "generation_identity",
@@ -112,6 +144,7 @@ CONTEXT_FIELDS = frozenset({
     "candidate_manifest_sha256",
     "wrapper_fc_er_che_schema_hashes",
     "qemu_executable_base_seed_checkout_bindings",
+    "preclaim_temporal_binding",
     "context_sha256",
 })
 
@@ -125,6 +158,7 @@ AUTHORIZATION_BINDING_POLICY = {
         "repository_tree",
         "constitutional_anchor_head",
         "immutable_assets",
+        "preclaim_temporal_binding",
         "one_shot_limits",
         "zero_retry_repair_replay",
         "no_network_policy",
@@ -385,6 +419,75 @@ def seal_context(context: dict[str, Any]) -> dict[str, Any]:
     return sealed
 
 
+def materialize_preclaim_temporal_binding(
+    *,
+    repository_root: Path,
+    generation_identity: str,
+    operation_identity: str,
+) -> dict[str, Any]:
+    """Derive the custody-owned coordinate from the committed JJ specification."""
+
+    specification_path = repository_root.resolve() / PRECLAIM_TEMPORAL_SPECIFICATION_PATH
+    if specification_path.is_symlink() or not specification_path.is_file():
+        raise ContextError("preclaim temporal vector specification absent or unsafe")
+    raw = specification_path.read_bytes()
+    if sha256_bytes(raw) != PRECLAIM_TEMPORAL_SPECIFICATION_SHA256:
+        raise ContextError("preclaim temporal vector specification hash mismatch")
+    try:
+        envelope = json.loads(raw, object_pairs_hook=_unique_object)
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise ContextError("preclaim temporal vector specification malformed") from exc
+    if not isinstance(envelope, dict) or set(envelope) != {
+        "schema_id", "reduction", "reduction_sha256"
+    }:
+        raise ContextError("preclaim temporal vector specification envelope invalid")
+    reduction = envelope["reduction"]
+    if not isinstance(reduction, dict) or envelope["reduction_sha256"] != sha256_bytes(
+        canonical_bytes(reduction)
+    ):
+        raise ContextError("preclaim temporal vector specification inner seal invalid")
+    if reduction.get("terminal") != PRECLAIM_TEMPORAL_SPECIFICATION_TERMINAL:
+        raise ContextError("preclaim temporal vector specification terminal invalid")
+    coordinates = reduction.get("expired_semantic_model", {}).get(
+        "temporal_coordinates", {}
+    )
+    coordinate = coordinates.get("expired_preclaim_time_unix_ns")
+    if type(coordinate) is not int or coordinate < 0:
+        raise ContextError("preclaim temporal coordinate value invalid")
+    return {
+        "schema_id": PRECLAIM_TEMPORAL_BINDING_SCHEMA_ID,
+        "policy_owner": PRECLAIM_TEMPORAL_POLICY_OWNER,
+        "producer_identity": PRECLAIM_TEMPORAL_PRODUCER,
+        "vector_specification_path": str(PRECLAIM_TEMPORAL_SPECIFICATION_PATH),
+        "vector_specification_sha256": PRECLAIM_TEMPORAL_SPECIFICATION_SHA256,
+        "vector_specification_identity": PRECLAIM_TEMPORAL_SPECIFICATION_TERMINAL,
+        "generation_identity": generation_identity,
+        "operation_identity": operation_identity,
+        "coordinate_unix_ns": coordinate,
+    }
+
+
+def validate_preclaim_temporal_binding(
+    binding: Any,
+    *,
+    repository_root: Path,
+    generation_identity: str,
+    operation_identity: str,
+) -> dict[str, Any]:
+    """Reauthenticate the exact policy output; no caller value is accepted."""
+
+    if not isinstance(binding, dict) or set(binding) != PRECLAIM_TEMPORAL_BINDING_FIELDS:
+        raise ContextError("preclaim temporal binding fields invalid")
+    expected = materialize_preclaim_temporal_binding(
+        repository_root=repository_root,
+        generation_identity=generation_identity,
+        operation_identity=operation_identity,
+    )
+    if binding != expected:
+        raise ContextError("preclaim temporal binding differs from policy output")
+    return binding
+
+
 def build_context(
     *,
     repository_root: Path,
@@ -455,6 +558,11 @@ def build_context(
         "candidate_manifest_sha256": candidate_manifest_sha256,
         "wrapper_fc_er_che_schema_hashes": wrapper_fc_er_che_schema_hashes,
         "qemu_executable_base_seed_checkout_bindings": bindings,
+        "preclaim_temporal_binding": materialize_preclaim_temporal_binding(
+            repository_root=repository_root,
+            generation_identity=generation_identity,
+            operation_identity=operation_identity,
+        ),
     }
     sealed = seal_context(context)
     validate_context(sealed, repository_root=repository_root)
@@ -662,6 +770,9 @@ def _validate_hash_map(value: Any, field: str) -> None:
 def validate_context(context: dict[str, Any], *, repository_root: Path) -> dict[str, Any]:
     if set(context) != CONTEXT_FIELDS:
         raise ContextError("context fields missing, unknown, or duplicated")
+    unsealed = {key: value for key, value in context.items() if key != "context_sha256"}
+    if context["context_sha256"] != sha256_bytes(canonical_bytes(unsealed)):
+        raise ContextError("context seal mismatch")
     if context["context_schema_version"] != SCHEMA_VERSION:
         raise ContextError("context schema version mismatch")
     if context["constitutional_anchor_head"] != CONSTITUTIONAL_ANCHOR_HEAD:
@@ -768,6 +879,12 @@ def validate_context(context: dict[str, Any], *, repository_root: Path) -> dict[
         raise ContextError("guest fixture root is not derived from identity namespace prefix")
     if context["authorization_binding_policy"] != AUTHORIZATION_BINDING_POLICY:
         raise ContextError("authorization binding policy mismatch")
+    validate_preclaim_temporal_binding(
+        context["preclaim_temporal_binding"],
+        repository_root=repository_root,
+        generation_identity=context["generation_identity"],
+        operation_identity=context["operation_identity"],
+    )
     if HEX_64.fullmatch(str(context["candidate_manifest_sha256"])) is None:
         raise ContextError("candidate manifest SHA-256 malformed")
     _validate_hash_map(context["wrapper_fc_er_che_schema_hashes"], "wrapper/FC/ER/CHE/schema hashes")
@@ -801,9 +918,6 @@ def validate_context(context: dict[str, Any], *, repository_root: Path) -> dict[
         context,
         validation_repository_root=repository_root,
     )
-    unsealed = {key: value for key, value in context.items() if key != "context_sha256"}
-    if context["context_sha256"] != sha256_bytes(canonical_bytes(unsealed)):
-        raise ContextError("context seal mismatch")
     if vector == WRONG_ATTEMPT and (
         len(FC_IDENTITY_TOKENS) != 39
         or len(set(derived_identity_tokens(prefix))) != 39
