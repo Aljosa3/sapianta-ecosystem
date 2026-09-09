@@ -98,11 +98,11 @@ FUTURE_CLOUD_INIT_SHA256 = (
 )
 EXPIRED_CLOUD_INIT = (
     ".github/governance/evidence/"
-    "g77_256jr_expired_human_authority_materialization_and_presentation_binding_v1/"
-    "static/G77_256JR_CLOUD_INIT_USER_DATA_V1.yaml"
+    "g77_256jt_expired_bootstrap_checkout_binding_repair_v1/"
+    "static/G77_256JT_CLOUD_INIT_USER_DATA_V1.yaml"
 )
 EXPIRED_CLOUD_INIT_SHA256 = (
-    "bcf626825e5d253fd0d6ae3af33f8ed26ad2d6b405d1203294c196eae1b421ee"
+    "4c2c020421b06d592cb64b0a8da56a5929a981cf32dcbda9ae077956e3ca3408"
 )
 FK_ADAPTER = ".github/governance/evidence/g77_256fc_wrong_attempt_operational_v1/harness/G77_256FC_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py"
 CANONICAL_CHE = "aigol/runtime/canonical_che_evidence_correlation_contract_v1.py"
@@ -152,14 +152,16 @@ FUTURE_SEED = (
 )
 EXPIRED_SEED = (
     "/home/pisarna/work/sapianta-fl/.github/governance/evidence/"
-    "g77_256jr_expired_human_authority_materialization_and_presentation_binding_v1/"
-    "static/SAPIANTA_EXPIRED_NOCLOUD_SEED_V1.img"
+    "g77_256jt_expired_bootstrap_checkout_binding_repair_v1/"
+    "static/SAPIANTA_EXPIRED_NOCLOUD_SEED_V2.img"
 )
 CHECKOUT = "/tmp/g77_256fm/checkout"
 LEGACY_CHECKOUT_HEAD = "7dce67ec18696ba0bad73130f3f7a84168f25277"
 LEGACY_CHECKOUT_TREE = "3cb61ec34e9593efb711dce61014dc8fdf0f6dd9"
 HISTORICAL_IF_HEAD = "699fcdce794ff49b6c8735602936355724ed1c90"
 HISTORICAL_IF_TREE = "7c773d4b2acdf013f1b8238eabfc8eced4dd6866"
+EXPIRED_CHECKOUT_HEAD = "304b342e26e92f226afa01db4b4203acfa51f532"
+EXPIRED_CHECKOUT_TREE = "fc0c50e4dd79e900d85d48c5c0aeb53fe9d0c937"
 P11_CONSUMER_RELATIVE = "tests/p11_da_operational_consumer_v1.py"
 COMMITTED_JM_P11_SHA256 = (
     "38399ab9d1eb74dc2a231eb3a363064ba8b90077d6cdbf1d3494ca937b2127f5"
@@ -215,7 +217,7 @@ EXPECTED_ASSET_SHA256 = {
     WRONG_CONTRACT_SEED: "fc98a62a1b3bd813b7f570438fc48151c378aeba4389de13d4e532d3f7979b21",
     WRONG_PROVENANCE_SEED: "4154ec58b7ebf46299ccc495a0a1232b7e31f67221f987b6fe7959f8d5593c7c",
     FUTURE_SEED: "6998d4cdaff3617b9e2c29f17318a220619fc718d0d9f9168b08e614cfdf0418",
-    EXPIRED_SEED: "47a79fe9b4dad751ab232789465753fabd27ff7db2443f3af3a99058e48fb516",
+    EXPIRED_SEED: "4d0f7d4e7f5cbb08ee18ed8c757a7467498513862a1b3194d3489df8c8d092fb",
     LEGACY_CLOUD_INIT: LEGACY_CLOUD_INIT_SHA256,
     LEGACY_SEED: "966f1910bbffe20fa18c4cee56ff61dcbb069348e2929bfda74e029a9dc0ec58",
 }
@@ -1135,6 +1137,51 @@ def authenticate_current_committed_jm_route(
         raise RuntimeError("current route target does not contain committed JM P11")
 
 
+def governed_checkout_identity(
+    repository_root: Path,
+    vector: str,
+    repository_head: str,
+    repository_tree: str,
+) -> tuple[str, str]:
+    """Return the existing FM-owned stable checkout identity for one vector.
+
+    EXPIRED reuses the committed JR operational baseline.  Later evidence
+    commits remain the authorization/repository baseline, but cannot become a
+    caller-selected bootstrap coordinate or force an N-1 asset rewrite.
+    """
+
+    if vector != fresh_context.EXPIRED:
+        return repository_head, repository_tree
+    if git(repository_root, "rev-parse", f"{EXPIRED_CHECKOUT_HEAD}^{{tree}}") != (
+        EXPIRED_CHECKOUT_TREE
+    ):
+        raise RuntimeError("EXPIRED stable checkout HEAD/TREE mismatch")
+    if subprocess.run(
+        ["git", "merge-base", "--is-ancestor", EXPIRED_CHECKOUT_HEAD, repository_head],
+        cwd=repository_root,
+        check=False,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    ).returncode:
+        raise RuntimeError("EXPIRED stable checkout is not an authenticated ancestor")
+    committed_p11 = subprocess.check_output(
+        ["git", "show", f"{EXPIRED_CHECKOUT_HEAD}:{P11_CONSUMER_RELATIVE}"],
+        cwd=repository_root,
+    )
+    if hashlib.sha256(committed_p11).hexdigest() != COMMITTED_JM_P11_SHA256:
+        raise RuntimeError("EXPIRED stable checkout does not contain committed JM P11")
+    adapter_path = fresh_context.EXPIRED_ADAPTER_SOURCE_RELATIVE_PATH
+    committed_adapter = subprocess.check_output(
+        ["git", "show", f"{EXPIRED_CHECKOUT_HEAD}:{adapter_path}"],
+        cwd=repository_root,
+    )
+    if hashlib.sha256(committed_adapter).hexdigest() != sha256_path(
+        repository_root / adapter_path
+    ):
+        raise RuntimeError("EXPIRED stable checkout adapter identity mismatch")
+    return EXPIRED_CHECKOUT_HEAD, EXPIRED_CHECKOUT_TREE
+
+
 def context_asset_expectations(
     context: dict[str, Any],
     candidate_source_path: Path | None = None,
@@ -1217,11 +1264,15 @@ def validate_immutable_context_bindings(
             raise RuntimeError("historical context checkout lifecycle binding mismatch")
     elif checkout_path != str(Path(context["transient_root"]) / "checkout"):
         raise RuntimeError("operation-scoped context checkout lifecycle binding mismatch")
-    expected_checkout_head = (
-        context["repository_head"] if owner_binding_present else LEGACY_CHECKOUT_HEAD
-    )
-    expected_checkout_tree = (
-        context["repository_tree"] if owner_binding_present else LEGACY_CHECKOUT_TREE
+    expected_checkout_head, expected_checkout_tree = (
+        governed_checkout_identity(
+            repository_root,
+            context_vector(context),
+            context["repository_head"],
+            context["repository_tree"],
+        )
+        if owner_binding_present
+        else (LEGACY_CHECKOUT_HEAD, LEGACY_CHECKOUT_TREE)
     )
     expected_bindings = {
         "qemu_executable": {"path": "/usr/bin/qemu-system-x86_64", "sha256": QEMU_EXECUTABLE_SHA256},
@@ -1684,6 +1735,9 @@ def build_operation_context(
         ),
     }
     checkout_path = transient_root.absolute() / "checkout"
+    checkout_head, checkout_tree = governed_checkout_identity(
+        repository_root, vector, repository_head, repository_tree
+    )
     bindings = {
         "qemu_executable": {"path": "/usr/bin/qemu-system-x86_64", "sha256": QEMU_EXECUTABLE_SHA256},
         "base": {"path": BASE_IMAGE, "sha256": EXPECTED_ASSET_SHA256[BASE_IMAGE]},
@@ -1693,8 +1747,8 @@ def build_operation_context(
         },
         "checkout": {
             "path": str(checkout_path),
-            "head": repository_head,
-            "tree": repository_tree,
+            "head": checkout_head,
+            "tree": checkout_tree,
             "detached": True,
             "clean": True,
             "read_only_mount": True,
