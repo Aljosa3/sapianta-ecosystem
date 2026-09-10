@@ -51,6 +51,12 @@ FO_REPOSITORY_ONLY_AUTHORIZATION_SHA256 = "84054b9a8840dd58450e4f0aa5b13e38f07a0
 FN_SPENT_AUTHORIZATION_SHA256 = "0fb64caf25be6abac9c0c1b8071e52527447163f4b1a72c2b1508dc9f5de9658"
 HEX_40 = re.compile(r"^[0-9a-f]{40}$")
 HEX_64 = re.compile(r"^[0-9a-f]{64}$")
+PRECONSUMPTION_INVOCATION_SCHEMA = (
+    "SAPIANTA_FM_PRECONSUMPTION_INVOCATION_BINDING_V1"
+)
+PRECONSUMPTION_INVOCATION_ENVELOPE_SCHEMA = (
+    "SAPIANTA_FM_PRECONSUMPTION_INVOCATION_BINDING_ENVELOPE_V1"
+)
 
 CANDIDATE = (
     ".github/governance/evidence/g77_256gd_fresh_operation_context_v1/candidate/"
@@ -1532,6 +1538,229 @@ def load_authority(path: Path) -> tuple[dict[str, Any], str]:
     if not isinstance(value, dict) or raw != canonical_bytes(value):
         raise RuntimeError("execution authority handoff is not unique-key canonical JSON")
     return value, hashlib.sha256(raw).hexdigest()
+
+
+def _repository_file_argument(repository_root: Path, path: Path) -> tuple[str, Path]:
+    """Return one canonical repository-relative file argument."""
+
+    root = repository_root.resolve()
+    supplied = path if path.is_absolute() else root / path
+    if supplied.is_symlink() or not supplied.is_file():
+        raise RuntimeError("FM invocation input absent, symlinked, or non-regular")
+    resolved = supplied.resolve()
+    if supplied.absolute() != resolved:
+        raise RuntimeError("FM invocation input has a non-canonical path component")
+    try:
+        relative = resolved.relative_to(root).as_posix()
+    except ValueError as exc:
+        raise RuntimeError("FM invocation input must be repository-resident") from exc
+    return relative, resolved
+
+
+def _authenticated_authority_digest(path: Path) -> str:
+    """Derive a digest only from a canonical, internally sealed handoff."""
+
+    authority, digest = load_authority(path)
+    if set(authority) != {"schema_id", "authorization", "authorization_sha256"}:
+        raise RuntimeError("execution authority envelope fields malformed or unknown")
+    if authority.get("schema_id") != AUTHORITY_SCHEMA:
+        raise RuntimeError("execution authority envelope schema mismatch")
+    authorization = authority.get("authorization")
+    if not isinstance(authorization, dict):
+        raise RuntimeError("execution authority inner value malformed")
+    if authority.get("authorization_sha256") != authority_sha256(authorization):
+        raise RuntimeError("execution authority inner seal mismatch")
+    if not HEX_64.fullmatch(digest):
+        raise RuntimeError("derived execution authority hash malformed")
+    return digest
+
+
+def build_preconsumption_invocation_binding(
+    *,
+    repository_root: Path,
+    operation_context: Path,
+    live_candidate_binding: Path,
+    execution_authority: Path,
+) -> dict[str, Any]:
+    """Build and seal the exact FM argv without accepting a caller digest.
+
+    This function is pure with respect to governance state: it reads canonical
+    repository inputs, writes nothing, consumes no authority, and starts no
+    process.  A future orchestration owner must validate its result before any
+    one-shot authority-consumption transition and execute the returned argv
+    without reconstruction.
+    """
+
+    root = repository_root.resolve()
+    launcher_relative, _ = _repository_file_argument(root, Path(__file__))
+    context_relative, context_path = _repository_file_argument(
+        root, operation_context
+    )
+    candidate_relative, _ = _repository_file_argument(
+        root, live_candidate_binding
+    )
+    authority_relative, authority_path = _repository_file_argument(
+        root, execution_authority
+    )
+    context_digest = sha256_path(context_path)
+    authority_digest = _authenticated_authority_digest(authority_path)
+    final_argv = [
+        sys.executable,
+        launcher_relative,
+        "--operation-context",
+        context_relative,
+        "--operation-context-sha256",
+        context_digest,
+        "--live-candidate-binding",
+        candidate_relative,
+        "--execution-authority",
+        authority_relative,
+        "--execution-authority-sha256",
+        authority_digest,
+    ]
+    binding = {
+        "schema_id": PRECONSUMPTION_INVOCATION_SCHEMA,
+        "binding_phase": "BEFORE_AUTHORITY_CONSUMPTION_AND_FM_INVOCATION",
+        "authority_digest_derivation": "SHA256_EXACT_CANONICAL_HANDOFF_BYTES",
+        "authenticated_canonical_authority_digest": authority_digest,
+        "sealed_invocation_authority_digest": authority_digest,
+        "final_fm_argv_authority_digest": authority_digest,
+        "operation_context_sha256": context_digest,
+        "execution_authority_path": authority_relative,
+        "final_fm_argv": final_argv,
+        "final_fm_argv_sha256": hashlib.sha256(canonical_bytes(final_argv)).hexdigest(),
+        "caller_digest_input_count": 0,
+        "provider_digest_input_count": 0,
+        "binding_is_authority": False,
+        "execution_authorized_by_binding": False,
+        "process_started": False,
+        "authority_consumption_count": 0,
+        "fm_operational_invocation_count": 0,
+    }
+    envelope = {
+        "schema_id": PRECONSUMPTION_INVOCATION_ENVELOPE_SCHEMA,
+        "invocation_binding": binding,
+        "invocation_binding_sha256": hashlib.sha256(canonical_bytes(binding)).hexdigest(),
+    }
+    validate_preconsumption_invocation_binding(
+        repository_root=root,
+        operation_context=operation_context,
+        live_candidate_binding=live_candidate_binding,
+        execution_authority=execution_authority,
+        envelope=envelope,
+    )
+    return envelope
+
+
+def validate_preconsumption_invocation_binding(
+    *,
+    repository_root: Path,
+    operation_context: Path,
+    live_candidate_binding: Path,
+    execution_authority: Path,
+    envelope: dict[str, Any],
+) -> dict[str, Any]:
+    """Re-derive and fail closed on any sealed or argv digest substitution."""
+
+    if set(envelope) != {
+        "schema_id",
+        "invocation_binding",
+        "invocation_binding_sha256",
+    }:
+        raise RuntimeError("preconsumption invocation envelope fields malformed")
+    if envelope.get("schema_id") != PRECONSUMPTION_INVOCATION_ENVELOPE_SCHEMA:
+        raise RuntimeError("preconsumption invocation envelope schema mismatch")
+    binding = envelope.get("invocation_binding")
+    if not isinstance(binding, dict):
+        raise RuntimeError("preconsumption invocation binding malformed")
+    expected_binding_fields = {
+        "schema_id",
+        "binding_phase",
+        "authority_digest_derivation",
+        "authenticated_canonical_authority_digest",
+        "sealed_invocation_authority_digest",
+        "final_fm_argv_authority_digest",
+        "operation_context_sha256",
+        "execution_authority_path",
+        "final_fm_argv",
+        "final_fm_argv_sha256",
+        "caller_digest_input_count",
+        "provider_digest_input_count",
+        "binding_is_authority",
+        "execution_authorized_by_binding",
+        "process_started",
+        "authority_consumption_count",
+        "fm_operational_invocation_count",
+    }
+    if set(binding) != expected_binding_fields:
+        raise RuntimeError("preconsumption invocation binding fields malformed")
+    if binding.get("schema_id") != PRECONSUMPTION_INVOCATION_SCHEMA:
+        raise RuntimeError("preconsumption invocation binding schema mismatch")
+    if envelope.get("invocation_binding_sha256") != hashlib.sha256(
+        canonical_bytes(binding)
+    ).hexdigest():
+        raise RuntimeError("preconsumption invocation binding seal mismatch")
+
+    root = repository_root.resolve()
+    launcher_relative, _ = _repository_file_argument(root, Path(__file__))
+    context_relative, context_path = _repository_file_argument(
+        root, operation_context
+    )
+    candidate_relative, _ = _repository_file_argument(
+        root, live_candidate_binding
+    )
+    authority_relative, authority_path = _repository_file_argument(
+        root, execution_authority
+    )
+    context_digest = sha256_path(context_path)
+    authority_digest = _authenticated_authority_digest(authority_path)
+    expected_argv = [
+        sys.executable,
+        launcher_relative,
+        "--operation-context",
+        context_relative,
+        "--operation-context-sha256",
+        context_digest,
+        "--live-candidate-binding",
+        candidate_relative,
+        "--execution-authority",
+        authority_relative,
+        "--execution-authority-sha256",
+        authority_digest,
+    ]
+    for field in (
+        "authenticated_canonical_authority_digest",
+        "sealed_invocation_authority_digest",
+        "final_fm_argv_authority_digest",
+    ):
+        value = binding.get(field)
+        if not isinstance(value, str) or not HEX_64.fullmatch(value):
+            raise RuntimeError(f"preconsumption {field} malformed")
+        if value != authority_digest:
+            raise RuntimeError(f"preconsumption {field} mismatch")
+    if binding.get("final_fm_argv") != expected_argv:
+        raise RuntimeError("preconsumption final FM argv mismatch")
+    if binding.get("final_fm_argv_sha256") != hashlib.sha256(
+        canonical_bytes(expected_argv)
+    ).hexdigest():
+        raise RuntimeError("preconsumption final FM argv seal mismatch")
+    expected_scalar_fields = {
+        "binding_phase": "BEFORE_AUTHORITY_CONSUMPTION_AND_FM_INVOCATION",
+        "authority_digest_derivation": "SHA256_EXACT_CANONICAL_HANDOFF_BYTES",
+        "operation_context_sha256": context_digest,
+        "execution_authority_path": authority_relative,
+        "caller_digest_input_count": 0,
+        "provider_digest_input_count": 0,
+        "binding_is_authority": False,
+        "execution_authorized_by_binding": False,
+        "process_started": False,
+        "authority_consumption_count": 0,
+        "fm_operational_invocation_count": 0,
+    }
+    for field, expected in expected_scalar_fields.items():
+        if binding.get(field) != expected:
+            raise RuntimeError(f"preconsumption {field} mismatch")
+    return binding
 
 
 def validate_execution_admission(
