@@ -681,9 +681,16 @@ def _derive_sealed_host_repository_root(
     operation_namespace = suffix[0]
     if GOVERNED_OPERATION_NAMESPACE.fullmatch(operation_namespace) is None:
         raise ContextError("sealed operation namespace is noncanonical")
-    namespace_lead = f"{prefix}_{vector}_"
-    if not operation_namespace.startswith(namespace_lead):
+    namespace_leads = (
+        f"{prefix}_{vector}_",
+        f"{prefix}_fresh_{vector}_",
+    )
+    matched_leads = tuple(
+        lead for lead in namespace_leads if operation_namespace.startswith(lead)
+    )
+    if len(matched_leads) != 1:
         raise ContextError("sealed operation projection is not namespace-bound")
+    namespace_lead = matched_leads[0]
     context_major = context["context_schema_version"].split(".", 1)[0]
     namespace_body = operation_namespace[len(namespace_lead):]
     if (
