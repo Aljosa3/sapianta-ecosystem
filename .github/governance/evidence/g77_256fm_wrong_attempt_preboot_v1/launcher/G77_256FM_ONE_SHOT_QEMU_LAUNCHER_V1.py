@@ -191,6 +191,8 @@ FRESH_OPERATION_CONTEXT_OWNER_HASH_KEY = "fresh_operation_context_owner"
 FRESH_OPERATION_CONTEXT_OWNER_SHA256 = (
     "337aa8d19f519bd0873ff9d688c16fc6b914e70ef1b03504813d2f4fdf8d899b"
 )
+GUEST_HARNESS_PROJECTION_ROOT_CONSTRUCTION_MODE = 0o700
+GUEST_HARNESS_PROJECTION_ROOT_PRESENTATION_MODE = 0o701
 ER_HARNESS_SHA256 = "c6539d1cc60940b1999956965bff43923a270598a982cd19f976eadec0a93152"
 QEMU_EXECUTABLE_SHA256 = "8a35ccba41582fc6c38b9df85fc9e35fa1d42f414d2d7d8090ee9b2f5e7c0854"
 
@@ -779,6 +781,10 @@ def prove_guest_adapter_binding(
         raise RuntimeError("adapter source SHA-256 mismatch")
     if projection_root.is_symlink() or not projection_root.is_dir():
         raise RuntimeError("adapter projection root absent or unsafe")
+    if projection_root.stat().st_mode & 0o777 != (
+        GUEST_HARNESS_PROJECTION_ROOT_PRESENTATION_MODE
+    ):
+        raise RuntimeError("adapter projection root permission binding mismatch")
     expected_entries = {projected, bootstrap, context_owner_projection}
     if set(projection_root.iterdir()) != expected_entries:
         raise RuntimeError("adapter projection stale, duplicate, or ambiguous")
@@ -2127,7 +2133,11 @@ def materialize_operation_state(
     runtime_export.mkdir(mode=0o700, parents=False, exist_ok=False)
     adapter_binding = context["guest_adapter_binding"]
     adapter_projection_root = Path(adapter_binding["projection_root"])
-    adapter_projection_root.mkdir(mode=0o700, parents=False, exist_ok=False)
+    adapter_projection_root.mkdir(
+        mode=GUEST_HARNESS_PROJECTION_ROOT_CONSTRUCTION_MODE,
+        parents=False,
+        exist_ok=False,
+    )
     adapter_source = repository_root / adapter_binding["source_path"]
     adapter_bytes = adapter_source.read_bytes()
     Path(adapter_binding["projected_path"]).write_bytes(adapter_bytes)
@@ -2138,6 +2148,9 @@ def materialize_operation_state(
         / FRESH_OPERATION_CONTEXT_OWNER_PROJECTION_FILENAME
     )
     context_owner_projection.write_bytes(context_owner_source.read_bytes())
+    adapter_projection_root.chmod(
+        GUEST_HARNESS_PROJECTION_ROOT_PRESENTATION_MODE
+    )
     _, candidate = resolve_candidate_source(repository_root, candidate_source_path)
     runtime_manifest = Path(context["runtime_manifest_path"])
     runtime_manifest.write_bytes(candidate.read_bytes())
