@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import inspect
 from pathlib import Path
 import subprocess
 import sys
@@ -25,6 +26,12 @@ BASE = Path(
     "G77_256KA_PHASE_B_CONTROLLER_V1.py"
 )
 BASE_SHA256 = "44cde7913d6fef0a3c48cb7b96b82e7b79605c94a963f2acd0f36b0b0f80e34e"
+KC_MATERIALIZER_SHA256 = "f41a7b9942a1de0b1825bdda3676d04968d857d01f7370551844abcde16de1d2"
+KC_MATERIALIZER_PATH = Path(
+    ".github/governance/evidence/"
+    "g77_256kc_fresh_expired_operational_recommissioning_v1/orchestration/"
+    "G77_256KC_PREAUTHORIZATION_MATERIALIZER_V1.py"
+)
 
 HEAD = "2b0a1ff1d7bc3e071392a786dfb64c2eac392df3"
 TREE = "2b7e42af265f20404ad467c6f1069df56cc388f8"
@@ -85,6 +92,38 @@ class KCPhaseBError(RuntimeError):
     """One deterministic fail-closed KC Phase-B controller error."""
 
 
+def _bind_kc_phase_b_materializer_owner(controller: ModuleType) -> ModuleType:
+    """Bind the reused controller to KC's authenticated KA-contract projection."""
+
+    wrapper = getattr(controller, "MATERIALIZER", None)
+    if (
+        not isinstance(wrapper, ModuleType)
+        or Path(getattr(wrapper, "__file__", "")).resolve()
+        != (ROOT / KC_MATERIALIZER_PATH).resolve()
+        or hashlib.sha256((ROOT / KC_MATERIALIZER_PATH).read_bytes()).hexdigest()
+        != KC_MATERIALIZER_SHA256
+    ):
+        raise KCPhaseBError("KC_MATERIALIZER_WRAPPER_IDENTITY_MISMATCH")
+    owner = getattr(wrapper, "K", None)
+    if not isinstance(owner, ModuleType) or getattr(wrapper, "M", None) is not getattr(owner, "M", None):
+        raise KCPhaseBError("KC_KA_CONTRACT_PROJECTION_MISMATCH")
+    entry_adapter = getattr(owner, "A", None)
+    entry = getattr(entry_adapter, "authenticate_entry", None)
+    authoritative_entry = getattr(getattr(entry_adapter, "M", None), "authenticate_entry", None)
+    if (
+        not callable(entry)
+        or entry is not authoritative_entry
+        or tuple(inspect.signature(entry).parameters) != ("remote_head", "nested_remote_tag")
+    ):
+        raise KCPhaseBError("KC_ENTRY_AUTHENTICATION_OWNER_MISMATCH")
+    for name in ("authenticate_jz", "authenticate_e05_frontier"):
+        function = getattr(owner, name, None)
+        if not callable(function) or inspect.signature(function).parameters:
+            raise KCPhaseBError(f"KC_PHASE_B_MATERIALIZER_INTERFACE_MISMATCH:{name}")
+    controller.MATERIALIZER = owner
+    return owner
+
+
 def load_controller() -> ModuleType:
     path = ROOT / BASE
     raw = path.read_bytes()
@@ -99,6 +138,7 @@ def load_controller() -> ModuleType:
     module.__file__ = str(Path(__file__).resolve())
     sys.modules[module.__name__] = module
     exec(compile(source, str(path), "exec"), module.__dict__)
+    _bind_kc_phase_b_materializer_owner(module)
     module.HEAD = HEAD
     module.TREE = TREE
     module.SUBJECT = "G77-256KB verify EXPIRED guest namespace binding repair"
