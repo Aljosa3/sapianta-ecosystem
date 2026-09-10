@@ -98,11 +98,11 @@ FUTURE_CLOUD_INIT_SHA256 = (
 )
 EXPIRED_CLOUD_INIT = (
     ".github/governance/evidence/"
-    "g77_256jt_expired_bootstrap_checkout_binding_repair_v1/"
-    "static/G77_256JT_CLOUD_INIT_USER_DATA_V1.yaml"
+    "g77_256jx_er_admission_runtime_checkout_role_separation_repair_v1/"
+    "static/G77_256JX_CLOUD_INIT_USER_DATA_V1.yaml"
 )
 EXPIRED_CLOUD_INIT_SHA256 = (
-    "4c2c020421b06d592cb64b0a8da56a5929a981cf32dcbda9ae077956e3ca3408"
+    "d427ea791a6a34412af12f6fb4b8f6d6597db120d037bd13e99c9cb64f52f859"
 )
 FK_ADAPTER = ".github/governance/evidence/g77_256fc_wrong_attempt_operational_v1/harness/G77_256FC_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py"
 CANONICAL_CHE = "aigol/runtime/canonical_che_evidence_correlation_contract_v1.py"
@@ -152,8 +152,8 @@ FUTURE_SEED = (
 )
 EXPIRED_SEED = (
     "/home/pisarna/work/sapianta-fl/.github/governance/evidence/"
-    "g77_256jt_expired_bootstrap_checkout_binding_repair_v1/"
-    "static/SAPIANTA_EXPIRED_NOCLOUD_SEED_V2.img"
+    "g77_256jx_er_admission_runtime_checkout_role_separation_repair_v1/"
+    "static/SAPIANTA_EXPIRED_NOCLOUD_SEED_V3.img"
 )
 CHECKOUT = "/tmp/g77_256fm/checkout"
 LEGACY_CHECKOUT_HEAD = "7dce67ec18696ba0bad73130f3f7a84168f25277"
@@ -162,6 +162,12 @@ HISTORICAL_IF_HEAD = "699fcdce794ff49b6c8735602936355724ed1c90"
 HISTORICAL_IF_TREE = "7c773d4b2acdf013f1b8238eabfc8eced4dd6866"
 EXPIRED_CHECKOUT_HEAD = "304b342e26e92f226afa01db4b4203acfa51f532"
 EXPIRED_CHECKOUT_TREE = "fc0c50e4dd79e900d85d48c5c0aeb53fe9d0c937"
+EXPIRED_RUNTIME_BASE_ADAPTER_SHA256 = (
+    "96b5a90269cf871f722babbdcf49b0aa067d712c9d07142d0a2acb15510c68c2"
+)
+EXPIRED_ADMISSION_ADAPTER_SHA256 = (
+    "f24d696ee3ab1f1b5d5feef2fa29e155e971f1aa1b8d890c98734011fb40e1d7"
+)
 P11_CONSUMER_RELATIVE = "tests/p11_da_operational_consumer_v1.py"
 COMMITTED_JM_P11_SHA256 = (
     "38399ab9d1eb74dc2a231eb3a363064ba8b90077d6cdbf1d3494ca937b2127f5"
@@ -217,7 +223,7 @@ EXPECTED_ASSET_SHA256 = {
     WRONG_CONTRACT_SEED: "fc98a62a1b3bd813b7f570438fc48151c378aeba4389de13d4e532d3f7979b21",
     WRONG_PROVENANCE_SEED: "4154ec58b7ebf46299ccc495a0a1232b7e31f67221f987b6fe7959f8d5593c7c",
     FUTURE_SEED: "6998d4cdaff3617b9e2c29f17318a220619fc718d0d9f9168b08e614cfdf0418",
-    EXPIRED_SEED: "4d0f7d4e7f5cbb08ee18ed8c757a7467498513862a1b3194d3489df8c8d092fb",
+    EXPIRED_SEED: "dda34ab8566eb3b3111783dc6d3a112ce88515ed6caf8f40469d0600c0e87fa4",
     LEGACY_CLOUD_INIT: LEGACY_CLOUD_INIT_SHA256,
     LEGACY_SEED: "966f1910bbffe20fa18c4cee56ff61dcbb069348e2929bfda74e029a9dc0ec58",
 }
@@ -1175,10 +1181,14 @@ def governed_checkout_identity(
         ["git", "show", f"{EXPIRED_CHECKOUT_HEAD}:{adapter_path}"],
         cwd=repository_root,
     )
-    if hashlib.sha256(committed_adapter).hexdigest() != sha256_path(
-        repository_root / adapter_path
+    if hashlib.sha256(committed_adapter).hexdigest() != (
+        EXPIRED_RUNTIME_BASE_ADAPTER_SHA256
     ):
-        raise RuntimeError("EXPIRED stable checkout adapter identity mismatch")
+        raise RuntimeError("EXPIRED stable checkout base adapter identity mismatch")
+    if sha256_path(repository_root / adapter_path) != (
+        EXPIRED_ADMISSION_ADAPTER_SHA256
+    ):
+        raise RuntimeError("EXPIRED admission adapter identity mismatch")
     return EXPIRED_CHECKOUT_HEAD, EXPIRED_CHECKOUT_TREE
 
 

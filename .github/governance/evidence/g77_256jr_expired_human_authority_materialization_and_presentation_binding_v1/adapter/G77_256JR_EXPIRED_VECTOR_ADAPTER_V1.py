@@ -109,7 +109,7 @@ def authenticate_expired_semantics(repository_root: Path) -> dict[str, Any]:
 
 
 def specialize_er_harness(repository_root: Path) -> ModuleType:
-    """Derive the fixed act interval while leaving observation clocks unchanged."""
+    """Derive the fixed interval and the authenticated EXPIRED role split."""
 
     root = repository_root.resolve()
     authenticate_expired_semantics(root)
@@ -130,6 +130,28 @@ def specialize_er_harness(repository_root: Path) -> ModuleType:
     if source.count(clock) != 1:
         raise ExpiredAdapterError("ER_VALIDITY_SPECIALIZATION_ANCHOR_INVALID")
     source = source.replace(clock, fixed)
+    collapsed_roles = (
+        '    if (\n'
+        '        context["repository_head"] != observed_head\n'
+        '        or context["repository_tree"] != observed_tree\n'
+        '        or checkout_binding["head"] != observed_head\n'
+        '        or checkout_binding["tree"] != observed_tree\n'
+        '    ):\n'
+        '        raise RuntimeError("sealed operation context checkout binding mismatch")\n'
+    )
+    separated_roles = (
+        '    # The FM context owner has already authenticated the sealed admission\n'
+        '    # repository identity.  This guest observation owns only the distinct\n'
+        '    # stable runtime checkout identity.\n'
+        '    if (\n'
+        '        checkout_binding["head"] != observed_head\n'
+        '        or checkout_binding["tree"] != observed_tree\n'
+        '    ):\n'
+        '        raise RuntimeError("sealed operation context checkout binding mismatch")\n'
+    )
+    if source.count(collapsed_roles) != 1:
+        raise ExpiredAdapterError("ER_REPOSITORY_ROLE_SEPARATION_ANCHOR_INVALID")
+    source = source.replace(collapsed_roles, separated_roles)
     module = ModuleType("g77_256jr_expired_er_specialization")
     module.__file__ = str(path)
     exec(compile(source, str(path), "exec"), module.__dict__)
