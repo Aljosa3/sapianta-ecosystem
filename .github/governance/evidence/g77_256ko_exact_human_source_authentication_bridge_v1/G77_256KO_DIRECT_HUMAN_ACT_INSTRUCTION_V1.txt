@@ -1,0 +1,38 @@
+G77-256KO DIRECT HUMAN ACT INSTRUCTION V1
+NONAUTHORITY: this instruction and the enclosed text are not Human authority.
+
+The Human must personally create and save this exact path:
+
+.github/governance/evidence/g77_256kn_fresh_expired_operational_recommissioning_v1/G77_256KN_HUMAN_OPERATIONAL_AUTHORIZATION_SOURCE_V1.txt
+
+Requirements:
+
+- Perform the edit directly as the Human; do not ask Codex, ChatGPT, an agent,
+  a script, or an automation to create, paste, or write the source file.
+- Use UTF-8 without BOM, LF line endings, and one final LF.
+- The file must contain exactly the bytes between the markers, excluding both
+  marker lines.
+- Do not edit any existing KN or KO artifact.
+- After saving, return for a separate authentication continuation. Saving the
+  file does not itself start Phase B or authorize automatic continuation.
+
+--- BEGIN EXACT HUMAN-SOURCE BYTES ---
+I authorize exactly one bounded G77_256KN SPCE Phase-B attempt for:
+
+GENERATION G77_256KN_ONE_FRESH_HUMAN_AUTHORIZED_EXPIRED_OPERATIONAL_COMMISSIONING_V1
+OPERATION G77_256KN_E05_EXPIRED_DENIAL_BEFORE_ENTRY_001
+CANDIDATE_SHA256 8af5ba1cbf9e396aa2f4f981a6f20b821c5fd1c38e091ed1cb3646c76c953b4a
+HUMAN_DECISION_PRESENTATION_SHA256 9b95f4ad710b607b0c8607da4b2b720d5e8bf94929f4f39dc4e121cc5b5f2f12
+PURPOSE Perform exactly one fresh Human-authorized EXPIRED operational attempt in the same G77-256KN generation to observe whether EXPIRED is denied before P11 entry after the KF repair.
+AUTHORITY_SCOPE ONE_KN_GENERATION__ONE_KN_OPERATION__ONE_AUTHORITY_CONSUMPTION_MAXIMUM__ONE_OPERATIONAL_ATTEMPT_MAXIMUM
+NOT_AUTHORIZED NO_REPLAY__NO_REPAIR_RETRY__NO_SECOND_OPERATION__NO_ALTERNATE_AUTHORITY_PATH__NO_P11_BYPASS__NO_PARALLEL_ROUTE__NO_AUTHORITY_TRANSFER__NO_HISTORICAL_AUTHORITY_REUSE__NO_EXPANSION_OF_PRODUCTION_BEHAVIOR
+EXPECTED_ROUTE FM_TO_ER_TO_P11
+E05_BEFORE_OPERATION VERIFIED__11_OF_18
+EXPIRED_BEFORE_OPERATION NOT_PROVEN_OPERATIONALLY
+
+I understand that this file is my direct Human act, authority may be consumed at most once, and EXPIRED denial before P11 entry remains unproven until operationally observed.
+--- END EXACT HUMAN-SOURCE BYTES ---
+
+STOP after the Human saves the file. A separate continuation must independently
+authenticate provenance, exact bytes, presentation binding, freshness, scope,
+and the still-unconsumed state before constructing any authority handoff.
