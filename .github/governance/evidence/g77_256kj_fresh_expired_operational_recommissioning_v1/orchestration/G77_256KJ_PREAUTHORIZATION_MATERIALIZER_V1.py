@@ -281,8 +281,6 @@ def bind_ki_into_phase_a(
         {
             "checkpoint_file_sha256": sha256_path(readiness_path),
             "checkpoint_inner_sha256": readiness["checkpoint_sha256"],
-            "ki_frontier_preflight_file_sha256": preflight["file_sha256"],
-            "ki_frontier_preflight_inner_sha256": preflight["inner_sha256"],
         }
     )
     reseal(request, "request")
