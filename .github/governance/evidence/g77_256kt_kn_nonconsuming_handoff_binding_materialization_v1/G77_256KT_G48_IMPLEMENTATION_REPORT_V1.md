@@ -1,0 +1,409 @@
+# 1. Implementation Summary
+
+Generation: `G77-256KT` — same-generation provider-interruption continuation.
+
+Mode: `SPCE_PHASE_A__REPOSITORY_ONLY_PRECONSUMPTION_MATERIALIZATION`.
+
+Reporting standard: G48 Constitutional Evidence Reporting Standard V1.d.
+
+`TERMINAL = A__KT_EXACT_NONCONSUMING_KN_CANONICAL_HANDOFF_AND_PRECONSUMPTION_BINDING_MATERIALIZED__AUTHORITY_UNCONSUMED__NO_PHASE_B__NO_OPERATION`
+
+KT reconstructed the authenticated KS checkpoint and the exact worktree. The
+only interrupted-worker artifact was one generation-local materializer. Its
+design reused the correct FM/JZ/KA/KG mechanism, but its owner-chain proof
+check incorrectly required the KE wrapper itself to define functions owned by
+its authenticated adapted controller. It was therefore classified
+`DEFECTIVE_PARTIAL_WORK`, repaired in place, and reused. No second KT
+materializer or parallel implementation path was created.
+
+`PROVIDER_INTERRUPTION = VERIFIED__USAGE_LIMIT_ONLY__NOT_CONSTITUTIONAL_FAILURE`
+
+`SAME_GENERATION_CONTINUATION = VERIFIED__G77_256KT`
+
+`PREVIOUS_WORKER_MEMORY_REQUIRED = VERIFIED__NO`
+
+`AUTHENTICATED_REPOSITORY_CONTINUATION = VERIFIED__YES`
+
+`PARTIAL_WORK_RECONSTRUCTION_STATUS = VERIFIED__ONE_GENERATION_LOCAL_MATERIALIZER_RECONSTRUCTED_AS_DEFECTIVE_PARTIAL_WORK`
+
+`PARTIAL_WORK_REUSE_STATUS = VERIFIED__REPAIRED_AND_REUSED__NO_SECOND_MATERIALIZER`
+
+`PARTIAL_WORK_DRIFT = VERIFIED__ONE_OWNER_CHAIN_PROOF_CHECK_DEFECT__ZERO_AUTHORITY_OR_OPERATIONAL_DRIFT`
+
+The repaired materializer used the existing FM canonical writer and existing
+FM/JZ preconsumption binder to persist exactly two KN prerequisites: the
+canonical Human-authority handoff and its digest-preserving invocation
+binding. Authority remains unconsumed. Phase B and every operational path
+remain unentered.
+
+# 2. Code Evidence
+
+## Authenticated entry checkpoint
+
+`HEAD = 55b93edd1e0680f0e2bbe78e4b863557e04c1428`
+
+`TREE = 3a328c540352acf6ba3df69e1c811b50f7a4b28d`
+
+`SUBJECT = G77-256KS authenticate KN authority and verify binding readiness`
+
+`REMOTE_HEAD = 55b93edd1e0680f0e2bbe78e4b863557e04c1428`
+
+`REMOTE_EQUALITY = VERIFIED__DIRECT_BRANCH_LS_REMOTE`
+
+Branch `g77-256fl-wrong-attempt-preboot-blocker`, origin
+`git@github.com:Aljosa3/sapianta-ecosystem.git`, stable ancestry anchor
+`5c972e9960987ab27420395b54ace693df097e7b`, empty index, and zero tracked
+diff authenticate exactly.
+
+Nested authority is `VERIFIED__CLEAN__DETACHED__PINNED__REMOTE_TAG_EQUAL` at
+origin `git@github.com:Aljosa3/sapianta-core.git`, immutable ref
+`refs/tags/sapianta-system-nested-authority-3183bab-v1`, HEAD
+`3183bab71f8f30397c0309dd2e6d846d14a11f66`, and tree
+`7c32ec05efc2be43297849bc38ec8766514a523d`.
+
+The sealed KS terminal is
+`A__KS_EXISTING_KN_HUMAN_AUTHORITY_AUTHENTICATED_AND_CANONICAL_BINDING_READY__UNCONSUMED__NO_PHASE_B__NO_OPERATION`.
+Its exact Human-decision authentication, unbound/unconsumed status, projected
+FM handoff coordinates, 15 zero counters, and no-Phase-B state reauthenticate.
+
+## Human source and immutable KN coordinates
+
+`SOURCE_BYTE_COUNT = 1213`
+
+`SOURCE_LF_COUNT = 14`
+
+`UTF8_VALIDITY = VERIFIED`
+
+`BOM_STATUS = VERIFIED__ABSENT`
+
+`FINAL_LF_STATUS = VERIFIED__PRESENT`
+
+`SOURCE_SHA256 = 56a50ef8a69761e492138d4f9f425eb2e845231bd654a731ead02fcbc34fdc96`
+
+`SOURCE_EXACT_BYTES_STATUS = VERIFIED__EXACT_KO_BYTE_EQUALITY`
+
+The source remains unmodified and untracked.
+
+The exact KN generation and operation are
+`G77_256KN_ONE_FRESH_HUMAN_AUTHORIZED_EXPIRED_OPERATIONAL_COMMISSIONING_V1`
+and `G77_256KN_E05_EXPIRED_DENIAL_BEFORE_ENTRY_001`. Reauthenticated bindings:
+
+- candidate `8af5ba1cbf9e396aa2f4f981a6f20b821c5fd1c38e091ed1cb3646c76c953b4a`;
+- context `37f5c7d46b305b6e6b912dd136917c96ad4c783341aa62cd1dc4994e6f5b4b`;
+- context file `adafd6cdc2bef25119e098e11a69a79cdc893656bc9471f72e4e6a85ca5e7695`;
+- canonical argv `96480352c744c6feb9d743fafc7eae111a143ebde6b18cf67160e05ac1e93816`;
+- temporal binding `cc46cded2aa3c294ad84c172619092889639fb74dda5f32ec68645508a2a1f56`;
+- request identity `9c5941b007e5939da928b7e1cc6cf0668a8e20b29f75bbe29964520645eb57d5`;
+- request file `f980e8cd5ac48c97bbc61a0f891f103e8305f14847a59333b39912024609831d`;
+- authorization presentation `71cc222249ad75b2b420d749c2d4bd66cf0bd2d982f054102384ddb14993e2ac`;
+- Human decision presentation `9b95f4ad710b607b0c8607da4b2b720d5e8bf94929f4f39dc4e121cc5b5f2f12`;
+- scope `ONE_KN_GENERATION__ONE_KN_OPERATION__ONE_AUTHORITY_CONSUMPTION_MAXIMUM__ONE_OPERATIONAL_ATTEMPT_MAXIMUM`;
+- route `FM_TO_ER_TO_P11`.
+
+The GN preauthorization object remains the exact authenticated ten-field
+schema. No field or alternate schema was added.
+
+## Existing mechanism and consumption separation
+
+`HANDOFF_PREPARATION_CONSUMES_AUTHORITY = VERIFIED__NO`
+
+`BINDING_MATERIALIZATION_CONSUMES_AUTHORITY = VERIFIED__NO`
+
+`PRECONSUMPTION_HANDOFF_REQUIRED = VERIFIED__YES__FM_STRICT_LOADER_REQUIRES_PERSISTED_CANONICAL_AUTHORITY_PATH`
+
+`PRECONSUMPTION_BINDING_REQUIRED = VERIFIED__YES__JZ_AND_KA_KG_CONSUMER_REVALIDATE_PERSISTED_DIGEST_PRESERVING_BINDING`
+
+The committed KA preconsumption checkpoint persists a canonical handoff and
+binding at `GRANTED_UNCONSUMED`, with authority consumption and FM invocation
+both zero. Its separately persisted consumption checkpoint records the later
+`GRANTED_UNCONSUMED → CONSUMED` transition and consumption count one. The
+committed KG preconsumption checkpoint independently persists the same
+preparation state with both counts zero. These sealed artifacts, plus the
+hash-pinned KA/KE/KG owner code, reproduce the required preparation/consumption
+separation without relying on worker memory or filenames.
+
+`CONSUMPTION_BOUNDARY_OWNER = VERIFIED__KA_KG_PHASE_B_CONTROLLER_PLUS_FM_FINAL_ADMISSION_AND_P11_ONE_SHOT_CONSUMER`
+
+`CONSUMPTION_BOUNDARY_ARTIFACT = G77_256KN_AUTHORITY_VALIDATION_AND_CONSUMPTION_CHECKPOINT_V1.json__ABSENT`
+
+`CONSUMPTION_BOUNDARY_TRANSITION = GRANTED_UNCONSUMED_TO_CONSUMED__NOT_ENTERED`
+
+`CONSUMPTION_BOUNDARY_PRECONDITIONS = EXACT_HANDOFF__EXACT_PRECONSUMPTION_BINDING__FINAL_ADMISSION__UNCONSUMED_RECEIPT_NAMESPACE__EXACT_ONE_SHOT_CLAIM`
+
+`HANDOFF_PRODUCER_OWNER = FM.write_authority_handoff`
+
+`HANDOFF_PRODUCER_ARTIFACT = .github/governance/evidence/g77_256fm_wrong_attempt_preboot_v1/launcher/G77_256FM_ONE_SHOT_QEMU_LAUNCHER_V1.py`
+
+`HANDOFF_SCHEMA_OWNER = FM.validate_authority_handoff_envelope_shape_AND_FM.parse_authority_handoff_bytes`
+
+`HANDOFF_SCHEMA = SAPIANTA_CONTEXT_BOUND_HUMAN_OPERATIONAL_AUTHORIZATION_HANDOFF_V1__SAPIANTA_CONTEXT_BOUND_FRESH_HUMAN_OPERATIONAL_AUTHORIZATION_V1`
+
+`HANDOFF_SERIALIZATION_RULE = UNIQUE_KEY_CANONICAL_COMPACT_JSON_PLUS_ONE_LF__STRICT_PARSE_ROUND_TRIP`
+
+`HANDOFF_BINDING_RULE = EXACT_KN_SOURCE_TO_GENERATION_OPERATION_VECTOR_CONTEXT_REPOSITORY_CANDIDATE_ARGV_WRAPPER_ADAPTER_AND_LIMITS`
+
+`HANDOFF_DIGEST_RULE = SHA256_EXACT_CANONICAL_HANDOFF_BYTES__DERIVED_BY_OWNER__NO_CALLER_OR_PROVIDER_DIGEST`
+
+`HANDOFF_COLLISION_GUARD = FRESH_PATHS_MUST_BE_ABSENT_BEFORE_EXCLUSIVE_MATERIALIZATION`
+
+`HANDOFF_REPLAY_GUARD = AUTHORIZATION_REUSABLE_FALSE__REPLAY_LIMIT_ZERO__UNCONSUMED_NAMESPACE_REQUIRED`
+
+`HANDOFF_ONE_SHOT_RULE = ONE_VM_BOOT__ONE_QEMU_EXECUTION__ONE_EXPIRED_ATTEMPT__ZERO_RETRY_REPAIR_REPLAY`
+
+`HANDOFF_CONSUMPTION_SEPARATION = VERIFIED__KA_KG_PREPARE_PERSISTS_HANDOFF_AND_BINDING_AS_GRANTED_UNCONSUMED__SEPARATE_CONSUME_AND_OPERATE_TRANSITIONS_TO_CONSUMED`
+
+No serializer, schema, signer, key, PKI, identity provider, registry, trust
+root, authority owner, authority route, generic abstraction, or constitutional
+concept was introduced.
+
+## Materialized handoff and binding
+
+`HUMAN_AUTHORITY_AUTHENTICATION = VERIFIED__EXACT_EXISTING_KN_HUMAN_AUTHORITY_AUTHENTICATED_BY_KS_AND_REAUTHENTICATED`
+
+`HUMAN_AUTHORITY_HANDOFF_MATERIALIZED = VERIFIED__EXACT_NONCONSUMING_CANONICAL_HANDOFF`
+
+`HUMAN_AUTHORITY_BINDING = VERIFIED__EXACT_KN_PRECONSUMPTION_BINDING`
+
+`HUMAN_AUTHORITY_CONSUMPTION_STATUS = VERIFIED__UNCONSUMED`
+
+`MATERIALIZED_HANDOFF_PATH = .github/governance/evidence/g77_256kn_fresh_expired_operational_recommissioning_v1/G77_256KN_FRESH_HUMAN_OPERATIONAL_AUTHORIZATION_HANDOFF_V1.json`
+
+`MATERIALIZED_HANDOFF_BYTE_COUNT = 1715`
+
+`MATERIALIZED_HANDOFF_SHA256 = f220a240d54c38ecba24fcc2ffd6c9c37b1cc11a69baac5f913964b0d5cff4ae`
+
+`MATERIALIZED_AUTHORIZATION_INNER_SHA256 = e1e21562553bd9b93bbb144336e0baa0fd1fdfc554e62cd65b5e08c6cae5e7c9`
+
+`MATERIALIZED_CANONICAL_JSON_STATUS = VERIFIED__UNIQUE_KEY_CANONICAL_COMPACT_JSON_PLUS_ONE_LF`
+
+`MATERIALIZED_SCHEMA_STATUS = VERIFIED__EXACT_FM_AUTHORITY_ENVELOPE_AND_AUTHORIZATION_SCHEMAS`
+
+`MATERIALIZED_STRICT_PARSE_STATUS = VERIFIED__FM_STRICT_PARSE_ROUND_TRIP_EQUAL`
+
+`PRECONSUMPTION_BINDING_PATH = .github/governance/evidence/g77_256kn_fresh_expired_operational_recommissioning_v1/G77_256KN_PRECONSUMPTION_INVOCATION_BINDING_V1.json`
+
+`PRECONSUMPTION_BINDING_FILE_SHA256 = 15b92bd8e07bea489c8128826a7757404489a2ecb1204c963f391a9a992e4135`
+
+`PRECONSUMPTION_BINDING_INNER_SHA256 = 234858e580d12c15f31e4258dd6c3664836c8b4f355d66239294400db4f2fe72`
+
+The binding is canonical, strictly rederived by FM, and preserves equality of
+the authenticated canonical authority digest, sealed invocation digest, and
+final FM argv authority digest. Caller/provider digest inputs, authority
+consumption, FM invocation, and process start all remain zero. The full KN
+source/presentation/request/context/temporal/scope/route chain remains sealed
+through the unchanged KN artifacts and exact canonical authority/context
+inputs; the FM invocation-binding schema was not expanded.
+
+# 3. Constitutional Self-Assessment
+
+## Failure Novelty + Convergence Check
+
+`FAILURE_CLASS = PROOF_GAP`
+
+`NOVELTY = VERIFIED__NEW_REQUIRED_PERSISTED_PRECONSUMPTION_EDGE__DISTINCT_FROM_KS_IN_MEMORY_READINESS`
+
+`AFFECTED_INVARIANT = EXACT_PERSISTED_CANONICAL_HANDOFF_AND_DIGEST_PRESERVING_BINDING_MUST_EXIST_AND_REVALIDATE_BEFORE_ONE_SHOT_CONSUMPTION`
+
+`PREVIOUS_CLOSEST_EDGE = KS_IN_MEMORY_CANONICAL_HANDOFF_PROJECTION_AND_BINDING_READINESS`
+
+`SEMANTIC_DIFFERENCE = VERIFIED__KT_PERSISTS_AND_STRICTLY_RELOADS_THE_EXACT_HANDOFF_AND_BINDING_REQUIRED_BY_THE_EXISTING_CONSUMER__KS_DID_NOT`
+
+`PRODUCTION_BEHAVIOR_IMPACT = VERIFIED__NONE__REPOSITORY_ONLY_PRECONSUMPTION`
+
+`NEW_CAPABILITY_REQUIRED = NOT_PROVEN__EXISTING_FM_JZ_KA_KG_MECHANISM_REUSED`
+
+`NEW_PROOF_REQUIRED = VERIFIED__PERSISTED_CANONICAL_BYTE_EQUALITY__STRICT_RELOAD__DIGEST_PRESERVING_BINDING__UNCONSUMED_STATE`
+
+`CONVERGENCE_SIGNAL = VERIFIED__KS_FIRST_BROKEN_EDGE_CLOSED_WITH_EXACT_TWO_EXISTING_MECHANISM_ARTIFACTS`
+
+`REPETITION_PRESSURE = VERIFIED__HIGH__KN_THROUGH_KT_HAS_NO_E05_MOVEMENT`
+
+`VERIFICATION_AMPLIFICATION_RISK = ESTIMATED__LOW_AFTER_MATERIALIZATION__NEXT_EDGE_IS_CONSUMPTION_AND_OPERATION_NOT_MORE_PHASE_A_PROOF`
+
+`CLASSIFICATION_EVIDENCE = VERIFIED__KS_FRONTIER__FM_STRICT_LOADER__JZ_BINDER__SEALED_KA_KG_PRECONSUMPTION_CHECKPOINTS__SEALED_KA_SEPARATE_CONSUMPTION_CHECKPOINT__HASH_PINNED_OWNER_CODE`
+
+`CLASSIFICATION_CONFIDENCE = VERIFIED__HIGH`
+
+`ACCEPTANCE_REQUIREMENT_FORCING_CONTINUATION = VERIFIED__KA_KG_CONSUMER_LOADS_AND_REVALIDATES_PERSISTED_HANDOFF_AND_BINDING_BEFORE_SEPARATE_CONSUMPTION_TRANSITION`
+
+`MINIMUM_MISSING_CAPABILITY = NOT_APPLICABLE__NO_NEW_CAPABILITY_GAP__ONE_GOVERNED_CONSUMPTION_AND_OPERATIONAL_OBSERVATION_REMAIN`
+
+`MINIMUM_LEGAL_NEXT_DELTA = AFTER_COMMITTED_KT_AND_HUMAN_REVIEW__REAUTHENTICATE_CONTEXT_BOUND_OPERATIONAL_ENTRY__THEN_IF_PASS_ONE_CONSUMPTION_AND_ONE_KN_PHASE_B_ATTEMPT__NO_RETRY`
+
+Provider exhaustion is not part of this classification. The edge is distinct
+and required because sealed historical consumer evidence requires actual
+persisted prerequisites, while KS proved only their in-memory projection.
+
+## Cross-vector reuse assessment
+
+`CROSS_VECTOR_REUSE_SCOPE = MULTI_VECTOR_REUSABLE`
+
+`REUSABLE_COMPONENT = DIRECT_HUMAN_UTF8_SOURCE_BYTES_TO_DERIVED_DIGEST_TO_CANONICAL_HANDOFF_TO_ONE_SHOT_CONSUMPTION_PATTERN`
+
+`REUSE_INVARIANT = EXPLICIT_HUMAN_DECISION_SOURCE_AND_EXACT_BYTES_MUST_PRECEDE_AUTHORITY_BINDING_AND_CONSUMPTION`
+
+`APPLICABLE_VECTORS = EXPIRED__FUTURE__WRONG_ATTEMPT__WRONG_CONTRACT__WRONG_INPUT__WRONG_PROVENANCE`
+
+`VECTOR_SPECIFIC_RESIDUE = KT_HANDOFF_IS_KN_EXPIRED_SPECIFIC__SOURCE_PRESENTATION_SCOPE_TEMPORAL_AUTHORITY_OPERATIONAL_ACCEPTANCE_AND_E05_REMAIN_VECTOR_LOCAL`
+
+`REUSE_PRECONDITIONS = PER_GENERATION_EXACT_BINDINGS__FRESH_NAMESPACE__STRICT_RELOAD__NO_AUTHORITY_OR_E05_TRANSFER`
+
+`REVALIDATION_REQUIRED = VERIFIED__PER_GENERATION_VECTOR_HUMAN_ACT_BINDING_AND_OPERATION`
+
+`EXPECTED_FUTURE_PROOF_REDUCTION = ESTIMATED__REUSE_SERIALIZER_BINDER_COLLISION_REPLAY_AND_ONE_SHOT_GUARDS__NO_AUTHORITY_OR_E05_TRANSFER`
+
+## Governance, frontier, architecture, proof yield, and CCWIM
+
+`PROJECT_STATE = VERIFIED__KT_HANDOFF_AND_BINDING_MATERIALIZED__AUTHORITY_UNCONSUMED__STOPPED`
+
+`PROJECT_PROGRESS = VERIFIED__KS_PERSISTED_PRECONSUMPTION_EDGE_CLOSED_WITH_EXISTING_MECHANISM`
+
+`PROJECT_PROGRESS_ESTIMATE = NOT_MEASURED__NO_CERTIFIED_TOTAL_PROJECT_DENOMINATOR`
+
+`INFORMAL_PROJECT_PROGRESS_ESTIMATE = ESTIMATED__ONE_REVIEWED_CONSUMPTION_AND_OPERATIONAL_EXPIRED_OBSERVATION_EDGE_REMAINS`
+
+`CONSTITUTIONAL_HEALTH_EVIDENCE = VERIFIED__STRICT_CANONICAL_RELOAD__DIGEST_EQUALITY__UNCONSUMED__NO_PROCESS__ONE_ROUTE`
+
+`SHADOW_AUTOMATION_STATUS = NOT_APPLICABLE__NO_NEW_AUTOMATION_OR_AUTHORITY_MECHANISM`
+
+`CONSTITUTIONAL_FRONTIER_DISTANCE = NOT_MEASURED__NO_GOVERNED_UNIVERSAL_SCALAR`
+
+`GOVERNANCE_EFFICIENCE = ESTIMATED__HIGH__TWO_REQUIRED_EXISTING_MECHANISM_ARTIFACTS_CLOSE_THE_PRECONSUMPTION_EDGE`
+
+`OVERENGINEERING_RISK = ESTIMATED__LOW__NO_NEW_SCHEMA_OWNER_ROUTE_REGISTRY_OR_ABSTRACTION`
+
+`COGNITION_PROVENANCE = VERIFIED__COMMITTED_KS_KR_KQ_KO_KN_FM_JZ_KA_KG_AND_DETERMINISTIC_MATERIALIZED_BYTES`
+
+`COGNITION_ASSISTED_HANDOFF = VERIFIED__COMMISSION_TO_AUTHENTICATED_REPOSITORY_CONTINUATION__NO_MEMORY_DEPENDENCY`
+
+`CANDIDATE_CAPABILITY = VERIFIED__EXACT_KN_NONCONSUMING_HANDOFF_AND_PRECONSUMPTION_BINDING__NOT_OPERATIONAL`
+
+`SHADOW_DESIGN_TARGET = VERIFIED__SEPARATE_ONE_SHOT_CONSUMPTION_THEN_FM_ER_P11_EXPIRED_ATTEMPT__NOT_ENTERED`
+
+`CONSTITUTIONAL_CONTINUATION_PROGRESS = VERIFIED__AUTHENTICATED_AUTHORITY_ADVANCED_FROM_BINDING_READINESS_TO_ACTUAL_UNCONSUMED_BINDING`
+
+`LAST_VERIFIED_OPERATIONAL_EDGE = EXACT_HUMAN_AUTHORITY_AUTHENTICATED_JZ_BOUND_CONSUMED_ONCE_AND_ONE_NO_NETWORK_VM_BOOT_REACHED_GUEST_CUSTODY_LOAD`
+
+`FIRST_UNVERIFIED_OPERATIONAL_EDGE = FRESH_HUMAN_AUTHORIZED_EXPIRED_DENIAL_BEFORE_P11_ENTRY_AFTER_KF_REPAIR`
+
+`LAST_VERIFIED_EDGE = KT_EXACT_KN_HANDOFF_AND_PRECONSUMPTION_BINDING_MATERIALIZED_AND_UNCONSUMED`
+
+`FIRST_BROKEN_EDGE = ONE_EXACT_AUTHORITY_CONSUMPTION_AND_ONE_EXACT_KN_OPERATIONAL_PHASE_B_ATTEMPT`
+
+`CURRENT_REAL_BLOCKER = VERIFIED__HUMAN_REVIEW_AND_COMMITTED_KT_CHECKPOINT_REQUIRED_BEFORE_ANY_CONSUMPTION__OPERATIONAL_HEAD_ADMISSION_MUST_BE_REAUTHENTICATED`
+
+`E05_STATE = VERIFIED__11_OF_18`
+
+`E05_FRONTIER = VERIFIED__7_UNSATISFIED_OF_18`
+
+`E05_CREDIT = VERIFIED__0`
+
+`KN_E05_CREDIT = VERIFIED__0`
+
+`EXPIRED = NOT_PROVEN_OPERATIONALLY`
+
+`EX_REUSED = VERIFIED__17_OF_17`
+
+`EX_RECONSTRUCTED = VERIFIED__0`
+
+`ARCHITECTURAL_DELTA_BUDGET = VERIFIED__PRODUCTION_MUTATION_0__P11_MUTATION_0__NEW_OWNER_0__NEW_ROUTE_0__NEW_REGISTRY_0__NEW_GENERIC_ABSTRACTION_0__NEW_CONSTITUTIONAL_CONCEPT_0__PRODUCTION_ROUTE_1_TO_1__PARALLEL_FLOW_NO`
+
+`PROOF_YIELD = VERIFIED__NEW_VERIFIED_CAPABILITY_0__NEW_OPERATIONAL_CAPABILITY_0__NEW_BLOCKER_LOCALIZED_0__NEW_BLOCKER_CLOSED_1__FALSE_OR_SUPERSEDED_BLOCKER_REMOVED_0__CLASSIFICATION_RESULT_1__HANDOFF_EDGE_1__BINDING_EDGE_1__EX_PROOF_REUSE_17`
+
+`CCWIM = ESTIMATED__L4_LIKE__NO_GOVERNED_CERTIFICATION; AUTHENTICATED_REPOSITORY_CONTINUATION=VERIFIED__YES; PREVIOUS_WORKER_CONVERSATION_REQUIRED=VERIFIED__NO; PREVIOUS_WORKER_MEMORY_REQUIRED=VERIFIED__NO; PARTIAL_WORK_RECONSTRUCTION=VERIFIED__DEFECTIVE_PARTIAL_REPAIRED_IN_PLACE; HANDOFF_AMBIGUITY=VERIFIED__0; OPERATIONAL_DRIFT=VERIFIED__0`
+
+`HAC_HAI_HAE = NOT_PROVEN__AUTHENTICATED_HAC_HAI_HAE_DEFINITIONS_NOT_LOCATED`
+
+## Reuse Impact Assessment
+
+1. Katere obstoječe certificirane zmogljivosti se ponovno uporabijo?
+
+Ponovno se uporabijo KS/KR/KQ/KO in nespremenljive KN koordinate, točna GN
+shema z desetimi polji, FM kanonični serializer/parser in atomic writer, JZ
+vezava z izpeljanim digestom, KA/KG priprava pred ločeno porabo, obstoječa
+collision/replay/one-shot varovala ter vseh 17 EX dokazov.
+
+2. Katere nove zmogljivosti (če sploh) nastanejo?
+
+Nobena nova produkcijska ali operativna zmogljivost. KT ustvari le omejena
+repozitorijska dokaza: točen neporabljajoč KN handoff in njegovo obstoječo
+predporabno FM vezavo.
+
+3. Ali katera obstoječa zmogljivost postane nedosegljiva?
+
+Ne. Obstoječe zmogljivosti, lastniki in varovala ostanejo dosegljivi ter
+nespremenjeni.
+
+4. Ali implementacija ustvarja vzporedni tok?
+
+Ne. Materializacija pripravi vhod samo za obstoječo pot FM → ER → P11 in je ne
+izvede.
+
+5. Ali zmanjšuje ali povečuje število produkcijskih poti?
+
+Ne. Število produkcijskih poti ostane ena pred KT in ena po KT.
+
+# 4. Validation Matrix
+
+| Validation | Result |
+|---|---|
+| KS HEAD/tree/subject/ancestry and direct remote equality | PASS |
+| Nested clean/detached/pinned state and direct remote tag equality | PASS |
+| Exact Human source bytes, UTF-8, BOM/final-LF, SHA-256, KO equality | PASS |
+| Sealed KS terminal, projection coordinates, zero counters | PASS |
+| Exact KN coordinates and GN ten-field schema | PASS |
+| Hash-pinned FM/JZ/KA/KE/KG mechanism | PASS |
+| Sealed KA/KG persisted preconsumption and KA separate consumption precedent | PASS |
+| Fresh collision, replay, one-shot, consumption, invocation, and result namespaces before materialization | PASS |
+| FM canonical serializer, unique-key strict parse, exact 1715 bytes | PASS |
+| Exact handoff outer and inner SHA-256 | PASS |
+| JZ/FM binding canonical seal, rederivation, and digest equality | PASS |
+| All 15 KT operational counters zero and Phase B false | PASS |
+| E05 unchanged at 11/18 with zero KT/KN credit; EX 17/17 reused | PASS |
+| Focused KT tests | PASS__9_OF_9 |
+| Relevant JZ/KA/KG mechanism tests | PASS__30_OF_30_APPLICABLE |
+| Historical KA worktree-boundary assertion | NOT_APPLICABLE__ASSERTS_KA_ONLY_UNTRACKED_SCOPE_AND_CORRECTLY_REJECTS_LATER_KT_WORKTREE |
+| Governance tests | PASS__9_OF_9 |
+| Governance conformance engine | PASS__CONFORMANT__ZERO_VIOLATIONS__ZERO_WARNINGS |
+| Python AST for KT materializer and tests | PASS |
+| Exactly six H1 and exactly five Slovenian RIA questions | PASS |
+| Canonical JSON and inner seals | PASS |
+| `git diff --check` | PASS |
+| Tracked/untracked mutation scope and empty index | PASS |
+
+No launcher, PRE, FM operational invocation, QEMU, VM, operation request,
+EXPIRED attempt, P11 entry, retry, repair retry, or replay validation was run;
+those actions are prohibited by KT scope.
+
+# 5. Repository Mutation Summary
+
+Production mutation count and P11 implementation mutation count are zero.
+Historical evidence and the Human source were not modified. The bounded
+generation-local mutation set is:
+
+- the repaired existing KT materializer;
+- one focused KT test module;
+- this G48 report;
+- the canonical/sealed KT terminal reduction;
+- the exact KN canonical authority handoff;
+- the exact KN preconsumption invocation binding.
+
+The source remains an additional unchanged, untracked Human-provided file.
+The index is empty. Nothing is staged, committed, or pushed.
+
+# 6. Certification Verdict
+
+`VERDICT = VERIFIED__KT_EXACT_NONCONSUMING_KN_CANONICAL_HANDOFF_AND_PRECONSUMPTION_BINDING_MATERIALIZED__AUTHORITY_UNCONSUMED__NO_PHASE_B__NO_OPERATION`
+
+`AUTO_CONTINUABLE = VERIFIED__NO`
+
+`HUMAN_REVIEW_REQUIRED = VERIFIED__YES`
+
+The next frontier is not entered: after Human review and a committed KT
+checkpoint, reauthenticate operational entry, consume exactly one authority,
+perform at most one exact KN Phase-B attempt, and observe whether EXPIRED is
+denied before P11 entry. Potential movement from E05 11/18 to 12/18 remains
+`NOT_PROVEN` until that operational observation.
+
+No authority consumption. No Phase B. No operation. No stage. No commit. No
+push.
