@@ -193,6 +193,22 @@ def specialize_fc_runtime_source(
         context_bound_metadata_tail,
     )
 
+    input_reference_anchor = (
+        '        "record_identity": "",\n'
+        '        "attempt_identity": AUTHORIZED_ATTEMPT_ID,\n'
+    )
+    aligned_input_reference = (
+        '        "record_identity": "",\n'
+        '        "attempt_identity": AUTHORIZED_ATTEMPT_ID,\n'
+        '        "authorization_reference": ACT_ID,\n'
+    )
+    if transformed.count(input_reference_anchor) != 1:
+        raise ExpiredAdapterError("FC_INPUT_AUTHORIZATION_REFERENCE_ANCHOR_INVALID")
+    transformed = transformed.replace(
+        input_reference_anchor,
+        aligned_input_reference,
+    )
+
     mutation = (
         "        wrong_value = dict(authorized_record)\n"
         "        wrong_value[\"record_identity\"] = \"\"\n"
@@ -255,6 +271,7 @@ def specialize_fc_runtime_source(
         "after.revision == 1",
         "differing_fields == []",
         '"authorized_context_sha256": gate.operation_context_sha256',
+        '"authorization_reference": ACT_ID',
     )
     if not all(token in transformed for token in required):
         raise ExpiredAdapterError("FC_EXPIRED_SPECIALIZATION_INCOMPLETE")
