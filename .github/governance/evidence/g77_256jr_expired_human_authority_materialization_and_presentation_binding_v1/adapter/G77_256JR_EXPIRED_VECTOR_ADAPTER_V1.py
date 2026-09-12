@@ -177,6 +177,22 @@ def specialize_fc_runtime_source(
     transformed = transformed.replace("WRONG_ATTEMPT", "EXPIRED")
     transformed = transformed.replace("wrong_attempt", "expired")
 
+    metadata_tail = (
+        '            "machine_completed_human_semantics": 0,\n'
+        "        },\n"
+    )
+    context_bound_metadata_tail = (
+        '            "machine_completed_human_semantics": 0,\n'
+        '            "authorized_context_sha256": gate.operation_context_sha256,\n'
+        "        },\n"
+    )
+    if transformed.count(metadata_tail) != 1:
+        raise ExpiredAdapterError("FC_AUTHORIZED_CONTEXT_METADATA_ANCHOR_INVALID")
+    transformed = transformed.replace(
+        metadata_tail,
+        context_bound_metadata_tail,
+    )
+
     mutation = (
         "        wrong_value = dict(authorized_record)\n"
         "        wrong_value[\"record_identity\"] = \"\"\n"
@@ -238,6 +254,7 @@ def specialize_fc_runtime_source(
         'after.state.value == "EXPIRED"',
         "after.revision == 1",
         "differing_fields == []",
+        '"authorized_context_sha256": gate.operation_context_sha256',
     )
     if not all(token in transformed for token in required):
         raise ExpiredAdapterError("FC_EXPIRED_SPECIALIZATION_INCOMPLETE")
