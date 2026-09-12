@@ -193,6 +193,8 @@ FRESH_OPERATION_CONTEXT_OWNER_SHA256 = (
 )
 GUEST_HARNESS_PROJECTION_ROOT_CONSTRUCTION_MODE = 0o700
 GUEST_HARNESS_PROJECTION_ROOT_PRESENTATION_MODE = 0o701
+RUNTIME_EXPORT_ROOT_CONSTRUCTION_MODE = 0o700
+RUNTIME_EXPORT_ROOT_PRESENTATION_MODE = 0o701
 ER_HARNESS_SHA256 = "c6539d1cc60940b1999956965bff43923a270598a982cd19f976eadec0a93152"
 QEMU_EXECUTABLE_SHA256 = "8a35ccba41582fc6c38b9df85fc9e35fa1d42f414d2d7d8090ee9b2f5e7c0854"
 
@@ -2130,7 +2132,11 @@ def materialize_operation_state(
             raise RuntimeError("transient root contains state outside checkout lifecycle")
     else:
         transient_root.mkdir(mode=0o700, parents=False, exist_ok=False)
-    runtime_export.mkdir(mode=0o700, parents=False, exist_ok=False)
+    runtime_export.mkdir(
+        mode=RUNTIME_EXPORT_ROOT_CONSTRUCTION_MODE,
+        parents=False,
+        exist_ok=False,
+    )
     adapter_binding = context["guest_adapter_binding"]
     adapter_projection_root = Path(adapter_binding["projection_root"])
     adapter_projection_root.mkdir(
@@ -2156,6 +2162,11 @@ def materialize_operation_state(
     runtime_manifest.write_bytes(candidate.read_bytes())
     context_projection = runtime_export / fresh_context.GUEST_CONTEXT_FILENAME
     context_projection.write_bytes(context_source_path.read_bytes())
+    runtime_export.chmod(RUNTIME_EXPORT_ROOT_PRESENTATION_MODE)
+    if runtime_export.stat().st_mode & 0o777 != (
+        RUNTIME_EXPORT_ROOT_PRESENTATION_MODE
+    ):
+        raise RuntimeError("runtime export root permission binding mismatch")
     overlay = Path(context["overlay_path"])
     subprocess.run(
         [
