@@ -1,0 +1,30 @@
+I, the Human authority for this governed operation, authorize exactly one bounded G77-256LD Phase-B operational attempt under the Phase-A decision presentation that I have reviewed.
+
+GENERATION = G77-256LD
+GENERATION_IDENTITY = G77_256LD_ONE_FRESH_HUMAN_AUTHORIZED_EXPIRED_OPERATIONAL_COMMISSIONING_V1
+OPERATION_IDENTITY = G77_256LD_E05_EXPIRED_DENIAL_BEFORE_ENTRY_001
+VECTOR = EXPIRED
+TARGET_ACCEPTANCE_EDGE = EXPIRED_DENIAL_AT_GOVERNED_PRECLAIM_BEFORE_P11_ENTRY
+
+MAX_AUTHORITY_CONSUMPTION = 1
+MAX_OPERATION_ATTEMPT = 1
+
+SECOND_OPERATION = FORBIDDEN
+RETRY = FORBIDDEN
+REPLAY = FORBIDDEN
+REPAIR_RETRY = FORBIDDEN
+ALTERNATE_AUTHORITY_PATH = FORBIDDEN
+P11_BYPASS = FORBIDDEN
+PARALLEL_ROUTE = FORBIDDEN
+AUTHORITY_TRANSFER = FORBIDDEN
+HISTORICAL_AUTHORITY_REUSE = FORBIDDEN
+PRODUCTION_EXPANSION = FORBIDDEN
+
+CURRENT_E05_STATE = 11_OF_18
+
+I authorize only the exact operation and bounds identified above.
+Any mismatch, ambiguity, stale binding, changed sealed context, changed request, changed operation identity, or failed pre-consumption validation requires fail-closed STOP before authority consumption.
+
+This authorization does not authorize repair-and-retry, replay, a second operation, another vector, production expansion, P11 bypass, or transfer/reuse of this authority.
+
+This authorization is fresh, nontransferable, nonreusable, and limited to this exact G77-256LD operation.
