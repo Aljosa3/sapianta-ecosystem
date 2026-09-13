@@ -138,18 +138,26 @@ def verify_seal(
 
 
 def authenticate_repository() -> None:
+    observed_head = git("rev-parse", "HEAD")
     if (
         ROOT != Path("/home/pisarna/work/sapianta-fl")
         or git("rev-parse", "--show-toplevel") != str(ROOT)
         or git("branch", "--show-current") != BRANCH
-        or git("rev-parse", "HEAD") != HEAD
-        or git("rev-parse", "HEAD^{tree}") != TREE
-        or git("log", "-1", "--format=%s") != SUBJECT
-        or git("rev-parse", "HEAD^") != IMPLEMENTATION_PARENT
+        or git("show", "-s", "--format=%T", HEAD) != TREE
+        or git("show", "-s", "--format=%s", HEAD) != SUBJECT
+        or git("rev-parse", f"{HEAD}^") != IMPLEMENTATION_PARENT
         or git("show", "-s", "--format=%T", IMPLEMENTATION_PARENT)
         != IMPLEMENTATION_TREE
     ):
         raise LHVerificationError("OUTER_REPOSITORY_CHECKPOINT_MISMATCH")
+    if subprocess.run(
+        ["git", "merge-base", "--is-ancestor", HEAD, observed_head],
+        cwd=ROOT,
+        check=False,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    ).returncode:
+        raise LHVerificationError("LG_ENTRY_NOT_ANCESTRAL_TO_CURRENT_HEAD")
     dirty = git("status", "--porcelain=v1", "--untracked-files=all").splitlines()
     if any(LH_REL.as_posix() not in line for line in dirty):
         raise LHVerificationError("MUTATION_OUTSIDE_LH_SCOPE")
