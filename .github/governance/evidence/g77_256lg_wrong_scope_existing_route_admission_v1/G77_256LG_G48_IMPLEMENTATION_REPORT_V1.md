@@ -293,7 +293,7 @@ The full per-vector matrix is sealed in the reduction.
 | COGNITION_PROVENANCE | authenticated repository and durable evidence primary; Human LG authorization bound; model nonauthoritative |
 | COGNITION_ASSISTED_HANDOFF | LF zero-mutation blocker revalidated and localized |
 | CANDIDATE_CAPABILITY | WRONG_SCOPE existing-route admission and Phase-A binding |
-| SHADOW_DESIGN_TARGET | one fresh Human-authorized WRONG_SCOPE denial before P11 entry with zero effect |
+| SHADOW_DESIGN_TARGET | Human-decision rejection and reauthorization lifecycle; `IMPLEMENT_NOW = NO` |
 | CONSTITUTIONAL_CONTINUATION_PROGRESS | LE repository proof → LG route admission/readiness; no E05 credit |
 | LAST_VERIFIED_EDGE | GN→FM context/adapter/bootstrap/authorization→P11 scope-target binding |
 | FIRST_BROKEN_EDGE | none observed after bounded delta |
