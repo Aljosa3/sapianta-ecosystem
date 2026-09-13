@@ -36,6 +36,7 @@ SUPPORTED_VECTORS = frozenset({
     "WRONG_PROVENANCE",
     "FUTURE",
     "EXPIRED",
+    "WRONG_SCOPE",
 })
 
 PRESENTATION_HEADER = "SAPIANTA SEALED AUTHORIZATION REQUEST HUMAN PRESENTATION V1"
@@ -345,6 +346,14 @@ def _validate_request_semantics(envelope: dict[str, Any]) -> None:
         request["authorized_vector_requested"] == "EXPIRED"
         and not request["generation_identity"].endswith(
             "_ONE_FRESH_HUMAN_AUTHORIZED_EXPIRED_OPERATIONAL_COMMISSIONING_V1"
+        )
+    ):
+        _fail("SEALED_REQUEST_VECTOR_GENERATION_BINDING_INVALID")
+    if (
+        request["authorized_vector_requested"] == "WRONG_SCOPE"
+        and not request["generation_identity"].endswith(
+            "_ONE_FRESH_HUMAN_AUTHORIZED_WRONG_SCOPE_"
+            "OPERATIONAL_COMMISSIONING_V1"
         )
     ):
         _fail("SEALED_REQUEST_VECTOR_GENERATION_BINDING_INVALID")

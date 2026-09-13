@@ -110,6 +110,14 @@ EXPIRED_CLOUD_INIT = (
 EXPIRED_CLOUD_INIT_SHA256 = (
     "fdad67efe32a70784600819404222abd7a7bcee4461854fba69651513b19664e"
 )
+WRONG_SCOPE_CLOUD_INIT = (
+    ".github/governance/evidence/"
+    "g77_256lg_wrong_scope_existing_route_admission_v1/"
+    "static/G77_256LG_CLOUD_INIT_USER_DATA_V1.yaml"
+)
+WRONG_SCOPE_CLOUD_INIT_SHA256 = (
+    "da8ccacd41c5796c76d8fb0405d9dc715fe12676286e7adf883b4bbe6a02f69f"
+)
 FK_ADAPTER = ".github/governance/evidence/g77_256fc_wrong_attempt_operational_v1/harness/G77_256FC_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py"
 CANONICAL_CHE = "aigol/runtime/canonical_che_evidence_correlation_contract_v1.py"
 ER_HARNESS_RELATIVE = (
@@ -161,6 +169,11 @@ EXPIRED_SEED = (
     "g77_256jx_er_admission_runtime_checkout_role_separation_repair_v1/"
     "static/SAPIANTA_EXPIRED_NOCLOUD_SEED_V3.img"
 )
+WRONG_SCOPE_SEED = (
+    "/home/pisarna/work/sapianta-fl/.github/governance/evidence/"
+    "g77_256lg_wrong_scope_existing_route_admission_v1/"
+    "static/SAPIANTA_WRONG_SCOPE_NOCLOUD_SEED_V1.img"
+)
 CHECKOUT = "/tmp/g77_256fm/checkout"
 LEGACY_CHECKOUT_HEAD = "7dce67ec18696ba0bad73130f3f7a84168f25277"
 LEGACY_CHECKOUT_TREE = "3cb61ec34e9593efb711dce61014dc8fdf0f6dd9"
@@ -189,7 +202,7 @@ FRESH_OPERATION_CONTEXT_OWNER_PROJECTION_FILENAME = (
 )
 FRESH_OPERATION_CONTEXT_OWNER_HASH_KEY = "fresh_operation_context_owner"
 FRESH_OPERATION_CONTEXT_OWNER_SHA256 = (
-    "337aa8d19f519bd0873ff9d688c16fc6b914e70ef1b03504813d2f4fdf8d899b"
+    "a3e22af7793063d1482e4e59deb114005bcba6c4b07f914a329c0a3b843db618"
 )
 GUEST_HARNESS_PROJECTION_ROOT_CONSTRUCTION_MODE = 0o700
 GUEST_HARNESS_PROJECTION_ROOT_PRESENTATION_MODE = 0o701
@@ -223,6 +236,7 @@ EXPECTED_ASSET_SHA256 = {
     WRONG_PROVENANCE_CLOUD_INIT: WRONG_PROVENANCE_CLOUD_INIT_SHA256,
     FUTURE_CLOUD_INIT: FUTURE_CLOUD_INIT_SHA256,
     EXPIRED_CLOUD_INIT: EXPIRED_CLOUD_INIT_SHA256,
+    WRONG_SCOPE_CLOUD_INIT: WRONG_SCOPE_CLOUD_INIT_SHA256,
     FK_ADAPTER: FK_ADAPTER_SHA256,
     CANONICAL_CHE: "75801995214e81419aab9a02326499c771ec0039658fb49598aa54bd033e13c5",
     CANONICALIZER: CANONICALIZER_SHA256,
@@ -234,6 +248,7 @@ EXPECTED_ASSET_SHA256 = {
     WRONG_PROVENANCE_SEED: "4154ec58b7ebf46299ccc495a0a1232b7e31f67221f987b6fe7959f8d5593c7c",
     FUTURE_SEED: "6998d4cdaff3617b9e2c29f17318a220619fc718d0d9f9168b08e614cfdf0418",
     EXPIRED_SEED: "81011b08aabb7052a14dc4f81ec51536c551cad97441563f846edbe778728004",
+    WRONG_SCOPE_SEED: "f274348c88d001c8dbc80684026185a2c3fef638cbedf1698f1ca4bb301b2b16",
     LEGACY_CLOUD_INIT: LEGACY_CLOUD_INIT_SHA256,
     LEGACY_SEED: "966f1910bbffe20fa18c4cee56ff61dcbb069348e2929bfda74e029a9dc0ec58",
 }
@@ -314,6 +329,13 @@ def current_bootstrap_asset_bindings(vector: str) -> dict[str, str]:
             "seed_path": EXPIRED_SEED,
             "seed_sha256": EXPECTED_ASSET_SHA256[EXPIRED_SEED],
         }
+    if vector == fresh_context.WRONG_SCOPE:
+        return {
+            "cloud_init_path": WRONG_SCOPE_CLOUD_INIT,
+            "cloud_init_sha256": WRONG_SCOPE_CLOUD_INIT_SHA256,
+            "seed_path": WRONG_SCOPE_SEED,
+            "seed_sha256": EXPECTED_ASSET_SHA256[WRONG_SCOPE_SEED],
+        }
     raise RuntimeError("bootstrap operation vector unsupported")
 
 
@@ -346,6 +368,9 @@ FUTURE_AUTHORIZATION_FIELDS = (
 EXPIRED_AUTHORIZATION_FIELDS = (
     AUTHORIZATION_FIELDS - {"wrong_attempt_operational_attempt_limit"}
 ) | {"expired_operational_attempt_limit"}
+WRONG_SCOPE_AUTHORIZATION_FIELDS = (
+    AUTHORIZATION_FIELDS - {"wrong_attempt_operational_attempt_limit"}
+) | {"wrong_scope_operational_attempt_limit"}
 
 
 def context_vector(context: dict[str, Any]) -> str:
@@ -372,6 +397,8 @@ def authorization_fields(value: dict[str, Any]) -> set[str]:
         return FUTURE_AUTHORIZATION_FIELDS
     if vector == fresh_context.EXPIRED:
         return EXPIRED_AUTHORIZATION_FIELDS
+    if vector == fresh_context.WRONG_SCOPE:
+        return WRONG_SCOPE_AUTHORIZATION_FIELDS
     raise RuntimeError("execution authority vector unsupported")
 
 
@@ -385,6 +412,7 @@ def operation_attempt_limit_field(vector: str) -> str:
         fresh_context.WRONG_PROVENANCE: "wrong_provenance_operational_attempt_limit",
         fresh_context.FUTURE: "future_operational_attempt_limit",
         fresh_context.EXPIRED: "expired_operational_attempt_limit",
+        fresh_context.WRONG_SCOPE: "wrong_scope_operational_attempt_limit",
     }
     try:
         return fields[vector]
@@ -729,6 +757,7 @@ def fc_guest_consumer_path(
         fresh_context.WRONG_PROVENANCE,
         fresh_context.FUTURE,
         fresh_context.EXPIRED,
+        fresh_context.WRONG_SCOPE,
     }:
         return f"{fresh_context.GUEST_HARNESS_ROOT}/{fresh_context.ADAPTER_BOOTSTRAP_FILENAME}"
     if vector != fresh_context.WRONG_ATTEMPT:
