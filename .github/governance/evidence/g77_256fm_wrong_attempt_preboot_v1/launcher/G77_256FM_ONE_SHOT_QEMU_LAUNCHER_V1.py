@@ -57,6 +57,10 @@ PRECONSUMPTION_INVOCATION_SCHEMA = (
 PRECONSUMPTION_INVOCATION_ENVELOPE_SCHEMA = (
     "SAPIANTA_FM_PRECONSUMPTION_INVOCATION_BINDING_ENVELOPE_V1"
 )
+COMMITTED_REVIEW_TRANSITION_SCHEMA = (
+    "SAPIANTA_FM_COMMITTED_REVIEW_TO_CURRENT_ADMISSION_TRANSITION_V1"
+)
+COMMITTED_REVIEW_CONTEXT_FILENAME = "SAPIANTA_FRESH_OPERATION_CONTEXT_V1.json"
 
 CANDIDATE = (
     ".github/governance/evidence/g77_256gd_fresh_operation_context_v1/candidate/"
@@ -1173,6 +1177,248 @@ def git(repository_root: Path, *arguments: str) -> str:
     return subprocess.check_output(["git", *arguments], cwd=repository_root, text=True).strip()
 
 
+def _is_git_ancestor(repository_root: Path, ancestor: str, descendant: str) -> bool:
+    return subprocess.run(
+        ["git", "merge-base", "--is-ancestor", ancestor, descendant],
+        cwd=repository_root,
+        check=False,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    ).returncode == 0
+
+
+def _committed_review_context_path(
+    repository_root: Path,
+    context: dict[str, Any],
+) -> str:
+    """Derive the sole canonical committed context path; never accept a caller path."""
+
+    root = repository_root.resolve()
+    operation_root = Path(context["operation_evidence_root"])
+    if not operation_root.is_absolute() or operation_root.name != "operation_state":
+        raise RuntimeError("committed review operation root is noncanonical")
+    review_path = operation_root.parent / "live_binding" / COMMITTED_REVIEW_CONTEXT_FILENAME
+    try:
+        relative = review_path.relative_to(root)
+    except ValueError as exc:
+        raise RuntimeError("committed review context path escapes repository") from exc
+    if (
+        len(relative.parts) < 6
+        or tuple(relative.parts[:3]) != (".github", "governance", "evidence")
+        or relative.parts[-2:] != ("live_binding", COMMITTED_REVIEW_CONTEXT_FILENAME)
+        or ".." in relative.parts
+    ):
+        raise RuntimeError("committed review context path is not governance-canonical")
+    return relative.as_posix()
+
+
+def _git_tree_entry(
+    repository_root: Path,
+    commit: str,
+    relative_path: str,
+) -> dict[str, str] | None:
+    raw = subprocess.check_output(
+        ["git", "ls-tree", "-z", commit, "--", relative_path],
+        cwd=repository_root,
+    )
+    if not raw:
+        return None
+    if raw.count(b"\0") != 1:
+        raise RuntimeError("committed transition path lookup is ambiguous")
+    metadata, separator, encoded_path = raw[:-1].partition(b"\t")
+    fields = metadata.decode("ascii").split()
+    path = encoded_path.decode("utf-8", errors="strict")
+    if not separator or len(fields) != 3 or fields[1] != "blob" or path != relative_path:
+        raise RuntimeError("committed transition path identity malformed")
+    mode, _, blob_oid = fields
+    content = subprocess.check_output(
+        ["git", "show", f"{commit}:{relative_path}"],
+        cwd=repository_root,
+    )
+    return {
+        "mode": mode,
+        "blob_oid": blob_oid,
+        "sha256": hashlib.sha256(content).hexdigest(),
+    }
+
+
+def _exact_committed_delta(
+    repository_root: Path,
+    review_head: str,
+    current_head: str,
+) -> list[dict[str, str]]:
+    raw = subprocess.check_output(
+        ["git", "diff", "--name-only", "-z", "--no-renames", review_head, current_head],
+        cwd=repository_root,
+    )
+    paths = [item.decode("utf-8", errors="strict") for item in raw.split(b"\0") if item]
+    if not paths or len(paths) != len(set(paths)) or paths != sorted(paths):
+        raise RuntimeError("committed transition delta absent, duplicated, or unordered")
+    delta: list[dict[str, str]] = []
+    for path in paths:
+        candidate = Path(path)
+        if candidate.is_absolute() or ".." in candidate.parts or candidate.as_posix() != path:
+            raise RuntimeError("committed transition delta path unsafe")
+        before = _git_tree_entry(repository_root, review_head, path)
+        after = _git_tree_entry(repository_root, current_head, path)
+        if before is None and after is None:
+            raise RuntimeError("committed transition delta entry has no endpoint")
+        status = "ADDED" if before is None else "DELETED" if after is None else "MODIFIED"
+        delta.append({
+            "path": path,
+            "status": status,
+            "old_mode": "0" if before is None else before["mode"],
+            "new_mode": "0" if after is None else after["mode"],
+            "old_blob_oid": "0" * 40 if before is None else before["blob_oid"],
+            "new_blob_oid": "0" * 40 if after is None else after["blob_oid"],
+            "old_sha256": "0" * 64 if before is None else before["sha256"],
+            "new_sha256": "0" * 64 if after is None else after["sha256"],
+        })
+    return delta
+
+
+def build_committed_review_transition(
+    *,
+    repository_root: Path,
+    context: dict[str, Any],
+    current_admission_head: str,
+    current_admission_tree: str,
+) -> dict[str, Any]:
+    """Derive one exact non-authority proof from committed review bytes to current Git."""
+
+    if not isinstance(context, dict) or not HEX_64.fullmatch(str(context.get("context_sha256"))):
+        raise RuntimeError("committed review context seal missing or malformed")
+    unsealed = {key: value for key, value in context.items() if key != "context_sha256"}
+    if context["context_sha256"] != hashlib.sha256(canonical_bytes(unsealed)).hexdigest():
+        raise RuntimeError("committed review context seal mismatch")
+    review_base_head = context.get("repository_head")
+    review_base_tree = context.get("repository_tree")
+    if not isinstance(review_base_head, str) or HEX_40.fullmatch(review_base_head) is None:
+        raise RuntimeError("committed review base HEAD malformed")
+    if not isinstance(review_base_tree, str) or HEX_40.fullmatch(review_base_tree) is None:
+        raise RuntimeError("committed review base TREE malformed")
+    if not HEX_40.fullmatch(current_admission_head) or not HEX_40.fullmatch(current_admission_tree):
+        raise RuntimeError("current admission identity malformed")
+    observed_head = git(repository_root, "rev-parse", "HEAD")
+    observed_tree = git(repository_root, "rev-parse", "HEAD^{tree}")
+    if (current_admission_head, current_admission_tree) != (observed_head, observed_tree):
+        raise RuntimeError("transition current admission identity is not observed Git")
+    if git(repository_root, "rev-parse", f"{review_base_head}^{{tree}}") != review_base_tree:
+        raise RuntimeError("committed review base HEAD/TREE mismatch")
+    if (review_base_head, review_base_tree) == (current_admission_head, current_admission_tree):
+        raise RuntimeError("same-HEAD admission must not manufacture a transition proof")
+
+    review_path = _committed_review_context_path(repository_root, context)
+    introduction_output = git(
+        repository_root,
+        "log",
+        "--format=%H",
+        "--diff-filter=A",
+        current_admission_head,
+        "--",
+        review_path,
+    )
+    introduction_commits = introduction_output.splitlines() if introduction_output else []
+    if len(introduction_commits) != 1:
+        raise RuntimeError("committed review object introduction missing or ambiguous")
+    review_head = introduction_commits[0]
+    review_tree = git(repository_root, "rev-parse", f"{review_head}^{{tree}}")
+    if (
+        not _is_git_ancestor(repository_root, review_base_head, review_head)
+        or not _is_git_ancestor(repository_root, review_head, current_admission_head)
+    ):
+        raise RuntimeError("committed review/current lineage invalid")
+    if _git_tree_entry(repository_root, review_base_head, review_path) is not None:
+        raise RuntimeError("review object predates its authenticated introduction")
+    review_entry = _git_tree_entry(repository_root, review_head, review_path)
+    current_entry = _git_tree_entry(repository_root, current_admission_head, review_path)
+    if review_entry is None or current_entry != review_entry:
+        raise RuntimeError("committed review object was removed, rebound, or modified")
+    committed_bytes = subprocess.check_output(
+        ["git", "show", f"{review_head}:{review_path}"],
+        cwd=repository_root,
+    )
+    if committed_bytes != canonical_bytes(context):
+        raise RuntimeError("in-memory context is not the canonical committed review object")
+    later_path_commits = git(
+        repository_root,
+        "log",
+        "--format=%H",
+        f"{review_head}..{current_admission_head}",
+        "--",
+        review_path,
+    )
+    if later_path_commits:
+        raise RuntimeError("post-review object rebinding or rewrite detected")
+
+    transition = {
+        "schema_id": COMMITTED_REVIEW_TRANSITION_SCHEMA,
+        "transition_kind": "EXACT_COMMITTED_REVIEW_OBJECT_TO_CURRENT_ADMISSION",
+        "transition_is_authority": False,
+        "transition_consumable": False,
+        "transition_state": "CURRENT_EXACT_PAIR",
+        "lineage_rule": "ANCESTRY_NECESSARY_NOT_SUFFICIENT",
+        "authorization_rule": "FRESH_HUMAN_AUTHORITY_MUST_BIND_CONTEXT_HASH_AND_CURRENT_ADMISSION_HEAD_TREE",
+        "generation_identity": context.get("generation_identity"),
+        "operation_identity": context.get("operation_identity"),
+        "review_context_sha256": context["context_sha256"],
+        "review_base_head": review_base_head,
+        "review_base_tree": review_base_tree,
+        "review_object_head": review_head,
+        "review_object_tree": review_tree,
+        "review_object_path": review_path,
+        "review_object_blob_oid": review_entry["blob_oid"],
+        "review_object_sha256": review_entry["sha256"],
+        "current_admission_head": current_admission_head,
+        "current_admission_tree": current_admission_tree,
+        "exact_committed_delta": _exact_committed_delta(
+            repository_root, review_head, current_admission_head
+        ),
+    }
+    transition["transition_sha256"] = hashlib.sha256(canonical_bytes(transition)).hexdigest()
+    return transition
+
+
+def authenticate_review_to_current_admission(
+    *,
+    repository_root: Path | None,
+    context: dict[str, Any],
+    observed_head: str,
+    observed_tree: str,
+    committed_review_transitions: list[dict[str, Any]] | None = None,
+) -> dict[str, str]:
+    """Authenticate same-HEAD equality or exactly one stronger committed review proof."""
+
+    same_identity = (
+        context.get("repository_head") == observed_head
+        and context.get("repository_tree") == observed_tree
+    )
+    proofs = [] if committed_review_transitions is None else committed_review_transitions
+    if same_identity:
+        if proofs:
+            raise RuntimeError("same-HEAD admission must not select a transition proof")
+        return {
+            "repository_identity_relation": "EXACT_SAME_HEAD_TREE",
+            "committed_review_transition_sha256": "NOT_APPLICABLE",
+        }
+    if repository_root is None:
+        raise RuntimeError("committed review transition requires repository authentication")
+    if not isinstance(proofs, list) or len(proofs) != 1 or not isinstance(proofs[0], dict):
+        raise RuntimeError("committed review transition proof missing or ambiguous")
+    expected = build_committed_review_transition(
+        repository_root=repository_root,
+        context=context,
+        current_admission_head=observed_head,
+        current_admission_tree=observed_tree,
+    )
+    if proofs[0] != expected:
+        raise RuntimeError("committed review transition proof mismatch")
+    return {
+        "repository_identity_relation": "EXACT_COMMITTED_REVIEW_TO_CURRENT_ADMISSION_TRANSITION",
+        "committed_review_transition_sha256": expected["transition_sha256"],
+    }
+
+
 def authenticate_current_committed_jm_route(
     repository_root: Path,
     repository_head: str,
@@ -1468,11 +1714,37 @@ def preauthority_serialization_fixture(
     *,
     request_sha256: str = "a" * 64,
     checkpoint_sha256: str = "b" * 64,
+    current_admission_head: str | None = None,
+    current_admission_tree: str | None = None,
+    committed_review_transition_sha256: str | None = None,
 ) -> dict[str, Any]:
     """Create deterministic test-only semantics that can never be authority."""
 
     if not HEX_64.fullmatch(request_sha256) or not HEX_64.fullmatch(checkpoint_sha256):
         raise RuntimeError("preauthority request/checkpoint fixture binding malformed")
+    transition_mode = any(
+        value is not None
+        for value in (
+            current_admission_head,
+            current_admission_tree,
+            committed_review_transition_sha256,
+        )
+    )
+    if transition_mode:
+        if (
+            current_admission_head is None
+            or current_admission_tree is None
+            or committed_review_transition_sha256 is None
+            or HEX_40.fullmatch(current_admission_head) is None
+            or HEX_40.fullmatch(current_admission_tree) is None
+            or HEX_64.fullmatch(committed_review_transition_sha256) is None
+        ):
+            raise RuntimeError("preauthority committed review transition binding malformed")
+        authorized_head = current_admission_head
+        authorized_tree = current_admission_tree
+    else:
+        authorized_head = context["repository_head"]
+        authorized_tree = context["repository_tree"]
     fixture_source = {
         "fixture_classification": "TEST_ONLY__NON_AUTHORITY__NON_OPERATIONAL",
         "request_sha256": request_sha256,
@@ -1485,6 +1757,14 @@ def preauthority_serialization_fixture(
         "candidate_sha256": context["candidate_manifest_sha256"],
         "canonical_argv_sha256": context["canonical_argv_sha256"],
     }
+    if transition_mode:
+        fixture_source.update({
+            "committed_review_transition_sha256": committed_review_transition_sha256,
+            "review_repository_head": context["repository_head"],
+            "review_repository_tree": context["repository_tree"],
+            "current_admission_head": authorized_head,
+            "current_admission_tree": authorized_tree,
+        })
     vector = context_vector(context)
     attempt_limit = operation_attempt_limit_field(vector)
     authorization = {
@@ -1498,8 +1778,8 @@ def preauthority_serialization_fixture(
         "authorized_operation_identity": context["operation_identity"],
         "authorized_generation_identity": context["generation_identity"],
         "authorized_vector": vector,
-        "authorized_repository_head": context["repository_head"],
-        "authorized_repository_tree": context["repository_tree"],
+        "authorized_repository_head": authorized_head,
+        "authorized_repository_tree": authorized_tree,
         "authorized_constitutional_anchor_head": CONSTITUTIONAL_ANCHOR_HEAD,
         "authorized_candidate_sha256": context["candidate_manifest_sha256"],
         "authorized_canonical_argv_sha256": context["canonical_argv_sha256"],
@@ -1527,6 +1807,9 @@ def validate_preauthority_serialization_fixture(
     *,
     request_sha256: str = "a" * 64,
     checkpoint_sha256: str = "b" * 64,
+    current_admission_head: str | None = None,
+    current_admission_tree: str | None = None,
+    committed_review_transition_sha256: str | None = None,
 ) -> None:
     """Reject any test-only semantic binding drift before Human authority."""
 
@@ -1534,6 +1817,9 @@ def validate_preauthority_serialization_fixture(
         context,
         request_sha256=request_sha256,
         checkpoint_sha256=checkpoint_sha256,
+        current_admission_head=current_admission_head,
+        current_admission_tree=current_admission_tree,
+        committed_review_transition_sha256=committed_review_transition_sha256,
     )
     if authorization != expected:
         raise RuntimeError("preauthority authority serialization fixture binding mismatch")
@@ -1541,11 +1827,26 @@ def validate_preauthority_serialization_fixture(
 
 def prove_authority_handoff_canonicalization(
     context: dict[str, Any],
+    *,
+    current_admission_head: str | None = None,
+    current_admission_tree: str | None = None,
+    committed_review_transition_sha256: str | None = None,
 ) -> dict[str, Any]:
     """Prove producer/loader byte equivalence without creating authority."""
 
-    authorization = preauthority_serialization_fixture(context)
-    validate_preauthority_serialization_fixture(context, authorization)
+    authorization = preauthority_serialization_fixture(
+        context,
+        current_admission_head=current_admission_head,
+        current_admission_tree=current_admission_tree,
+        committed_review_transition_sha256=committed_review_transition_sha256,
+    )
+    validate_preauthority_serialization_fixture(
+        context,
+        authorization,
+        current_admission_head=current_admission_head,
+        current_admission_tree=current_admission_tree,
+        committed_review_transition_sha256=committed_review_transition_sha256,
+    )
     envelope = build_authority_handoff(authorization)
     first = canonical_authority_handoff_bytes(authorization)
     second = canonical_authority_handoff_bytes(authorization)
@@ -1592,6 +1893,27 @@ def load_authority(path: Path) -> tuple[dict[str, Any], str]:
     if not isinstance(value, dict) or raw != canonical_bytes(value):
         raise RuntimeError("execution authority handoff is not unique-key canonical JSON")
     return value, hashlib.sha256(raw).hexdigest()
+
+
+def load_committed_review_transition(path: Path, supplied_sha256: str) -> dict[str, Any]:
+    """Load one canonical non-authority transition proof with exact file binding."""
+
+    if path.is_symlink() or not path.is_file():
+        raise RuntimeError("committed review transition file absent or unsafe")
+    if HEX_64.fullmatch(supplied_sha256) is None:
+        raise RuntimeError("supplied committed review transition hash malformed")
+    raw = path.read_bytes()
+    if hashlib.sha256(raw).hexdigest() != supplied_sha256:
+        raise RuntimeError("committed review transition file hash mismatch")
+    try:
+        value = json.loads(raw)
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise RuntimeError("committed review transition file malformed") from exc
+    if not isinstance(value, dict) or raw != canonical_bytes(value):
+        raise RuntimeError("committed review transition is not canonical JSON")
+    if value.get("transition_is_authority") is not False:
+        raise RuntimeError("committed review transition cannot be authority")
+    return value
 
 
 def _repository_file_argument(repository_root: Path, path: Path) -> tuple[str, Path]:
@@ -1832,11 +2154,18 @@ def validate_execution_admission(
     canonical_argv_sha256: str,
     receipt_namespace_consumed: bool,
     candidate_source_path: Path | None = None,
+    repository_root: Path | None = None,
+    committed_review_transitions: list[dict[str, Any]] | None = None,
 ) -> dict[str, str]:
     """Pure fail-closed admission; it performs no writes or process execution."""
 
-    if context["repository_head"] != observed_head or context["repository_tree"] != observed_tree:
-        raise RuntimeError("operation context repository binding differs from observed state")
+    repository_identity = authenticate_review_to_current_admission(
+        repository_root=repository_root,
+        context=context,
+        observed_head=observed_head,
+        observed_tree=observed_tree,
+        committed_review_transitions=committed_review_transitions,
+    )
 
     if set(authority) != {"schema_id", "authorization", "authorization_sha256"}:
         raise RuntimeError("execution authority envelope fields malformed or unknown")
@@ -1921,6 +2250,7 @@ def validate_execution_admission(
         "constitutional_anchor_head": CONSTITUTIONAL_ANCHOR_HEAD,
         "execution_authority_file_sha256": authority_file_sha256,
         "human_authorization_source_sha256": source_sha,
+        **repository_identity,
     }
 
 
@@ -1940,6 +2270,7 @@ def validate_final_admission(
     canonical_argv_sha256: str,
     receipt_namespace_consumed: bool,
     candidate_source_path: Path | None = None,
+    committed_review_transitions: list[dict[str, Any]] | None = None,
 ) -> dict[str, str]:
     """FO final admission extended by the existing FM preboot composition gate."""
 
@@ -1951,6 +2282,7 @@ def validate_final_admission(
         repository_clean=repository_clean,
         observed_asset_sha256=observed_asset_sha256,
         candidate_source_path=candidate_source_path,
+        committed_review_transitions=committed_review_transitions,
     )
     receipt_readiness = validate_receipt_parent_ready(repository_root, context)
     visibility = validate_preboot_visibility(
@@ -1974,6 +2306,8 @@ def validate_final_admission(
         canonical_argv_sha256=canonical_argv_sha256,
         receipt_namespace_consumed=receipt_namespace_consumed,
         candidate_source_path=candidate_source_path,
+        repository_root=repository_root,
+        committed_review_transitions=committed_review_transitions,
     )
     admission.update({
         "receipt_parent": receipt_readiness["receipt_parent"],
@@ -2788,19 +3122,21 @@ def authority_free_static_readiness(
     repository_clean: bool,
     observed_asset_sha256: dict[str, str],
     candidate_source_path: Path | None = None,
+    committed_review_transitions: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Complete static determination with zero Human authorization objects."""
 
-    authenticate_current_committed_jm_route(
-        repository_root,
-        context["repository_head"],
-        context["repository_tree"],
+    repository_identity = authenticate_review_to_current_admission(
+        repository_root=repository_root,
+        context=context,
+        observed_head=observed_head,
+        observed_tree=observed_tree,
+        committed_review_transitions=committed_review_transitions,
     )
+    authenticate_current_committed_jm_route(repository_root, observed_head, observed_tree)
     validate_immutable_context_bindings(
         repository_root, context, candidate_source_path
     )
-    if context["repository_head"] != observed_head or context["repository_tree"] != observed_tree:
-        raise RuntimeError("static readiness repository HEAD/TREE mismatch")
     if not repository_clean:
         raise RuntimeError("static readiness repository is dirty")
     if not constitutional_anchor_is_ancestor(repository_root):
@@ -2831,7 +3167,17 @@ def authority_free_static_readiness(
     )
     checkout = validate_checkout_preboot_readiness(context)
     adapter = prove_guest_adapter_binding(repository_root, context)
-    authority_handoff = prove_authority_handoff_canonicalization(context)
+    if repository_identity["repository_identity_relation"] == "EXACT_SAME_HEAD_TREE":
+        authority_handoff = prove_authority_handoff_canonicalization(context)
+    else:
+        authority_handoff = prove_authority_handoff_canonicalization(
+            context,
+            current_admission_head=observed_head,
+            current_admission_tree=observed_tree,
+            committed_review_transition_sha256=repository_identity[
+                "committed_review_transition_sha256"
+            ],
+        )
     reduction = {
         "result": "STATIC_READINESS_PASS",
         "phase": "AUTHORITY_FREE_STATIC_READINESS",
@@ -2849,6 +3195,7 @@ def authority_free_static_readiness(
         "automatic_retry_count": 0,
         "repair_count": 0,
         "replay_count": 0,
+        **repository_identity,
     }
     reduction["readiness_sha256"] = hashlib.sha256(canonical_bytes(reduction)).hexdigest()
     return reduction
@@ -2879,6 +3226,10 @@ def receipt(*, context: dict[str, Any], phase: str, argv: list[str], digest: str
         "constitutional_anchor_head": admission["constitutional_anchor_head"],
         "execution_authority_file_sha256": admission["execution_authority_file_sha256"],
         "human_authorization_source_sha256": admission["human_authorization_source_sha256"],
+        "repository_identity_relation": admission["repository_identity_relation"],
+        "committed_review_transition_sha256": admission[
+            "committed_review_transition_sha256"
+        ],
         "candidate_sha256": context["candidate_manifest_sha256"],
         "adapter_sha256": context["wrapper_fc_er_che_schema_hashes"]["wrapper"],
         "canonicalizer": {
@@ -2912,6 +3263,8 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("--live-candidate-binding", required=True, type=Path)
     parser.add_argument("--execution-authority", required=True, type=Path)
     parser.add_argument("--execution-authority-sha256", required=True)
+    parser.add_argument("--committed-review-transition", action="append", type=Path)
+    parser.add_argument("--committed-review-transition-sha256", action="append")
     return parser.parse_args()
 
 
@@ -2928,6 +3281,14 @@ def main() -> int:
     if sha256_path(context_path) != arguments.operation_context_sha256:
         raise RuntimeError("operation context file hash mismatch")
     context = fresh_context.load_context(context_path, repository_root=repository_root)
+    transition_paths = arguments.committed_review_transition or []
+    transition_hashes = arguments.committed_review_transition_sha256 or []
+    if len(transition_paths) != len(transition_hashes):
+        raise RuntimeError("committed review transition path/hash count mismatch")
+    committed_review_transitions = [
+        load_committed_review_transition(path.resolve(), digest)
+        for path, digest in zip(transition_paths, transition_hashes, strict=True)
+    ]
     pre_path = Path(context["pre_receipt_path"])
     post_path = Path(context["post_receipt_path"])
     consumable_paths = receipt_consumable_paths(repository_root, context)
@@ -2954,6 +3315,7 @@ def main() -> int:
         repository_clean=repository_clean,
         observed_asset_sha256=observed_assets,
         candidate_source_path=candidate_source_path,
+        committed_review_transitions=committed_review_transitions,
     )
     authority, authority_file_sha = load_authority(arguments.execution_authority.resolve())
 
@@ -2967,6 +3329,12 @@ def main() -> int:
     )
     if final_context != context:
         raise RuntimeError("operation context semantic drift after static readiness")
+    final_committed_review_transitions = [
+        load_committed_review_transition(path.resolve(), digest)
+        for path, digest in zip(transition_paths, transition_hashes, strict=True)
+    ]
+    if final_committed_review_transitions != committed_review_transitions:
+        raise RuntimeError("committed review transition drift after static readiness")
     final_observed_head = git(repository_root, "rev-parse", "HEAD")
     final_observed_tree = git(repository_root, "rev-parse", "HEAD^{tree}")
     final_repository_clean = git(
@@ -3004,6 +3372,7 @@ def main() -> int:
         canonical_argv_sha256=final_digest,
         receipt_namespace_consumed=any(path.exists() for path in consumable_paths),
         candidate_source_path=candidate_source_path,
+        committed_review_transitions=final_committed_review_transitions,
     )
     executable_sha = sha256_path(Path(argv[0]))
     started = time.time_ns()
