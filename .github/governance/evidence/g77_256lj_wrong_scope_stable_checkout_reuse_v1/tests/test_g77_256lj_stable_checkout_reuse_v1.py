@@ -96,3 +96,26 @@ def test_complete_phase_a_uses_current_admission_and_stable_runtime(tmp_path: Pa
     assert result["governed_runtime_checkout_tree"] == V.LH_TREE
     counters = {key: value for key, value in result.items() if key.endswith("_count")}
     assert counters and set(counters.values()) == {0}
+
+
+def test_sealed_reduction_and_g48_report_are_exact() -> None:
+    reduction = V.authenticate_evidence()
+    assert reduction["terminal"] == V.TERMINAL
+    assert reduction["ex"] == {
+        "reconstructed": "VERIFIED__0",
+        "reused": "VERIFIED__17_OF_17",
+    }
+    assert reduction["architecture"]["p11_mutation"] == 0
+    assert reduction["architecture"]["er_mutation"] == 0
+    assert reduction["architecture"]["ex_mutation"] == 0
+    assert len(reduction["admissibility"]) == 14
+    assert [item["vector"] for item in reduction["cross_vector_reuse_assessment"]] == [
+        "WRONG_SCOPE",
+        "WRONG_CALLER",
+        "WRONG_ATTEMPT",
+        "WRONG_INPUT",
+        "WRONG_CONTRACT",
+        "WRONG_PROVENANCE",
+        "FUTURE",
+        "EXPIRED",
+    ]

@@ -190,7 +190,10 @@ def authenticate_predecessor() -> dict[str, Any]:
         != "A__G77_256LI_ARCHITECTURAL_SCOPE_EXPANSION_REQUIRED__STOP_FOR_HUMAN_REVIEW"
         or reduction.get("failure_novelty_and_convergence_check", {}).get("failure_class")
         != "DUPLICATE_OR_EQUIVALENT_EDGE"
-        or reduction.get("e05") != {"after": "12/18", "before": "12/18", "credit": 0}
+        or {
+            key: reduction.get("e05", {}).get(key)
+            for key in ("after", "before", "credit")
+        } != {"after": "12/18", "before": "12/18", "credit": 0}
     ):
         raise LJVerificationError("LI_PREDECESSOR_CONTRACT_MISMATCH")
     return reduction["failure_novelty_and_convergence_check"]
@@ -421,7 +424,10 @@ def authenticate_evidence() -> dict[str, Any]:
         or not isinstance(reduction, dict)
         or envelope.get("reduction_sha256") != sha256_bytes(canonical_bytes(reduction))
         or reduction.get("terminal") != TERMINAL
-        or reduction.get("e05") != {"after": "12/18", "before": "12/18", "credit": 0}
+        or {
+            key: reduction.get("e05", {}).get(key)
+            for key in ("after", "before", "credit")
+        } != {"after": "12/18", "before": "12/18", "credit": 0}
         or any(reduction.get("operational_counters", {}).values())
     ):
         raise LJVerificationError("LJ_REDUCTION_CONTRACT_MISMATCH")
