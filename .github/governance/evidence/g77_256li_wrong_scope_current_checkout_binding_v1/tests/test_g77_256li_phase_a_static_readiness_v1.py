@@ -68,9 +68,15 @@ def test_seed_is_exact_three_member_projection() -> None:
     assert result["projection"] == "VERIFIED__EXACT_THREE_MEMBERS"
 
 
-def test_complete_authority_free_phase_a_static_readiness(tmp_path: Path) -> None:
+def test_postcommit_phase_a_fails_closed_on_equivalent_identity_edge(
+    tmp_path: Path,
+) -> None:
     phase = V.authenticate_phase_a(tmp_path)
-    assert phase["result"] == "COMPLETE_PHASE_A_STATIC_READINESS__VERIFIED"
+    assert phase["result"] == (
+        "FAIL_CLOSED__POST_COMMIT_CURRENT_REPOSITORY_IDENTITY_MISMATCH"
+    )
+    assert phase["failure_class"] == "DUPLICATE_OR_EQUIVALENT_EDGE"
+    assert phase["ready_for_human_decision"] is False
     assert phase["repository_head"] == V.ENTRY_HEAD
     assert phase["repository_tree"] == V.ENTRY_TREE
     assert phase["vector"] == "WRONG_SCOPE"
@@ -145,11 +151,12 @@ def test_g48_report_has_exact_six_h1_and_reuse_questions() -> None:
     assert report.rstrip().endswith(V.TERMINAL)
 
 
-def test_full_verifier_reaches_only_human_decision_boundary(tmp_path: Path) -> None:
+def test_full_verifier_stops_for_human_architectural_review(tmp_path: Path) -> None:
     result = V.verify(tmp_path)
     assert result["terminal"] == V.TERMINAL
-    assert result["phase_a"]["result"] == (
-        "COMPLETE_PHASE_A_STATIC_READINESS__VERIFIED"
+    assert result["phase_a_failure"]["result"] == (
+        "FAIL_CLOSED__POST_COMMIT_CURRENT_REPOSITORY_IDENTITY_MISMATCH"
     )
+    assert result["phase_a_failure"]["ready_for_human_decision"] is False
     assert result["e05"]["after"] == "12/18"
     assert result["e05"]["credit"] == 0

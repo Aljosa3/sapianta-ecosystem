@@ -29,6 +29,9 @@ LI = ROOT / LI_REL
 ENTRY_HEAD = "f7acd5feb3dec686ca4e2cd359b63e232f6c5fbe"
 ENTRY_TREE = "968704d8915edf6d524a8a7705591788d8333bdd"
 ENTRY_SUBJECT = "G77-256LH bind failure verifier to committed terminal"
+ATTEMPTED_COMMIT = "c725df9545518e867ad31a39d83ae71522be1c05"
+ATTEMPTED_TREE = "58feeebe35d4e68ed6acae86584382c6ac358d41"
+ATTEMPTED_SUBJECT = "G77-256LI repair WRONG_SCOPE current-checkout binding"
 LH_PARENT = "fbc3eba8d4c31f192d6127975cb5ad1f4019952a"
 LG_HEAD = "332ca67e20e8f330bc9182d1aa9cc99ef3f02363"
 LG_TREE = "8ac8b003bae4727c40ec20aaefd7ff41eb3d3c71"
@@ -39,9 +42,8 @@ NESTED_TREE = "7c32ec05efc2be43297849bc38ec8766514a523d"
 NESTED_TAG = "sapianta-system-nested-authority-3183bab-v1"
 BRANCH = "g77-256fl-wrong-attempt-preboot-blocker"
 TERMINAL = (
-    "A__G77_256LI_WRONG_SCOPE_CURRENT_CHECKOUT_BINDING_REPAIRED__"
-    "PHASE_A_STATIC_READINESS_VERIFIED__ZERO_AUTHORITY__ZERO_OPERATION__"
-    "READY_FOR_HUMAN_DECISION"
+    "A__G77_256LI_ARCHITECTURAL_SCOPE_EXPANSION_REQUIRED__"
+    "STOP_FOR_HUMAN_REVIEW"
 )
 
 FM_REL = Path(
@@ -146,6 +148,9 @@ def authenticate_entry() -> dict[str, Any]:
         or git("show", "-s", "--format=%s", ENTRY_HEAD) != ENTRY_SUBJECT
         or git("rev-parse", f"{ENTRY_HEAD}^") != LH_PARENT
         or git("rev-parse", f"{LG_HEAD}^{{tree}}") != LG_TREE
+        or git("rev-parse", f"{ATTEMPTED_COMMIT}^{{tree}}") != ATTEMPTED_TREE
+        or git("show", "-s", "--format=%s", ATTEMPTED_COMMIT)
+        != ATTEMPTED_SUBJECT
     ):
         raise LIVerificationError("ENTRY_CHECKPOINT_MISMATCH")
     if subprocess.run(
@@ -156,6 +161,14 @@ def authenticate_entry() -> dict[str, Any]:
         stderr=subprocess.DEVNULL,
     ).returncode:
         raise LIVerificationError("LH_ENTRY_NOT_ANCESTRAL_TO_CURRENT_HEAD")
+    if subprocess.run(
+        ["git", "merge-base", "--is-ancestor", ATTEMPTED_COMMIT, current_head],
+        cwd=ROOT,
+        check=False,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    ).returncode:
+        raise LIVerificationError("LI_ATTEMPT_COMMIT_NOT_ANCESTRAL_TO_CURRENT_HEAD")
     nested = ROOT / "sapianta_system"
     if (
         git("rev-parse", "HEAD", cwd=nested) != NESTED_HEAD
@@ -182,6 +195,8 @@ def authenticate_entry() -> dict[str, Any]:
     return {
         "entry_head": ENTRY_HEAD,
         "entry_tree": ENTRY_TREE,
+        "attempted_commit": ATTEMPTED_COMMIT,
+        "attempted_tree": ATTEMPTED_TREE,
         "current_head": current_head,
         "branch": BRANCH,
         "nested_head": NESTED_HEAD,
@@ -382,33 +397,37 @@ def authenticate_phase_a(work_root: Path) -> dict[str, Any]:
     overlay.parent.mkdir(parents=True, exist_ok=True)
     overlay.touch()
     observations = fm.observe_context_assets(ROOT, context, candidate)
-    readiness = fm.authority_free_static_readiness(
-        repository_root=ROOT,
-        context=context,
-        observed_head=ENTRY_HEAD,
-        observed_tree=ENTRY_TREE,
-        repository_clean=True,
-        observed_asset_sha256=observations,
-        candidate_source_path=candidate,
-    )
-    binding_proof = readiness.get("guest_adapter_binding", {})
+    try:
+        fm.authority_free_static_readiness(
+            repository_root=ROOT,
+            context=context,
+            observed_head=ENTRY_HEAD,
+            observed_tree=ENTRY_TREE,
+            repository_clean=True,
+            observed_asset_sha256=observations,
+            candidate_source_path=candidate,
+        )
+    except RuntimeError as error:
+        if str(error) != "sealed route target is not the current repository identity":
+            raise
+    else:
+        raise LIVerificationError("EXPECTED_POST_COMMIT_PHASE_A_FAILURE_NOT_OBSERVED")
     if (
-        readiness.get("result") != "STATIC_READINESS_PASS"
-        or readiness.get("human_operational_authorization_count") != 0
-        or readiness.get("qemu_execution_count") != 0
-        or binding_proof.get("result") != "PREAUTHORITY_GUEST_ADAPTER_BINDING_PASS"
-        or binding_proof.get("nocloud_source_projection_identity") != "PASS"
+        git("rev-parse", "HEAD") == ENTRY_HEAD
         or context.get("repository_head") != ENTRY_HEAD
         or context.get("repository_tree") != ENTRY_TREE
         or fm.context_vector(context) != "WRONG_SCOPE"
     ):
-        raise LIVerificationError("COMPLETE_PHASE_A_STATIC_READINESS_NOT_PROVEN")
+        raise LIVerificationError("POST_COMMIT_FAILURE_CONTEXT_MISMATCH")
     return {
-        "result": "COMPLETE_PHASE_A_STATIC_READINESS__VERIFIED",
+        "result": "FAIL_CLOSED__POST_COMMIT_CURRENT_REPOSITORY_IDENTITY_MISMATCH",
+        "failure_class": "DUPLICATE_OR_EQUIVALENT_EDGE",
+        "error": "sealed route target is not the current repository identity",
+        "ready_for_human_decision": False,
         "repository_head": ENTRY_HEAD,
         "repository_tree": ENTRY_TREE,
         "vector": "WRONG_SCOPE",
-        "bootstrap_tuple": "VERIFIED",
+        "bootstrap_tuple": "VERIFIED__IMMUTABLE_LH_PREDECESSOR",
         "caller": "VERIFIED",
         "attempt": "VERIFIED",
         "input": "VERIFIED",
@@ -468,7 +487,7 @@ def verify(work_root: Path) -> dict[str, Any]:
         "failure": failure,
         "dependency_closure": closure,
         "seed": seed,
-        "phase_a": phase_a,
+        "phase_a_failure": phase_a,
         "e05": reduction["e05"],
         "ex": reduction["ex"],
     }
