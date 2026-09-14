@@ -1,0 +1,112 @@
+{
+  "schema_id": "G77_256LU_STATIC_INTEGRATION_BINDING_RELATION_ENVELOPE_V1",
+  "relation": {
+    "schema_id": "G77_256LU_STATIC_INTEGRATION_BINDING_RELATION_V1",
+    "artifact_class": "STATIC_NONAUTHORITY_NONCONSUMABLE_NONEXECUTABLE_INTEGRATION_PROOF",
+    "capability_id": "SESSION_INDEPENDENT_ONE_SHOT_FM_PROCESS_SUPERVISION_AND_DURABLE_TERMINAL_HANDOFF_V1",
+    "integration_readiness": "PROVEN",
+    "exact_existing_fm_invocation": {
+      "argv_owner": "EXISTING_FM_BUILD_PRECONSUMPTION_INVOCATION_BINDING_PLUS_EXISTING_COMMITTED_REVIEW_TRANSITION_EXTENSION",
+      "executable": "/usr/bin/python",
+      "launcher": ".github/governance/evidence/g77_256fm_wrong_attempt_preboot_v1/launcher/G77_256FM_ONE_SHOT_QEMU_LAUNCHER_V1.py",
+      "working_directory": "/home/pisarna/work/sapianta-fl",
+      "historical_lr_example_is_authority": false,
+      "historical_lr_example_reusable": false,
+      "future_values_required": true,
+      "replacement_route": false
+    },
+    "binding_relation": {
+      "FUTURE_AUTHORIZED_INVOCATION_BINDING.lifecycle_id": "LT_SEALED_SUPERVISOR_INPUT.lifecycle_id",
+      "FUTURE_AUTHORIZED_INVOCATION_BINDING.invocation_id": "LT_SEALED_SUPERVISOR_INPUT.invocation_id",
+      "FUTURE_AUTHORIZED_INVOCATION_BINDING.fm_invocation_binding_sha256": "LT_SEALED_SUPERVISOR_INPUT.invocation_binding_identity",
+      "FUTURE_AUTHORIZED_INVOCATION_BINDING.context_file_sha256": "LT_SEALED_SUPERVISOR_INPUT.fm_input_identity",
+      "FUTURE_AUTHORIZED_INVOCATION_BINDING.current_admission_head_tree": "LT_SEALED_SUPERVISOR_INPUT.admission_identity",
+      "FUTURE_AUTHORIZED_INVOCATION_BINDING.authority_file_sha256": "LT_SEALED_SUPERVISOR_INPUT.authority_binding_sha256",
+      "EXISTING_FM_INVOCATION.final_fm_argv": "LT_SEALED_SUPERVISOR_INPUT.argv",
+      "EXISTING_FM_INVOCATION.final_fm_argv_sha256": "LT_SEALED_SUPERVISOR_INPUT.argv_sha256",
+      "EXISTING_FM_INVOCATION.repository_root": "LT_SEALED_SUPERVISOR_INPUT.working_directory",
+      "EXISTING_FM_INVOCATION.attempt_limit": "LT_SEALED_SUPERVISOR_INPUT.attempt_limit=1",
+      "EXISTING_FM_INVOCATION.retry_limit": "LT_SEALED_SUPERVISOR_INPUT.retry_limit=0",
+      "FM_CONTEXT.pre_receipt_path": "FM_PRE_RECEIPT.path",
+      "FM_CONTEXT.post_receipt_path": "FM_POST_RECEIPT.path",
+      "FM_CONTEXT.serial_path": "EXISTING_DIRECT_SERIAL_SINK.path",
+      "FM_CONTEXT.runtime_export_root+guest_output_relative_paths": "GUEST_RUNTIME_EVIDENCE.paths",
+      "FM_POST_RECEIPT+GUEST_RUNTIME_EVIDENCE+LT_TERMINAL_OR_UNKNOWN": "POSTOP_REDUCER.independent_inputs"
+    },
+    "transitive_identity_rule": "THE_EXACT_CONTEXT_FILE_HASH_IS_PRESENT_IN_FINAL_FM_ARGV_AND_BINDS_RECEIPT_NAMESPACE_SERIAL_PATH_RUNTIME_EXPORT_AND_GUEST_OUTPUTS; LT_BINDS_THE_UNMODIFIED_FINAL_FM_ARGV_AND_HASH",
+    "required_order": [
+      "FRESH_HUMAN_REVIEWED_PHASE_A_OBJECT",
+      "SEPARATE_HUMAN_DECISION",
+      "FRESH_AUTHORITY",
+      "FINAL_FM_ADMISSION",
+      "SEALED_NONAUTHORITY_LT_INPUT",
+      "AUTHORITY_CONSUMPTION",
+      "LT_EXCLUSIVE_RESERVATION",
+      "AT_MOST_ONE_LT_SUPERVISED_EXACT_FM_CHILD",
+      "FM_PRE",
+      "EXISTING_FM_QEMU_EXECUTION",
+      "FM_POST_OR_ABSENT_IF_NOT_DURABLY_WRITTEN",
+      "GUEST_RUNTIME_EVIDENCE_OR_ABSENT",
+      "POSTOP_REDUCTION_WITH_LT_TERMINAL_OR_UNKNOWN_AS_NONAUTHORITY_INPUT"
+    ],
+    "failure_windows": {
+      "authority_consumed_before_supervisor_start": "ZERO_CHILD__AUTHORITY_SPENT__NO_RELAUNCH",
+      "supervisor_reservation_before_child_start": "NAMESPACE_SPENT__NO_RELAUNCH",
+      "child_started_before_running_flush": "UNKNOWN__NO_RELAUNCH",
+      "caller_disappears": "DETACHED_SUPERVISOR_CONTINUES_OR_UNKNOWN__NO_RELAUNCH",
+      "supervisor_disappears": "UNKNOWN__NO_RELAUNCH",
+      "fm_pre_without_post": "FM_PRE_REMAINS_AUTHORITATIVE__OUTCOME_UNKNOWN__NO_RELAUNCH",
+      "terminal_unknown": "NO_SUCCESS_DENIAL_P11_OR_PROTECTED_EFFECT_INFERENCE__NO_RELAUNCH",
+      "process_identity_stale_or_reused": "UNKNOWN__NO_RELAUNCH",
+      "future_recovery_observes_ambiguity": "UNKNOWN__NO_RELAUNCH"
+    },
+    "pre_post_ownership": {
+      "pre_owner": "EXISTING_FM_ONLY",
+      "post_owner": "EXISTING_FM_ONLY",
+      "lt_writes_pre": false,
+      "lt_writes_post": false,
+      "lt_synthesizes_post": false,
+      "lt_infers_denial": false,
+      "lt_infers_p11_zero": false,
+      "lt_infers_protected_effect_zero": false
+    },
+    "authority_boundary": {
+      "supervisor_is_authority": false,
+      "supervisor_state_is_authority": false,
+      "terminal_exit_is_authority": false,
+      "authority_created_by_lu": false,
+      "authority_consumed_by_lu": false,
+      "future_authority_source": "SEPARATE_HUMAN_AUTHORIZED_EXISTING_GOVERNED_LIFECYCLE_ONLY"
+    },
+    "failure_matrix": {
+      "A": "INTEGRATION_READY",
+      "B": "REJECT",
+      "C": "REJECT",
+      "D": "REJECT",
+      "E": "REJECT",
+      "F": "REJECT",
+      "G": "REJECT",
+      "H": "REJECT",
+      "I": "REJECT",
+      "J": "REJECT",
+      "K": "REJECT",
+      "L": "REJECT",
+      "M": "REJECT",
+      "N": "REJECT"
+    },
+    "new_capability_required": "NO",
+    "new_capability_created": "NO",
+    "production_behavior_impact": "NONE",
+    "production_route_count": "1 -> 1",
+    "operational_retry_authorized": "NO",
+    "lu_execution_counters": {
+      "authority_created": 0,
+      "authority_consumed": 0,
+      "operation_attempts": 0,
+      "qemu_starts": 0,
+      "vm_starts": 0,
+      "p11_entries": 0
+    }
+  },
+  "relation_sha256": "cc2340615e7f1f37b0c7da54fd886bdec0f0080fb73b6adb6b8a364102978f80"
+}
