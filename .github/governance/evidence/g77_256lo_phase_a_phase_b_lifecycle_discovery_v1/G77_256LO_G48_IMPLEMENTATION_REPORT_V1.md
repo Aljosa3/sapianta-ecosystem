@@ -291,7 +291,7 @@ Because requirement 5 is not proven, LO stops before implementation.
 | Candidate lifecycle security properties | PASS__GAP_ONLY__NO_IMPLEMENTATION |
 | LO authority/operation artifacts | PASS, zero |
 | Focused LO tests | PASS |
-| KV/LI/LJ/LM/LN regression run | 48/59 overall with LO and governance; 11 historical generation-bound HEAD/dirty-set/full-FM-hash assertions classified as harness artifacts, no production semantic failure |
+| KV/LI/LJ/LM/LN post-commit regressions | 37/42; five historical generation-bound assertions classified as harness artifacts (three KV exact-old-HEAD dependents, two LI old-whole-FM-hash dependents); LJ/LM/LN fully pass; no production semantic failure |
 | Governance tests | PASS |
 | Conformance engine | CONFORMANT, 20/20, zero warnings/violations |
 | G48 headings and RIA questions | PASS, exactly six/five |
@@ -340,6 +340,8 @@ Exact commit and push commands:
 ```bash
 git add .github/governance/evidence/g77_256lo_phase_a_phase_b_lifecycle_discovery_v1
 git commit -m "G77-256LO prove committed Phase-A successor-admission lifecycle gap"
+git add .github/governance/evidence/g77_256lo_phase_a_phase_b_lifecycle_discovery_v1/G77_256LO_G48_IMPLEMENTATION_REPORT_V1.md
+git commit -m "G77-256LO record lifecycle discovery terminal"
 git push origin HEAD:g77-256fl-wrong-attempt-preboot-blocker
 ```
 
