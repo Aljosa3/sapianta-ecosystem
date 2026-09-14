@@ -588,14 +588,42 @@ def verify() -> dict[str, Any]:
     )
     if equivalence["preauth_final_admission_equivalence"] != GL.EQUIVALENCE_RESULT:
         raise LMVerificationError("RECEIPT_PARENT_EQUIVALENCE_MISMATCH")
-    observed_assets = FM.observe_context_assets(ROOT, context, CANDIDATE_REL)
-    static = FM.authority_free_static_readiness(
-        repository_root=ROOT, context=context, observed_head=ENTRY_HEAD,
-        observed_tree=ENTRY_TREE, repository_clean=True,
-        observed_asset_sha256=observed_assets, candidate_source_path=CANDIDATE_REL,
+    # Preserve the LJ separation: the sealed materialization base is historical
+    # after an evidence commit, while repository authentication requires only an
+    # advancing descendant.  Replaying FM.authority_free_static_readiness here
+    # would incorrectly substitute current-admission identity for the sealed
+    # base and recreate the rejected LI literal HEAD/TREE loop.
+    readiness_envelope = load_canonical(READINESS)
+    readiness = readiness_envelope.get("checkpoint")
+    if (
+        not isinstance(readiness, dict)
+        or readiness_envelope.get("checkpoint_sha256")
+        != sha256_bytes(canonical_bytes(readiness))
+        or readiness.get("context_sha256") != context["context_sha256"]
+        or readiness.get("context_file_sha256") != sha256_path(CONTEXT)
+        or readiness.get("entry", {}).get("head") != ENTRY_HEAD
+        or readiness.get("entry", {}).get("tree") != ENTRY_TREE
+        or readiness.get("static_readiness", {}).get("result")
+        != "STATIC_READINESS_PASS"
+        or any(readiness.get("operational_counters", {}).values())
+    ):
+        raise LMVerificationError("SEALED_ENTRY_BASE_READINESS_MISMATCH")
+    freshness = FM.fresh_context.validate_freshness(
+        context, overlay_materialized=True
     )
-    if static.get("result") != "STATIC_READINESS_PASS":
-        raise LMVerificationError("STATIC_READINESS_REPLAY_FAILED")
+    checkout = FM.validate_checkout_preboot_readiness(context)
+    visibility = FM.validate_preboot_visibility(
+        ROOT, context, context["canonical_argv"], context["canonical_argv_sha256"],
+        candidate_source_path=CANDIDATE_REL,
+    )
+    adapter = FM.prove_guest_adapter_binding(ROOT, context)
+    if (
+        not freshness
+        or checkout.get("checkout_head_tree") != "PASS"
+        or visibility.get("result") != "PREBOOT_VISIBILITY_COMPOSITION_PASS"
+        or not adapter
+    ):
+        raise LMVerificationError("STABLE_MATERIALIZATION_REPLAY_FAILED")
     root_cause = load_canonical(ROOT_CAUSE)
     if root_cause.get("analysis_sha256") != sha256_bytes(canonical_bytes(root_cause["analysis"])):
         raise LMVerificationError("ROOT_CAUSE_SEAL_MISMATCH")
