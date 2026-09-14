@@ -1,0 +1,121 @@
+{
+  "schema_id": "G77_256LN_SPCE_PREAUTHORITY_TERMINAL_REDUCTION_ENVELOPE_V1",
+  "reduction": {
+    "schema_id": "G77_256LN_SPCE_PREAUTHORITY_TERMINAL_REDUCTION_V1",
+    "generation": "G77-256LN",
+    "terminal": "A__G77_256LN_AUTHORITY_BINDING_CONFLICT__STOP",
+    "result_class": "FAIL_CLOSED_BEFORE_AUTHORITY_CREATION_OR_CONSUMPTION",
+    "human_decision": {
+      "present": true,
+      "prompt_sha256": "ebc0da0131702480c046eb9792f76ed502027037ff0a858f203bba9e79a06bf1",
+      "prompt_byte_count": 21939,
+      "approved_decision_object_id": "G77_256LM_WRONG_SCOPE_PHASE_A_DECISION_OBJECT_001",
+      "approved_operation_identity": "G77_256LM_E05_WRONG_SCOPE_DENIAL_BEFORE_P11_ENTRY_001",
+      "authority_created": false
+    },
+    "authenticated_entry": {
+      "head": "027b76b3031acd2214add3e447e0197e884833ec",
+      "tree": "e4c5c567887bfbfa16ae98a5034cabbad29d4346",
+      "subject": "G77-256LM record fresh Human decision readiness",
+      "remote_equality": "VERIFIED",
+      "ll_to_lm_ancestry": "VERIFIED",
+      "lm_commits_remote": "VERIFIED",
+      "nested_head": "3183bab71f8f30397c0309dd2e6d846d14a11f66",
+      "nested_tree": "7c32ec05efc2be43297849bc38ec8766514a523d",
+      "nested_state": "CLEAN__DETACHED__LOCAL_REMOTE_TAG_EQUAL"
+    },
+    "phase_a_authentication": {
+      "decision_object_file_sha256": "a0dd34a573e4dc43482d6d7054f55ba8c3792f573c92606c119b6f31f82ceadc",
+      "decision_object_canonical_inner_sha256": "a50c9d17f9b69667fd3074bce8c713e67347700ba6ddcc5c7f2e399dfcfdddb7",
+      "receipt_observation_file_sha256": "9d95056790eefdca89afaf5a46112e5b37b356b2ae3d137b929144e5e915a725",
+      "receipt_observation_canonical_inner_sha256": "88c2e05a4d667c4cb418b14d9b0de5a2bb62fc73c9cbb15ca5e97ffea33a8a8e",
+      "receipt_parent_readiness": "PASS__EXISTING_GL_FM_OWNER_REOBSERVED",
+      "isolated_semantic_mismatch": "authority_scope only",
+      "authority_state": "NONE",
+      "operation_state": "NOT_STARTED"
+    },
+    "failure_novelty_and_convergence_check": {
+      "failure_class": "DUPLICATE_OR_EQUIVALENT_EDGE",
+      "novelty": "LI_CLASS_CURRENT_ADMISSION_IDENTITY_MISMATCH_RECURS_AT_PHASE_B",
+      "affected_invariant": "SEALED_OPERATION_CONTEXT_REPOSITORY_IDENTITY_MUST_EQUAL_CURRENT_COMMITTED_ADMISSION_IDENTITY",
+      "previous_closest_edge": "G77_256LI_POST_COMMIT_CURRENT_HEAD_TREE_MISMATCH",
+      "semantic_difference": "LM_RECEIPT_READINESS_IS_VALID_BUT_OPERATIONAL_FINAL_ADMISSION_REENTERS_UNCHANGED_CURRENT_IDENTITY_GATE",
+      "production_behavior_impact": "NONE__STOP_BEFORE_AUTHORITY_AND_OPERATION",
+      "new_capability_required": "NO_FOR_STOP__YES_IF_COMMITTED_PHASE_A_MUST_BE_OPERATIONALLY_ADMISSIBLE_AFTER_SUCCESSOR_COMMIT",
+      "new_proof_required": "FRESH_PREHUMAN_OBJECT_AND_CONTEXT_WITH_CURRENT_ADMISSION_IDENTITY_OR_SEPARATELY_AUTHORIZED_ARCHITECTURAL_REVIEW",
+      "convergence_signal": "FAIL_CLOSED__NO_DUPLICATE_OPERATIONAL_ATTEMPT",
+      "repetition_pressure": "HIGH__DO_NOT_REISSUE_LITERAL_COMMITTED_HEAD_BINDING",
+      "verification_amplification_risk": "HIGH_IF_ANOTHER_PHASE_A_COMMIT_REPEATS_THE_SAME_EDGE"
+    },
+    "conflict": {
+      "sealed_materialization_head": "ea3781b64cd8780021e8cbb5e65f6b057b1bf649",
+      "sealed_materialization_tree": "607e9dae3a562d823d64b17888c11d3e4b881e2f",
+      "current_admission_head": "027b76b3031acd2214add3e447e0197e884833ec",
+      "current_admission_tree": "e4c5c567887bfbfa16ae98a5034cabbad29d4346",
+      "first_failed_conjunct": "FM_AUTHORITY_FREE_STATIC_READINESS_CURRENT_COMMITTED_JM_ROUTE",
+      "error": "sealed route target is not the current repository identity",
+      "final_admission": "NOT_PASSED__DETERMINISTIC_PREAUTHORITY_CONJUNCT_REJECTED",
+      "repair_authorized": false,
+      "retry_authorized": false
+    },
+    "frontier": {
+      "LAST_VERIFIED_EDGE": "EXPLICIT_HUMAN_DECISION__EXACT_LM_OBJECT_AND_RECEIPT_EVIDENCE_AUTHENTICATED",
+      "FIRST_BROKEN_EDGE": "CURRENT_COMMITTED_REPOSITORY_IDENTITY_AT_FINAL_ADMISSION",
+      "FIRST_UNVERIFIED_EDGE": "FRESH_AUTHORITY_CREATION_THEN_CONSUMPTION_AND_OPERATIONAL_WRONG_SCOPE_DENIAL",
+      "MINIMUM_MISSING_CAPABILITY": "CURRENT_ADMISSION_COMPATIBLE_FRESH_PHASE_A_LIFECYCLE_FOR_A_FUTURE_EXACT_HUMAN_DECISION",
+      "MINIMUM_MISSING_PROOF": "OPERATIONAL_WRONG_SCOPE_DENIAL_BEFORE_P11_ENTRY",
+      "MINIMUM_LEGAL_NEXT_DELTA": "STOP__NO_AUTHORITY__SEPARATE_HUMAN_REVIEW_OF_NON_SELF_INVALIDATING_PHASE_A_TO_PHASE_B_LIFECYCLE"
+    },
+    "architecture": {
+      "PRODUCTION_MUTATION": 0,
+      "P11_MUTATION": 0,
+      "ER_MUTATION": 0,
+      "EX_MUTATION": 0,
+      "NEW_OWNER": 0,
+      "NEW_ROUTE": 0,
+      "NEW_REGISTRY": 0,
+      "NEW_GENERIC_ABSTRACTION": 0,
+      "NEW_CONSTITUTIONAL_CONCEPT": 0,
+      "ROUTE_COUNT_BEFORE": 1,
+      "ROUTE_COUNT_AFTER": 1
+    },
+    "operational_counters": {
+      "HUMAN_AUTHORITY_SOURCE_COUNT": 0,
+      "AUTHORITY_CREATION_COUNT": 0,
+      "AUTHORITY_CONSUMPTION_COUNT": 0,
+      "OPERATION_ATTEMPT_COUNT": 0,
+      "QEMU_START_COUNT": 0,
+      "VM_START_COUNT": 0,
+      "RETRY_COUNT": 0,
+      "OPERATIONAL_REPLAY_COUNT": 0,
+      "REPAIR_RETRY_COUNT": 0,
+      "P11_ENTRY_COUNT": 0,
+      "PROTECTED_INVOCATION_COUNT": 0,
+      "PROTECTED_EFFECT_COUNT": 0
+    },
+    "e05": {
+      "BEFORE": "12/18",
+      "LN_CREDIT": 0,
+      "AFTER": "12/18",
+      "WRONG_SCOPE": "UNSAT__NO_OPERATIONAL_ATTEMPT"
+    },
+    "ll_firewall": {
+      "LL_AUTHORITY_REUSED": 0,
+      "AUTHORITY_TRANSFER": "NO",
+      "PROOF_TRANSFER": "NO",
+      "E05_CREDIT_TRANSFER": "NO"
+    },
+    "ex": {
+      "EX_REUSED": "VERIFIED__17_OF_17",
+      "EX_RECONSTRUCTED": "VERIFIED__0"
+    },
+    "reuse_impact_assessment": {
+      "existing_certified_capabilities_reused": "LM_GL_FM_LG_LE_LJ_GN_FC_ER_P11_EX_READ_ONLY_AUTHENTICATION_ONLY",
+      "new_capabilities": "NONE",
+      "existing_capability_unreachable": false,
+      "parallel_flow": false,
+      "production_route_effect": "UNCHANGED__1_TO_1"
+    }
+  },
+  "reduction_sha256": "4bb5abcaeb26152788ec6a8ff9212876942cd2b5a80da20e09d86e49c96a2db3"
+}
