@@ -143,7 +143,10 @@ def authenticate_repository() -> dict[str, str]:
         or not is_ancestor(BASE_HEAD, remote)
     ):
         raise LKVerificationError("LJ_ENTRY_OR_SUCCESSOR_AUTHENTICATION_FAILED")
-    dirty = git("status", "--porcelain=v1", "--untracked-files=all").splitlines()
+    dirty = subprocess.check_output(
+        ["git", "status", "--porcelain=v1", "--untracked-files=all"],
+        cwd=ROOT, text=True,
+    ).splitlines()
     unexpected = [
         line for line in dirty
         if not line[3:].startswith(LK_REL.as_posix() + "/")

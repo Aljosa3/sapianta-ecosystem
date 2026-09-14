@@ -70,3 +70,50 @@ def test_replay_is_deterministic_and_stops_at_human_boundary() -> None:
     assert first["authority_creation_count"] == 0
     assert first["operation_attempt_count"] == 0
     assert first["ready_for_human_decision"] is True
+
+
+def test_terminal_reduction_is_canonical_sealed_and_complete() -> None:
+    envelope = V.load_canonical(V.REDUCTION)
+    reduction = envelope["reduction"]
+    assert envelope["reduction_sha256"] == V.sha256_bytes(
+        V.canonical_bytes(reduction)
+    )
+    assert reduction["terminal"] == V.TERMINAL
+    assert reduction["decision_object"]["count"] == 1
+    assert reduction["phase_a"]["independent_semantic_mutation_count"] == 1
+    assert set(reduction["operational_counters"].values()) == {0}
+    assert reduction["e05"] == {
+        "AFTER": "12/18",
+        "BEFORE": "12/18",
+        "FRONTIER": "WRONG_SCOPE",
+        "LK_CREDIT": 0,
+        "WRONG_SCOPE": (
+            "UNSAT__PHASE_A_READY__HUMAN_DECISION_PENDING__OPERATIONAL_UNPROVEN"
+        ),
+    }
+    assert [row["VECTOR"] for row in reduction["cross_vector_reuse_assessment"]] == [
+        "WRONG_SCOPE", "WRONG_CALLER", "WRONG_ATTEMPT", "WRONG_INPUT",
+        "WRONG_CONTRACT", "WRONG_PROVENANCE", "FUTURE", "EXPIRED",
+    ]
+    assert all(
+        row["AUTHORITY_TRANSFER"] == row["PROOF_TRANSFER"]
+        == row["E05_CREDIT_TRANSFER"] == "NO"
+        for row in reduction["cross_vector_reuse_assessment"]
+    )
+
+
+def test_g48_report_has_exactly_six_required_h1_headings() -> None:
+    text = V.REPORT.read_text(encoding="utf-8")
+    headings = [line for line in text.splitlines() if line.startswith("# ")]
+    assert headings == [
+        "# 1. Implementation Summary",
+        "# 2. Code Evidence",
+        "# 3. Constitutional Self-Assessment",
+        "# 4. Validation Matrix",
+        "# 5. Repository Mutation Summary",
+        "# 6. Certification Verdict",
+    ]
+    assert text.rstrip().endswith(V.TERMINAL)
+    assert "THIS OBJECT IS NOT AUTHORIZED" in text
+    assert "APPROVAL HAS NOT YET BEEN GIVEN" in text
+    assert "NO OPERATION MAY START FROM THIS GENERATION" in text
