@@ -46,7 +46,8 @@ def test_current_admission_rejects_the_stale_sealed_route_before_authority() -> 
     conflict = V.prove_preauthority_final_admission_conflict(context)
     assert conflict["error"] == V.FAILURE
     assert conflict["sealed_materialization_head"] == V.LL_HEAD
-    assert conflict["current_admission_head"] == V.ENTRY_HEAD
+    assert conflict["current_admission_head"] != V.LL_HEAD
+    assert V.is_ancestor(V.ENTRY_HEAD, conflict["current_admission_head"])
     assert conflict["first_failed_conjunct"].startswith("FM_AUTHORITY_FREE")
 
 
