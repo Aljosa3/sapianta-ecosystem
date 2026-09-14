@@ -112,11 +112,11 @@ EXPIRED_CLOUD_INIT_SHA256 = (
 )
 WRONG_SCOPE_CLOUD_INIT = (
     ".github/governance/evidence/"
-    "g77_256li_wrong_scope_current_checkout_binding_v1/"
-    "static/G77_256LI_CLOUD_INIT_USER_DATA_V1.yaml"
+    "g77_256lj_wrong_scope_stable_checkout_reuse_v1/"
+    "static/G77_256LJ_CLOUD_INIT_USER_DATA_V1.yaml"
 )
 WRONG_SCOPE_CLOUD_INIT_SHA256 = (
-    "8013bbb1b59ee082c1d820639463baa53acba9cbac84658813ca23bb65f54d0c"
+    "17957eee3b80526632c0384c552f1e11979b0411995a131950c207a9086feaea"
 )
 FK_ADAPTER = ".github/governance/evidence/g77_256fc_wrong_attempt_operational_v1/harness/G77_256FC_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py"
 CANONICAL_CHE = "aigol/runtime/canonical_che_evidence_correlation_contract_v1.py"
@@ -171,8 +171,8 @@ EXPIRED_SEED = (
 )
 WRONG_SCOPE_SEED = (
     "/home/pisarna/work/sapianta-fl/.github/governance/evidence/"
-    "g77_256li_wrong_scope_current_checkout_binding_v1/"
-    "static/SAPIANTA_WRONG_SCOPE_NOCLOUD_SEED_V2.img"
+    "g77_256lj_wrong_scope_stable_checkout_reuse_v1/"
+    "static/SAPIANTA_WRONG_SCOPE_NOCLOUD_SEED_V3.img"
 )
 CHECKOUT = "/tmp/g77_256fm/checkout"
 LEGACY_CHECKOUT_HEAD = "7dce67ec18696ba0bad73130f3f7a84168f25277"
@@ -186,6 +186,14 @@ EXPIRED_RUNTIME_BASE_ADAPTER_SHA256 = (
 )
 EXPIRED_ADMISSION_ADAPTER_SHA256 = (
     "df87b85f40ab9b6a286c8114c931cedc90f485c0e9992271aef92cbf1549e344"
+)
+WRONG_SCOPE_CHECKOUT_HEAD = "f7acd5feb3dec686ca4e2cd359b63e232f6c5fbe"
+WRONG_SCOPE_CHECKOUT_TREE = "968704d8915edf6d524a8a7705591788d8333bdd"
+WRONG_SCOPE_RUNTIME_BASE_ADAPTER_SHA256 = (
+    "67847030651e8add82dd16bc8741ad0d81f44c7ba873689a521aea85f2ec4949"
+)
+WRONG_SCOPE_ADMISSION_ADAPTER_SHA256 = (
+    "035c3c02cfb4cee26c6af2501b85a547d0376c80c4df376b7a40a8671277136f"
 )
 P11_CONSUMER_RELATIVE = "tests/p11_da_operational_consumer_v1.py"
 COMMITTED_JM_P11_SHA256 = (
@@ -248,7 +256,7 @@ EXPECTED_ASSET_SHA256 = {
     WRONG_PROVENANCE_SEED: "4154ec58b7ebf46299ccc495a0a1232b7e31f67221f987b6fe7959f8d5593c7c",
     FUTURE_SEED: "6998d4cdaff3617b9e2c29f17318a220619fc718d0d9f9168b08e614cfdf0418",
     EXPIRED_SEED: "81011b08aabb7052a14dc4f81ec51536c551cad97441563f846edbe778728004",
-    WRONG_SCOPE_SEED: "975f38f4965038e2631341490369c6d0f8f5c36554f2f90041d66f9101fb5fdd",
+    WRONG_SCOPE_SEED: "29d46bad5bb2243dc4120ca39c62bf45363335b8e215a9f3e32e04957e70964e",
     LEGACY_CLOUD_INIT: LEGACY_CLOUD_INIT_SHA256,
     LEGACY_SEED: "966f1910bbffe20fa18c4cee56ff61dcbb069348e2929bfda74e029a9dc0ec58",
 }
@@ -1192,47 +1200,56 @@ def governed_checkout_identity(
     repository_head: str,
     repository_tree: str,
 ) -> tuple[str, str]:
-    """Return the existing FM-owned stable checkout identity for one vector.
+    """Return the existing FM-owned stable checkout identity where required.
 
     EXPIRED reuses the committed JR operational baseline.  Later evidence
     commits remain the authorization/repository baseline, but cannot become a
     caller-selected bootstrap coordinate or force an N-1 asset rewrite.
+
+    WRONG_SCOPE applies the same role separation to the authenticated LH
+    baseline containing its semantics, FC/ER route, and committed JM P11.
     """
 
-    if vector != fresh_context.EXPIRED:
+    if vector not in {fresh_context.EXPIRED, fresh_context.WRONG_SCOPE}:
         return repository_head, repository_tree
-    if git(repository_root, "rev-parse", f"{EXPIRED_CHECKOUT_HEAD}^{{tree}}") != (
-        EXPIRED_CHECKOUT_TREE
-    ):
-        raise RuntimeError("EXPIRED stable checkout HEAD/TREE mismatch")
+    if vector == fresh_context.EXPIRED:
+        stable_head = EXPIRED_CHECKOUT_HEAD
+        stable_tree = EXPIRED_CHECKOUT_TREE
+        base_adapter_sha256 = EXPIRED_RUNTIME_BASE_ADAPTER_SHA256
+        admission_adapter_sha256 = EXPIRED_ADMISSION_ADAPTER_SHA256
+    else:
+        stable_head = WRONG_SCOPE_CHECKOUT_HEAD
+        stable_tree = WRONG_SCOPE_CHECKOUT_TREE
+        base_adapter_sha256 = WRONG_SCOPE_RUNTIME_BASE_ADAPTER_SHA256
+        admission_adapter_sha256 = WRONG_SCOPE_ADMISSION_ADAPTER_SHA256
+    if git(repository_root, "rev-parse", f"{stable_head}^{{tree}}") != stable_tree:
+        raise RuntimeError(f"{vector} stable checkout HEAD/TREE mismatch")
     if subprocess.run(
-        ["git", "merge-base", "--is-ancestor", EXPIRED_CHECKOUT_HEAD, repository_head],
+        ["git", "merge-base", "--is-ancestor", stable_head, repository_head],
         cwd=repository_root,
         check=False,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     ).returncode:
-        raise RuntimeError("EXPIRED stable checkout is not an authenticated ancestor")
+        raise RuntimeError(f"{vector} stable checkout is not an authenticated ancestor")
     committed_p11 = subprocess.check_output(
-        ["git", "show", f"{EXPIRED_CHECKOUT_HEAD}:{P11_CONSUMER_RELATIVE}"],
+        ["git", "show", f"{stable_head}:{P11_CONSUMER_RELATIVE}"],
         cwd=repository_root,
     )
     if hashlib.sha256(committed_p11).hexdigest() != COMMITTED_JM_P11_SHA256:
-        raise RuntimeError("EXPIRED stable checkout does not contain committed JM P11")
-    adapter_path = fresh_context.EXPIRED_ADAPTER_SOURCE_RELATIVE_PATH
+        raise RuntimeError(f"{vector} stable checkout does not contain committed JM P11")
+    adapter_path = fresh_context.adapter_source_relative_path(
+        f"G77_256LJ_ONE_FRESH_HUMAN_AUTHORIZED_{vector}_OPERATIONAL_COMMISSIONING_V1"
+    )
     committed_adapter = subprocess.check_output(
-        ["git", "show", f"{EXPIRED_CHECKOUT_HEAD}:{adapter_path}"],
+        ["git", "show", f"{stable_head}:{adapter_path}"],
         cwd=repository_root,
     )
-    if hashlib.sha256(committed_adapter).hexdigest() != (
-        EXPIRED_RUNTIME_BASE_ADAPTER_SHA256
-    ):
-        raise RuntimeError("EXPIRED stable checkout base adapter identity mismatch")
-    if sha256_path(repository_root / adapter_path) != (
-        EXPIRED_ADMISSION_ADAPTER_SHA256
-    ):
-        raise RuntimeError("EXPIRED admission adapter identity mismatch")
-    return EXPIRED_CHECKOUT_HEAD, EXPIRED_CHECKOUT_TREE
+    if hashlib.sha256(committed_adapter).hexdigest() != base_adapter_sha256:
+        raise RuntimeError(f"{vector} stable checkout base adapter identity mismatch")
+    if sha256_path(repository_root / adapter_path) != admission_adapter_sha256:
+        raise RuntimeError(f"{vector} admission adapter identity mismatch")
+    return stable_head, stable_tree
 
 
 def context_asset_expectations(

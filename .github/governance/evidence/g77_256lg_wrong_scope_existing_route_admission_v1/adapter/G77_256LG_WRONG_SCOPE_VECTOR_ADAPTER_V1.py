@@ -35,6 +35,13 @@ FC_ADAPTER = Path(
 FC_ADAPTER_SHA256 = (
     "b2e9f72d6b35b2db0021bf9bf1223350f570d1eaecda3379a8af013c705aa770"
 )
+ER_HARNESS = Path(
+    ".github/governance/evidence/g77_256er_p11_operational_v1/harness/"
+    "G77_256ER_P11_OPERATIONAL_HARNESS_V1.py"
+)
+ER_HARNESS_SHA256 = (
+    "c6539d1cc60940b1999956965bff43923a270598a982cd19f976eadec0a93152"
+)
 LE_REDUCTION = Path(
     ".github/governance/evidence/g77_256le_wrong_scope_minimum_governed_delta_v1/"
     "G77_256LE_SPCE_TERMINAL_REPOSITORY_ONLY_REDUCTION_V1.json"
@@ -125,6 +132,42 @@ def authenticate_wrong_scope_semantics(repository_root: Path) -> dict[str, Any]:
     if denial.get("reason") != EXPECTED_DENIAL:
         raise WrongScopeAdapterError("LE_DENIAL_REASON_DRIFT")
     return model
+
+
+def specialize_er_harness(repository_root: Path) -> ModuleType:
+    """Preserve host admission while observing the stable runtime checkout."""
+
+    root = repository_root.resolve()
+    authenticate_wrong_scope_semantics(root)
+    path = root / ER_HARNESS
+    if path.is_symlink() or not path.is_file() or _sha256(path) != ER_HARNESS_SHA256:
+        raise WrongScopeAdapterError("ER_HARNESS_BINDING_INVALID")
+    source = path.read_text(encoding="utf-8")
+    collapsed_roles = (
+        '    if (\n'
+        '        context["repository_head"] != observed_head\n'
+        '        or context["repository_tree"] != observed_tree\n'
+        '        or checkout_binding["head"] != observed_head\n'
+        '        or checkout_binding["tree"] != observed_tree\n'
+        '    ):\n'
+        '        raise RuntimeError("sealed operation context checkout binding mismatch")\n'
+    )
+    separated_roles = (
+        '    # FM already authenticated the sealed current admission repository.\n'
+        '    # Guest observation owns only the distinct stable runtime checkout.\n'
+        '    if (\n'
+        '        checkout_binding["head"] != observed_head\n'
+        '        or checkout_binding["tree"] != observed_tree\n'
+        '    ):\n'
+        '        raise RuntimeError("sealed operation context checkout binding mismatch")\n'
+    )
+    if source.count(collapsed_roles) != 1:
+        raise WrongScopeAdapterError("ER_REPOSITORY_ROLE_SEPARATION_ANCHOR_INVALID")
+    source = source.replace(collapsed_roles, separated_roles)
+    module = ModuleType("g77_256lg_wrong_scope_er_specialization")
+    module.__file__ = str(path)
+    exec(compile(source, str(path), "exec"), module.__dict__)
+    return module
 
 
 def specialize_fc_runtime_source(
@@ -314,6 +357,7 @@ def load_guest_runtime_namespace(
     exec(compile(source, namespace["__file__"], "exec"), namespace)
     if namespace.get("GENERATION_ID") != context["generation_identity"]:
         raise WrongScopeAdapterError("WRONG_SCOPE_GENERATION_SPECIALIZATION_FAILED")
+    namespace["load_er"] = lambda: specialize_er_harness(root)
     return namespace
 
 
