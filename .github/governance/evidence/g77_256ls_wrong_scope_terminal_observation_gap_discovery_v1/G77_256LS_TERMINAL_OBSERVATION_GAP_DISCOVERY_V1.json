@@ -1,0 +1,223 @@
+{
+  "decision": {
+    "failure_class": "HARNESS_OR_TEST_ARTIFACT",
+    "first_broken_edge": "SESSION_BOUND_HOST_PROCESS_LIFETIME_BEFORE_GOVERNED_GUEST_EXECUTION_AND_DURABLE_FINALIZATION",
+    "harness_gap": "YES__LR_FM_QEMU_PROCESS_LIFETIME_AND_TERMINAL_HANDOFF_DEPENDED_ON_THE_LIVE_CALLING_SESSION",
+    "minimum_legal_next_delta": "HUMAN_REVIEWED_GENERATION_LOCAL_SESSION_INDEPENDENT_ONE_SHOT_SUPERVISION_DELTA_ONLY__NO_PRODUCTION_CHANGE__NO_OPERATION_IN_LS",
+    "minimum_missing_capability": "SESSION_INDEPENDENT_ONE_SHOT_FM_PROCESS_SUPERVISION_AND_DURABLE_TERMINAL_HANDOFF_V1",
+    "minimum_missing_proof": "AUTHENTICATED_TERMINAL_OPERATIONAL_WRONG_SCOPE_DENIAL_BEFORE_P11",
+    "new_capability_required": "YES__BOUNDED_HARNESS_PROOF_CAPABILITY_ONLY__NO_PRODUCTION_CAPABILITY",
+    "new_proof_required": "YES__FUTURE_SEPARATELY_AUTHORIZED_WRONG_SCOPE_OPERATIONAL_PROOF_REMAINS_REQUIRED",
+    "novelty": "NEWLY_LOCALIZED_HOST_PROCESS_LIFETIME_DEPENDENCY__NO_NEW_PRODUCTION_SEMANTIC_EDGE",
+    "operational_retry_authorized": "NO",
+    "operational_retry_required": "NO_DECISION_IN_LS__DEPENDS_ON_FUTURE_GOVERNED_DELTA",
+    "production_capability_gap": "NO__STATIC_WRONG_SCOPE_DENIAL_AND_EXISTING_ER_TO_P11_ROUTE_REMAIN_PRESENT",
+    "proof_capability_gap": "YES__HOST_TERMINAL_HANDOFF_IS_NOT_SESSION_INDEPENDENT",
+    "reporting_gap": "NO__LR_REPORT_ACCURATELY_PRESERVES_UNKNOWN",
+    "reuse_target": "EXISTING_FM_PRE_POST_RECEIPTS__DIRECT_SERIAL_FILE__GUEST_RUNTIME_EXPORT_AND_SEALS__EXISTING_VECTOR_POSTOP_REDUCERS",
+    "root_cause": "LR_CONTROLLER_AND_FM_LAUNCHER_DID_NOT_REACH_THEIR_DURABLE_FINALIZERS_BEFORE_THE_SESSION_BOUND_PROCESS_CHAIN_ENDED__EXACT_EXTERNAL_TERMINATION_TRIGGER_UNKNOWN",
+    "root_cause_confidence": "HIGH_FOR_THE_FAILED_PROCESS_LIFETIME_BOUNDARY__UNKNOWN_FOR_THE_EXTERNAL_TERMINATION_TRIGGER"
+  },
+  "decision_sha256": "76cdb4aba0168a810258141c55c1aedc9c8c4339c2320dc9ed9c83ca1d9c12d4",
+  "discovery": {
+    "architecture": {
+      "constitutional_concept_delta": 0,
+      "er_production_files_changed": 0,
+      "ex_production_files_changed": 0,
+      "fm_production_files_changed": 0,
+      "gn_production_files_changed": 0,
+      "owner_delta": 0,
+      "p11_production_files_changed": 0,
+      "production_files_changed": 0,
+      "registry_delta": 0,
+      "route_count_after": 1,
+      "route_count_before": 1,
+      "route_delta": 0
+    },
+    "capability_specification": {
+      "authority_effect": "NONE__MUST_NOT_CREATE_CONSUME_EXTEND_OR_REUSE_AUTHORITY",
+      "consumability": "NONAUTHORITY__SUPERVISION_RECORD_IS_NOT_CONSUMABLE",
+      "fail_closed_behavior": "MISSING_OR_AMBIGUOUS_CHILD_TERMINAL_REMAINS_UNKNOWN__NO_REINVOCATION__NO_SYNTHETIC_POST",
+      "input": "ONE_EXACT_FUTURE_SEPARATELY_AUTHORIZED_FM_INVOCATION_BINDING_AFTER_A_NEW_GOVERNED_PHASE_A_LIFECYCLE",
+      "name": "SESSION_INDEPENDENT_ONE_SHOT_FM_PROCESS_SUPERVISION_AND_DURABLE_TERMINAL_HANDOFF_V1",
+      "output": "DURABLE_CHILD_STARTED_AND_TERMINATED_OR_INTERRUPTED_UNKNOWN_STATE_BOUND_TO_ONE_OPERATION_IDENTITY",
+      "owner": "GENERATION_LOCAL_HOST_COMMISSIONING_HARNESS__NOT_A_PRODUCTION_OWNER",
+      "reuse_candidates": "FM_PRE_POST_RECEIPTS__SERIAL_FILE__GUEST_RUNTIME_EXPORT__GUEST_SEALS__HX_IC_JE_LD_POSTOP_REDUCERS",
+      "route_impact": "ZERO__EXISTING_SINGLE_FM_TO_ER_TO_P11_ROUTE_ONLY",
+      "trust_boundary": "HOST_HARNESS_PROCESS_LIFETIME_AROUND_THE_EXISTING_FM_LAUNCHER",
+      "why_existing_capability_is_insufficient": "EXISTING_LR_CONTROLLER_AND_FM_LAUNCHER_SYNCHRONOUSLY_WAIT_IN_THE_CALLING_SESSION_WITH_NO_DETACHED_SUPERVISOR_DURABLE_PID_STATUS_OR_SIGNAL_TERMINALIZATION"
+    },
+    "cognition": {
+      "authenticated_git_history": "LR_COMMIT_IDENTITY_AND_LQ_TO_LR_ANCESTRY",
+      "authenticated_repository_fact": "CONTROLLER_FM_ADAPTER_P11_AND_NOCLOUD_SOURCE_BYTES__RECEIPT_AND_SEAL_PRESENCE_ABSENCE",
+      "codex_inference": "COMMON_CAUSE_IS_SESSION_BOUND_PROCESS_CHAIN_TERMINATION_BEFORE_FINALIZERS",
+      "durable_operational_artifact": "FM_PRE_RECEIPT_AND_43692_BYTE_SERIAL_STREAM",
+      "static_code_analysis": "POST_IN_FM_FINALLY__CONTROLLER_RESULT_AFTER_FM_RETURN__NO_TIMEOUT_SIGNAL_HANDLER_OR_SESSION_DETACH",
+      "test_result": "LS_AND_CURRENT_STATIC_VERIFIERS",
+      "unknown": "EXACT_EXTERNAL_TERMINATION_SIGNAL_OR_HOST_CAUSE__GUEST_SCOPE_DECISION__P11_AND_EFFECT_COUNTS"
+    },
+    "constitutional_health_evidence": {
+      "authority_cardinality": "PASS__HISTORICAL_LR_ONE_CREATED_ONE_CONSUMED_NONREUSABLE__LS_ZERO",
+      "fail_closed_unknown": "PASS",
+      "no_authority_laundering": "PASS",
+      "no_production_path_expansion": "PASS",
+      "no_proof_inflation": "PASS",
+      "no_retry": "PASS",
+      "no_scope_reinterpretation": "PASS",
+      "operation_cardinality": "PASS__HISTORICAL_LR_ONE__LS_ZERO"
+    },
+    "controller_analysis": {
+      "controller_result_durability": "ONLY_AFTER_FM_CHILD_RETURNS_OR_RAISES_TO_LR_PYTHON_PROCESS",
+      "distinguish_guest_crash_from_host_interruption": "NO_WITH_LR_ARTIFACT_SET",
+      "distinguish_guest_denial_from_guest_crash": "NO_WITH_LR_ARTIFACT_SET",
+      "distinguish_host_interruption_from_observation_loss": "NO_WITH_LR_ARTIFACT_SET",
+      "distinguish_vm_exit": "NORMALLY_POST_RECEIPT_AND_EXIT_STATUS__ABSENT_IN_LR",
+      "exception_handling": "LR_CATCHES_BASEEXCEPTION_AROUND_FM_CHILD__FM_FINALLY_WRITES_POST_AROUND_QEMU_CHILD",
+      "guest_exit_observation": "QEMU_RETURN_CODE_ONLY_AFTER_QEMU_PROCESS_RETURNS",
+      "operation_completed_definition": "QEMU_CHILD_RETURNED_AND_FM_POST_RECEIPT_WAS_WRITTEN__THEN_LR_CONTROLLER_RESULT_WRITTEN",
+      "post_receipt_event": "FM_QEMU_SUBPROCESS_RETURN_OR_PYTHON_UNWIND_THROUGH_FINALLY",
+      "process_loss_behavior": "NO_DURABLE_HOST_TERMINAL_ARTIFACT_IF_FM_AND_LR_PYTHON_PROCESSES_ARE_NONCOOPERATIVELY_TERMINATED",
+      "serial_capture": "QEMU_DIRECT_FILE_SINK_BOUND_IN_CANONICAL_ARGV",
+      "session_dependency": "YES__SYNCHRONOUS_SUBPROCESS_CHAIN_WITH_NO_START_NEW_SESSION_OR_DURABLE_SUPERVISOR",
+      "signal_handling": "NONE_EXPLICIT",
+      "timeout_behavior": "NONE_ON_LR_TO_FM_OR_FM_TO_QEMU_SUBPROCESS_RUN"
+    },
+    "cross_vector_reuse": [
+      {"classification":"EXACT_REUSE_POSSIBLE","mechanism":"FM_PRE_POST__SERIAL__GUEST_EXPORT__POSTOP_REDUCTION","vector":"WRONG_ATTEMPT"},
+      {"classification":"SEMANTICALLY_EQUIVALENT","mechanism":"FM_PRE_POST__SERIAL__GUEST_EXPORT__POSTOP_REDUCTION","vector":"WRONG_INPUT"},
+      {"classification":"SEMANTICALLY_EQUIVALENT","mechanism":"FM_PRE_POST__SERIAL__GUEST_EXPORT__POSTOP_REDUCTION","vector":"WRONG_CONTRACT"},
+      {"classification":"SEMANTICALLY_EQUIVALENT","mechanism":"FM_PRE_POST__SERIAL__GUEST_EXPORT__POSTOP_REDUCTION","vector":"WRONG_PROVENANCE"},
+      {"classification":"SEMANTICALLY_EQUIVALENT","mechanism":"CERTIFIED_DENIAL_AND_TERMINAL_EVIDENCE_SHAPE__VECTOR_SPECIFIC_SEMANTICS","vector":"WRONG_CALLER"},
+      {"classification":"SEMANTICALLY_EQUIVALENT","mechanism":"FM_PRE_POST__SERIAL__GUEST_EXPORT__POSTOP_REDUCTION","vector":"FUTURE"},
+      {"classification":"EXACT_REUSE_POSSIBLE","mechanism":"CURRENT_FM_PRE_POST__SERIAL__GUEST_EXPORT__POSTOP_REDUCTION","vector":"EXPIRED"}
+    ],
+    "e05": {
+      "after": "12/18",
+      "before": "12/18",
+      "ls_credit": 0,
+      "wrong_scope": "UNSAT__OPERATIONAL_PROOF_INCOMPLETE"
+    },
+    "entry": {
+      "branch": "g77-256fl-wrong-attempt-preboot-blocker",
+      "lr_head": "b738b0795b9d50b60819bbbf31e49fab6b47ed5d",
+      "lr_subject": "G77-256LR record interrupted one-shot operational terminal",
+      "lr_tree": "ee02f204235da4ea28bca05bfedabe645fe1cdfa",
+      "nested_head": "3183bab71f8f30397c0309dd2e6d846d14a11f66",
+      "nested_tree": "7c32ec05efc2be43297849bc38ec8766514a523d"
+    },
+    "execution_counters_ls": {
+      "authority_consumed": 0,
+      "authority_created": 0,
+      "operation_attempts": 0,
+      "p11_entries": 0,
+      "qemu_starts": 0,
+      "vm_starts": 0
+    },
+    "failure_novelty_and_convergence": {
+      "affected_invariant": "ONE_SHOT_OPERATION_MUST_NOT_BE_REPEATED_WHEN_TERMINAL_OUTCOME_IS_UNKNOWN",
+      "convergence_signal": "STATIC_DENIAL_ROUTE_AND_DURABLE_GUEST_POST_PIPELINE_EXIST__GAP_LOCALIZED_TO_HOST_HARNESS_PROCESS_LIFETIME",
+      "failure_class": "HARNESS_OR_TEST_ARTIFACT",
+      "new_capability_required": "YES__BOUNDED_HARNESS_PROOF_CAPABILITY_ONLY",
+      "new_proof_required": "YES__WRONG_SCOPE_OPERATIONAL_ACCEPTANCE_REMAINS_UNPROVEN",
+      "novelty": "NEWLY_LOCALIZED_HOST_PROCESS_LIFETIME_DEPENDENCY__NO_NEW_PRODUCTION_SEMANTIC_EDGE",
+      "previous_closest_edge": "LR_VM_BOOT_DURABLY_EVIDENCED_AT_EARLY_SYSTEMD_STARTUP",
+      "production_behavior_impact": "NONE_PROVEN__GOVERNED_GUEST_EXECUTION_NOT_OBSERVED",
+      "repetition_pressure": "BOUNDED_IF_HARNESS_LIFETIME_IS_REVIEWED_BEFORE_ANY_NEW_PHASE_A_LIFECYCLE",
+      "semantic_difference": "PROCESS_CHAIN_ENDED_BEFORE_NOCLOUD_BOOT_MARKER_GUEST_ADAPTER_AND_BOTH_HOST_FINALIZERS",
+      "verification_amplification_risk": "HIGH_IF_SOLVED_BY_RETRY_OR_GENERIC_OBSERVABILITY__LOW_IF_BOUNDED_TO_ONE_SESSION_INDEPENDENT_HARNESS_HANDOFF"
+    },
+    "forward_compatibility": {
+      "AMBIGUOUS": "UNCHANGED",
+      "COHERENT_COPY": "UNCHANGED",
+      "REVOKED": "UNCHANGED",
+      "STALE": "UNCHANGED",
+      "SUPERSEDED": "UNCHANGED",
+      "WRONG_SCOPE": "UNCHANGED__OPERATIONAL_UNSAT"
+    },
+    "governance": {
+      "ex_reconstructed": "VERIFIED__0",
+      "ex_reused": "VERIFIED__17_OF_17",
+      "governance_efficience": "HIGH__BROKEN_EDGE_ISOLATED_WITH_ZERO_PRODUCTION_MUTATION",
+      "hac": "NOT_USED__AUTHENTICATED_DEFINITIONS_NOT_PROVEN",
+      "hae": "NOT_USED__AUTHENTICATED_DEFINITIONS_NOT_PROVEN",
+      "hai": "NOT_USED__AUTHENTICATED_DEFINITIONS_NOT_PROVEN",
+      "overengineering_risk": "LOW_TO_BOUNDED__ONE_EXACT_HARNESS_ONLY_CANDIDATE__NO_GENERIC_FRAMEWORK",
+      "shadow_automation_status": "VERIFIED__ABSENT",
+      "shadow_design_implement_now": "NO",
+      "shadow_design_target": "HUMAN_DECISION_REJECTION_AND_REAUTHORIZATION_LIFECYCLE__HUMAN_REJECTION_FINALITY"
+    },
+    "lr_terminal_facts": {
+      "authority_consumed_count": 1,
+      "authority_created_count": 1,
+      "authority_reusable": false,
+      "operation_attempt_count": 1,
+      "p11_entry_count": "UNKNOWN",
+      "post_receipt_count": 0,
+      "pre_receipt_count": 1,
+      "protected_effect_count": "UNKNOWN",
+      "protected_invocation_count": "UNKNOWN",
+      "recovery_state_class": "STATE_B",
+      "retry_count": 0,
+      "vm_boot_state": "PROVEN",
+      "wrong_scope_denial": "NOT_PROVEN"
+    },
+    "observation_pipeline": [
+      {"edge":"A__AUTHORITY_CONSUMPTION_TO_INVOCATION_CHECKPOINT","status":"PROVEN"},
+      {"edge":"B__INVOCATION_CHECKPOINT_TO_FM_PRE_RECEIPT","status":"PROVEN"},
+      {"edge":"C__FM_PRE_RECEIPT_TO_QEMU_LAUNCH","status":"PROVEN__BY_SERIAL_NOT_BY_PRE_ALONE"},
+      {"edge":"D__QEMU_LAUNCH_TO_VM_BOOT","status":"PROVEN"},
+      {"edge":"E__VM_BOOT_TO_GOVERNED_GUEST_EXECUTION","status":"NOT_OBSERVED__FIRST_UNVERIFIED_EDGE"},
+      {"edge":"F__GUEST_EXECUTION_TO_SCOPE_ADMISSION","status":"UNKNOWN"},
+      {"edge":"G__SCOPE_ADMISSION_TO_WRONG_SCOPE_DECISION","status":"UNKNOWN"},
+      {"edge":"H__WRONG_SCOPE_DECISION_TO_P11_CONTAINMENT","status":"UNKNOWN"},
+      {"edge":"I__GUEST_RESULT_TO_SERIAL_OR_RUNTIME_EXPORT_OBSERVATION","status":"NOT_OBSERVED"},
+      {"edge":"J__FM_RESULT_TO_LR_CONTROLLER_TERMINAL_STATE","status":"NOT_OBSERVED"},
+      {"edge":"K__CONTROLLER_TERMINAL_TO_POST_RECEIPT","status":"NOT_APPLICABLE__SOURCE_ORDER_IS_QEMU_RETURN_TO_FM_POST_THEN_LR_CONTROLLER_RESULT"},
+      {"edge":"L__POST_RECEIPT_TO_SEALED_TERMINAL_EVIDENCE","status":"NOT_REACHED__POST_ABSENT"}
+    ],
+    "proof_yield": {
+      "acceptance_credit": 0,
+      "capability_discovery": "BOUNDED_SESSION_INDEPENDENT_HARNESS_SUPERVISION_IDENTIFIED",
+      "frontier_movement": "POSITIVE_FROM_PREAUTHORITY_TO_VM_BOOT_AND_TERMINAL_OBSERVATION_EDGE",
+      "negative_proof": "NO_OPERATIONAL_WRONG_SCOPE_DENIAL__P11_ZERO__OR_EFFECT_ZERO_PROOF",
+      "reuse_discovery": "EXISTING_PRODUCTION_DENIAL_AND_GUEST_POST_EVIDENCE_PIPELINE_REUSABLE",
+      "unresolved_edges": "EXACT_EXTERNAL_TERMINATION_TRIGGER__GUEST_EXECUTION__SCOPE_DECISION__P11_AND_EFFECT_COUNTS"
+    },
+    "receipt_semantics": {
+      "missing_post_classification": "EXPECTED_IF_FM_PROCESS_IS_NONCOOPERATIVELY_TERMINATED_BEFORE_FINALLY__EXACT_TRIGGER_UNKNOWN",
+      "post_required_for_acceptance": "NECESSARY_HOST_COMPLETION_EVIDENCE_BUT_NOT_SUFFICIENT_WITHOUT_GUEST_DENIAL_AND_ZERO_COUNTER_EVIDENCE",
+      "post_proves": "FM_QEMU_CHILD_LEFT_SUBPROCESS_RUN_AND_FINALLY_RECORDED_COMPLETION_TIME_AND_EXIT_STATUS",
+      "pre_plus_serial_can_infer_denial": false,
+      "pre_proves": "FINAL_FM_ADMISSION_PASSED_AND_PRE_RECEIPT_WAS_DURABLY_WRITTEN_IMMEDIATELY_BEFORE_QEMU_SUBPROCESS_INVOCATION",
+      "reason_inference_forbidden": "SERIAL_STOPS_BEFORE_GOVERNED_GUEST_MARKER_AND_CONTAINS_NO_DENIAL_OR_COUNTER_EVIDENCE"
+    },
+    "serial_analysis": {
+      "boot_evidence": "PROVEN",
+      "denial_evidence": "INCONCLUSIVE__ABSENT_FROM_TRUNCATED_STREAM",
+      "governed_execution_start_evidence": "INCONCLUSIVE__BOOT_MARKER_ABSENT_BEFORE_ABRUPT_END",
+      "guest_start_evidence": "PROVEN__KERNEL_AND_SYSTEMD_USERSPACE",
+      "last_observed_boundary": "EARLY_SYSTEMD_STARTUP_AT_APPROXIMATELY_21_SECONDS",
+      "p11_evidence": "INCONCLUSIVE__ABSENT_FROM_TRUNCATED_STREAM",
+      "protected_effect_evidence": "INCONCLUSIVE__ABSENT_FROM_TRUNCATED_STREAM",
+      "sha256": "72c46b41a40d6b00ffd4a1fccdfc67ae5b4584dfe0bf2bc924aec0f2251c5998",
+      "size": 43692,
+      "terminal_exit_evidence": "INCONCLUSIVE__NO_POWEROFF_OR_EXIT_MARKER",
+      "wrong_scope_evaluation_evidence": "INCONCLUSIVE__ABSENT_FROM_TRUNCATED_STREAM"
+    },
+    "spce": {
+      "constraints": "NO_AUTHORITY__NO_OPERATION__NO_RETRY__NO_PRODUCTION_MUTATION__UNKNOWN_FAILS_CLOSED",
+      "execution": "READ_ONLY_STATIC_AND_DURABLE_EVIDENCE_ANALYSIS__GENERATION_LOCAL_REPORT_ONLY",
+      "problem": "SESSION_BOUND_PROCESS_CHAIN_ENDED_BEFORE_GOVERNED_GUEST_OR_DURABLE_HOST_TERMINAL_OBSERVATION",
+      "state": "LR_STATE_B_TERMINAL__ONE_CONSUMED_AUTHORITY__ONE_ATTEMPT__VM_BOOT__NO_TERMINAL_RESULT"
+    },
+    "static_wrong_scope_behavior": {
+      "authorized_scope": "P11_DA_ONE_BOUNDED_OPERATIONAL_ATTEMPT_V1",
+      "classification": "STATIC_EXPECTED_BEHAVIOR__NOT_OPERATIONALLY_PROVEN_BEHAVIOR",
+      "decision": "WRONG_SCOPE_DENY_BEFORE_PRECLAIM_LEDGER_APPEND_CLAIM_ENTRY_INVOCATION_OR_EFFECT",
+      "isolated_mismatch": "authority_scope",
+      "presented_scope": "P11_DA_DIFFERENT_OPERATIONAL_SCOPE_V1"
+    },
+    "terminal": "A__G77_256LS_WRONG_SCOPE_TERMINAL_OBSERVATION_GAP_CLASSIFIED__ZERO_AUTHORITY__ZERO_OPERATION__MINIMUM_LEGAL_NEXT_DELTA_IDENTIFIED__READY_FOR_HUMAN_REVIEW"
+  },
+  "schema_id": "G77_256LS_TERMINAL_OBSERVATION_GAP_DISCOVERY_ENVELOPE_V1"
+}
