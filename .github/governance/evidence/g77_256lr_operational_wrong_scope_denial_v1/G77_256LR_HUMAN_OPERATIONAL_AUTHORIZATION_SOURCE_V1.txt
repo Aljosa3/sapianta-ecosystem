@@ -1,0 +1,10 @@
+"Odobrim exact sealed LQ objekt
+`G77_256LQ_WRONG_SCOPE_PHASE_A_REVIEW_OBJECT_001`,
+whole-object SHA256
+`035e406848463173bd68b6cf1ec810cdfa7ab846ce02b26cf376c7d81a77eecb`,
+za natanko en enkratni WRONG_SCOPE operational attempt v okviru
+`P11_DA_ONE_BOUNDED_OPERATIONAL_ATTEMPT_V1`,
+pri katerem je presented scope
+`P11_DA_DIFFERENT_OPERATIONAL_SCOPE_V1`.
+Odobritev velja samo za ta exact objekt in se ne prenaša na drug objekt,
+scope, retry ali successor lifecycle."
