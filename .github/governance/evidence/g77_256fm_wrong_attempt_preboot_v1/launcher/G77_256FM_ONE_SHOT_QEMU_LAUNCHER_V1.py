@@ -112,11 +112,11 @@ EXPIRED_CLOUD_INIT_SHA256 = (
 )
 WRONG_SCOPE_CLOUD_INIT = (
     ".github/governance/evidence/"
-    "g77_256lg_wrong_scope_existing_route_admission_v1/"
-    "static/G77_256LG_CLOUD_INIT_USER_DATA_V1.yaml"
+    "g77_256li_wrong_scope_current_checkout_binding_v1/"
+    "static/G77_256LI_CLOUD_INIT_USER_DATA_V1.yaml"
 )
 WRONG_SCOPE_CLOUD_INIT_SHA256 = (
-    "da8ccacd41c5796c76d8fb0405d9dc715fe12676286e7adf883b4bbe6a02f69f"
+    "8013bbb1b59ee082c1d820639463baa53acba9cbac84658813ca23bb65f54d0c"
 )
 FK_ADAPTER = ".github/governance/evidence/g77_256fc_wrong_attempt_operational_v1/harness/G77_256FC_WRONG_ATTEMPT_VECTOR_ADAPTER_V1.py"
 CANONICAL_CHE = "aigol/runtime/canonical_che_evidence_correlation_contract_v1.py"
@@ -171,8 +171,8 @@ EXPIRED_SEED = (
 )
 WRONG_SCOPE_SEED = (
     "/home/pisarna/work/sapianta-fl/.github/governance/evidence/"
-    "g77_256lg_wrong_scope_existing_route_admission_v1/"
-    "static/SAPIANTA_WRONG_SCOPE_NOCLOUD_SEED_V1.img"
+    "g77_256li_wrong_scope_current_checkout_binding_v1/"
+    "static/SAPIANTA_WRONG_SCOPE_NOCLOUD_SEED_V2.img"
 )
 CHECKOUT = "/tmp/g77_256fm/checkout"
 LEGACY_CHECKOUT_HEAD = "7dce67ec18696ba0bad73130f3f7a84168f25277"
@@ -248,7 +248,7 @@ EXPECTED_ASSET_SHA256 = {
     WRONG_PROVENANCE_SEED: "4154ec58b7ebf46299ccc495a0a1232b7e31f67221f987b6fe7959f8d5593c7c",
     FUTURE_SEED: "6998d4cdaff3617b9e2c29f17318a220619fc718d0d9f9168b08e614cfdf0418",
     EXPIRED_SEED: "81011b08aabb7052a14dc4f81ec51536c551cad97441563f846edbe778728004",
-    WRONG_SCOPE_SEED: "f274348c88d001c8dbc80684026185a2c3fef638cbedf1698f1ca4bb301b2b16",
+    WRONG_SCOPE_SEED: "975f38f4965038e2631341490369c6d0f8f5c36554f2f90041d66f9101fb5fdd",
     LEGACY_CLOUD_INIT: LEGACY_CLOUD_INIT_SHA256,
     LEGACY_SEED: "966f1910bbffe20fa18c4cee56ff61dcbb069348e2929bfda74e029a9dc0ec58",
 }
