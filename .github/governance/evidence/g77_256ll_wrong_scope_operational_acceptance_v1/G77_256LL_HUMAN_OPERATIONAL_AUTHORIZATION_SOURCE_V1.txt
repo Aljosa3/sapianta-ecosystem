@@ -1,0 +1,53 @@
+The Human has independently authenticated G77-256LK and has explicitly
+approved the exact sealed LK WRONG_SCOPE decision object for the bounded
+one-shot operational acceptance attempt defined below.
+
+HUMAN_DECISION = APPROVE_EXACTLY_THIS_SEALED_OBJECT
+
+AUTHORIZED_DECISION_OBJECT_ID =
+G77_256LK_WRONG_SCOPE_PHASE_A_DECISION_OBJECT_001
+
+AUTHORIZED_CANONICAL_OPERATION_ID =
+G77_256LK_E05_WRONG_SCOPE_DENIAL_BEFORE_P11_ENTRY_001
+
+AUTHORIZED_VECTOR = WRONG_SCOPE
+
+AUTHORIZED_OPERATION_ATTEMPT_MAXIMUM = 1
+AUTHORIZED_RETRY_COUNT = 0
+AUTHORIZED_OPERATIONAL_REPLAY_COUNT = 0
+AUTHORIZED_REPAIR_RETRY_COUNT = 0
+
+IMPORTANT HASH DISTINCTION:
+
+The authenticated whole-file SHA-256 observed independently by the Human is:
+
+DECISION_OBJECT_FILE_SHA256 =
+4e263a945d3ab5bd0e4eab398df232c891347396b3fd4f7c34b83d91bf5a4adc
+
+The LK G48 report separately identifies the canonical inner SHA-256 as:
+
+DECISION_OBJECT_CANONICAL_INNER_SHA256 =
+c50473b9089c66363b7a9310e55b382d8e95adebef36c7bf734e6adc39a305fc
+
+DO NOT conflate these two hashes.
+
+Authenticate both using their existing authenticated repository semantics.
+Do not invent a new hash interpretation.
+
+This Human decision authorizes ONLY the exact authenticated sealed object,
+its exact canonical operation, exactly one fresh authority instance, and
+at most one operational attempt.
+
+This Human decision does NOT authorize:
+- any second attempt,
+- retry,
+- operational replay,
+- repair-and-rerun,
+- another vector,
+- another decision object,
+- another operation,
+- scope widening,
+- production redesign,
+- architectural expansion,
+- bypass of fail-closed controls,
+- reuse of consumed authority.
