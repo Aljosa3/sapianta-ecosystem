@@ -95,8 +95,8 @@ def test_lq_lr_nonreuse_and_historical_unknown_preserved() -> None:
 def test_receipt_namespace_is_fresh_empty_and_nonoperational() -> None:
     context = V.load_canonical(V.CONTEXT)
     checkpoint = V.load_canonical(V.READINESS)["checkpoint"]
-    observation = V.GL.validate_bound_observation(
-        V.ROOT, context, checkpoint["receipt_parent_claim"]
+    observation = V.validate_replay_safe_receipt_claim(
+        context, checkpoint["receipt_parent_claim"]
     )
     assert observation["receipt_parent_ready"] is True
     assert observation["receipt_files_absent"] is True

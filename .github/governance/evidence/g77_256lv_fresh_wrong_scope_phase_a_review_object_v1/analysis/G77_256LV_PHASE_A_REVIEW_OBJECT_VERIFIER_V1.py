@@ -228,6 +228,44 @@ def zero_counters() -> dict[str, int]:
     }
 
 
+def validate_replay_safe_receipt_claim(
+    context: dict[str, Any], claim: dict[str, Any]
+) -> dict[str, Any]:
+    """Authenticate the sealed GL claim and replay its semantic state.
+
+    GL's original observation also seals ctime/inode device metadata.  Those
+    values authenticate materialization-time freshness but are not a Git
+    replay identity.  LV therefore preserves that exact sealed observation
+    while reusing the same GL/FM owner to compare every semantic state field.
+    """
+
+    owner = GL._load_existing_owner(ROOT)
+    if set(claim) != {"schema_id", "observation", "observation_sha256"}:
+        raise LVVerificationError("RECEIPT_CLAIM_ENVELOPE_INVALID")
+    observation = claim.get("observation")
+    if (
+        claim.get("schema_id") != GL.CLAIM_SCHEMA
+        or not isinstance(observation, dict)
+        or claim.get("observation_sha256") != GL._sealed_hash(owner, observation)
+    ):
+        raise LVVerificationError("RECEIPT_CLAIM_SEAL_INVALID")
+    current = GL._observed_state(
+        owner,
+        context,
+        owner.validate_receipt_parent_ready(ROOT, context),
+    )
+    replay_fields = set(observation) - {"directory_identity"}
+    if (
+        replay_fields != set(current) - {"directory_identity"}
+        or any(current[field] != observation[field] for field in replay_fields)
+        or observation.get("authority_count") != 0
+        or observation.get("operational_execution_count") != 0
+        or observation.get("receipt_namespace_unused") is not True
+    ):
+        raise LVVerificationError("RECEIPT_PARENT_SEMANTIC_STATE_CHANGED")
+    return current
+
+
 def authenticate_repository() -> dict[str, str]:
     head = git("rev-parse", "HEAD")
     remote = git("rev-parse", f"refs/remotes/origin/{BRANCH}")
@@ -856,7 +894,7 @@ def verify() -> dict[str, Any]:
         or any(checkpoint.get("operational_counters", {}).values())
     ):
         raise LVVerificationError("STATIC_READINESS_SEAL_OR_BOUNDARY_INVALID")
-    GL.validate_bound_observation(ROOT, context, checkpoint["receipt_parent_claim"])
+    validate_replay_safe_receipt_claim(context, checkpoint["receipt_parent_claim"])
 
     review_envelope = load_canonical(REVIEW)
     review = review_envelope.get("review_object")
