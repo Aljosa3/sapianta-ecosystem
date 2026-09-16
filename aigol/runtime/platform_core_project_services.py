@@ -796,6 +796,7 @@ def prepare_unified_human_interface_project_context(
     ):
         from aigol.runtime.constitutional_reuse_proof_production_gate import (
             READY_FOR_FRESH_G47,
+            REQUIRED,
             classify_reuse_proof_applicability,
             prepare_reuse_proof_production_admission,
             validate_reuse_proof_applicability,
@@ -857,10 +858,54 @@ def prepare_unified_human_interface_project_context(
                 created_at=created_at,
             )
         )
+        effective_reuse_proof_input = reuse_proof_input
+        if (
+            applicability["applicability_disposition"] == REQUIRED
+            and reuse_proof_input is None
+            and reuse_proof_result is None
+        ):
+            from aigol.runtime.constitutional_reuse_proof_runtime import (
+                compose_constitutional_reuse_proof_input,
+            )
+
+            try:
+                composed_input = compose_constitutional_reuse_proof_input(
+                    proof_id=f"G63-AUTO:{session_id}:{turn_index:03d}",
+                    request=effective_message,
+                    proposed_scope=proposed_scope,
+                    repository_root=workspace,
+                    workspace_state=prior_state,
+                    created_at=created_at,
+                    expected_baseline=applicability["authenticated_baseline"],
+                )
+                if isinstance(reuse_proof_applicability, dict):
+                    if applicability["authenticated_baseline"] is not None:
+                        effective_reuse_proof_input = composed_input
+                else:
+                    baseline = deepcopy(composed_input["authenticated_baseline"])
+                    applicability = classify_reuse_proof_applicability(
+                        applicability_id=f"G64-04-APP:{session_id}:{turn_index:03d}",
+                        request_reference=f"{session_id}:{turn_index:03d}",
+                        request_hash=replay_hash(effective_message),
+                        project_objective_reference=project_objective["artifact_type"],
+                        project_objective_hash=project_objective["artifact_hash"],
+                        authenticated_baseline=baseline,
+                        proposed_scope=proposed_scope,
+                        change_characteristics=_reuse_proof_change_characteristics(
+                            effective_message,
+                            reuse_proof_exemption_code,
+                        ),
+                        exemption_code=reuse_proof_exemption_code,
+                        exemption_evidence=reuse_proof_exemption_evidence,
+                        created_at=created_at,
+                    )
+                    effective_reuse_proof_input = composed_input
+            except FailClosedRuntimeError:
+                effective_reuse_proof_input = None
         reuse_proof_production_admission = prepare_reuse_proof_production_admission(
             admission_id=f"G64-04-ADMISSION:{session_id}:{turn_index:03d}",
             applicability_artifact=applicability,
-            proof_input=reuse_proof_input,
+            proof_input=effective_reuse_proof_input,
             proof_result=reuse_proof_result,
             repository_root=workspace,
             workspace_state=prior_state,

@@ -9,8 +9,10 @@ or replace Development Governance.
 from __future__ import annotations
 
 from copy import deepcopy
+import hashlib
 from pathlib import Path
 import re
+import subprocess
 from typing import Any
 
 from aigol.runtime.capability_audit_runtime import (
@@ -25,9 +27,16 @@ from aigol.runtime.platform_capability_certification_registry import (
     lookup_platform_capability_certification,
 )
 from aigol.runtime.platform_capability_composition_coverage import (
+    COVERAGE_COMPLETE,
+    NO_GAP_EXISTING_CAPABILITY_SUFFICIENT,
     PLATFORM_CAPABILITY_COMPOSITION_COVERAGE_VERSION,
     discover_platform_capability_composition_coverage,
     validate_platform_capability_composition_coverage,
+)
+from aigol.runtime.platform_development_composition_plan import (
+    DEVELOPMENT_COMPOSITION_PLAN_NO_IMPLEMENTATION_REQUIRED,
+    compose_platform_development_plan,
+    validate_platform_development_composition_plan,
 )
 from aigol.runtime.platform_core_project_services import (
     PLATFORM_CORE_HUMAN_INTENT_CAPABILITY_RESOLUTION_VERSION,
@@ -221,6 +230,12 @@ BOUNDARY_FLAGS = {
 _SHA1_PATTERN = re.compile(r"^[0-9a-f]{40}$")
 _SHA256_PATTERN = re.compile(r"^sha256:[0-9a-f]{64}$")
 
+_OWNER_COMPOSITION_GOVERNING_SOURCES = (
+    "docs/governance/G63_02_CONSTITUTIONAL_REUSE_PROOF_FRAMEWORK_REPORT_V1.md",
+    "docs/governance/G63_04_CONSTITUTIONAL_REUSE_PROOF_RUNTIME_COMPOSITION_AUDIT_REPORT_V1.md",
+    "docs/governance/G64_03_CONSTITUTIONAL_REUSE_PROOF_PRODUCTION_INTEGRATION_DESIGN_REPORT_V1.md",
+)
+
 
 def create_responsibility_signature(
     *,
@@ -282,6 +297,471 @@ def validate_responsibility_signature(artifact: dict[str, Any]) -> dict[str, Any
             _require_string(candidate.get(field), field)
     _verify_named_hash(candidate, "signature_hash", "responsibility signature")
     return deepcopy(candidate)
+
+
+def compose_constitutional_reuse_proof_input(
+    *,
+    proof_id: str,
+    request: str,
+    proposed_scope: dict[str, Any],
+    repository_root: str | Path,
+    created_at: str,
+    workspace_state: dict[str, Any] | None = None,
+    expected_baseline: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Compose one existing G63 input from authenticated read-only owners.
+
+    This bounded owner path intentionally supports only the strongest existing
+    G20 disposition: one unchanged certified capability is sufficient. Every
+    other disposition remains incomplete and fails closed for caller or Human
+    evidence instead of being promoted into a synthetic proof.
+    """
+
+    query = _require_string(request, "request")
+    scope = _require_dict(proposed_scope, "proposed_scope")
+    root = Path(repository_root).resolve()
+    if not root.is_dir():
+        raise FailClosedRuntimeError("reuse proof repository root is unavailable")
+
+    baseline = _acquire_authenticated_owner_baseline(
+        root=root,
+        expected_baseline=expected_baseline,
+    )
+    coverage = validate_platform_capability_composition_coverage(
+        discover_platform_capability_composition_coverage(
+            query=query,
+            workspace_state=workspace_state,
+            governance_root=root,
+            created_at=created_at,
+        )
+    )
+    if coverage.get("coverage_status") != COVERAGE_COMPLETE:
+        raise FailClosedRuntimeError(
+            "material capability coverage evidence is unavailable or incomplete"
+        )
+    if coverage.get("uncovered_residual_gap_count") != 0:
+        raise FailClosedRuntimeError("material capability coverage contains a residual gap")
+    minimal = _require_dict(
+        coverage.get("minimal_required_platform_extension"),
+        "minimal_required_platform_extension",
+    )
+    if minimal.get("classification") != NO_GAP_EXISTING_CAPABILITY_SUFFICIENT:
+        raise FailClosedRuntimeError(
+            "owner evidence does not prove one unchanged certified reuse target"
+        )
+    recommended = _canonical_strings(
+        minimal.get("recommended_components"),
+        "recommended_components",
+        require_nonempty=True,
+    )
+    if len(recommended) != 1:
+        raise FailClosedRuntimeError("owner evidence has no unique reuse target")
+    candidate_id = recommended[0]
+
+    discovered = coverage.get("discovered_reusable_capabilities")
+    if not isinstance(discovered, list) or len(discovered) != 1:
+        raise FailClosedRuntimeError("owner evidence has contradictory candidate cardinality")
+    discovered_candidate = _require_dict(discovered[0], "discovered capability")
+    if (
+        discovered_candidate.get("capability_identifier") != candidate_id
+        or discovered_candidate.get("certified") is not True
+    ):
+        raise FailClosedRuntimeError("owner evidence contradicts the selected reuse target")
+
+    record = lookup_platform_capability_certification(candidate_id)
+    if record is None or record.get("superseded_by") is not None:
+        raise FailClosedRuntimeError("selected reuse target is not currently certified")
+    if (
+        discovered_candidate.get("certification_record_hash")
+        != record["certification_record_hash"]
+        or discovered_candidate.get("implementation_owner")
+        != record["implementation_owner"]
+    ):
+        raise FailClosedRuntimeError("certification owner evidence is contradictory")
+
+    discovery = coverage.get("candidate_capability_discovery")
+    goal_target = (
+        str(discovery.get("selected_goal_target") or "general_project_goal")
+        if isinstance(discovery, dict)
+        else "general_project_goal"
+    )
+    knowledge = validate_platform_knowledge_response(
+        query_platform_knowledge(
+            query=query,
+            capability_identifier=candidate_id,
+            goal_target=goal_target,
+            workspace_state=workspace_state,
+        )
+    )
+    if (
+        knowledge.get("canonical_capability_identifier") != candidate_id
+        or knowledge.get("certification_record_hash")
+        != record["certification_record_hash"]
+        or knowledge.get("capability_owner") != record["capability_owner"]
+        or knowledge.get("architectural_owner") != record["architectural_owner"]
+        or knowledge.get("implementation_owner") != record["implementation_owner"]
+        or knowledge.get("is_certified") is not True
+    ):
+        raise FailClosedRuntimeError("Platform Knowledge contradicts certification evidence")
+
+    plan = validate_platform_development_composition_plan(
+        compose_platform_development_plan(
+            capability_coverage_artifact=coverage,
+            created_at=created_at,
+        )
+    )
+    if (
+        plan.get("plan_status")
+        != DEVELOPMENT_COMPOSITION_PLAN_NO_IMPLEMENTATION_REQUIRED
+        or plan.get("implementation_required") is not False
+        or plan.get("residual_capability_gaps")
+    ):
+        raise FailClosedRuntimeError("G20 planning evidence contradicts unchanged reuse")
+
+    implementation_path = _implementation_owner_path(
+        root,
+        _require_string(record.get("implementation_owner"), "implementation_owner"),
+    )
+    if implementation_path is None:
+        raise FailClosedRuntimeError("certified implementation owner is unavailable")
+
+    matrix = build_capability_matrix(detect_capabilities(root))
+    conformance = run_conformance_check(root)
+    if conformance.get("critical_violations"):
+        raise FailClosedRuntimeError("critical governance conformance violation blocks proof")
+
+    evidence_refs = _owner_evidence_references(
+        coverage=coverage,
+        knowledge=knowledge,
+        plan=plan,
+        record=record,
+        capability_matrix=matrix,
+        conformance=conformance,
+    )
+    route_descriptor = next(
+        (
+            deepcopy(item)
+            for item in coverage.get("platform_query_route_descriptors", [])
+            if isinstance(item, dict)
+            and item.get("service_identifier") == candidate_id
+        ),
+        None,
+    )
+    if route_descriptor is not None and (
+        route_descriptor.get("implementation_owner") != record["implementation_owner"]
+    ):
+        raise FailClosedRuntimeError("route ownership contradicts certification evidence")
+
+    signature = create_responsibility_signature(
+        semantic_responsibility=query,
+        inputs=["authenticated project objective", "authenticated owner evidence"],
+        outputs=["existing certified capability reuse disposition"],
+        state_and_persistence="No new state or persistence; reuse is read-only evidence composition.",
+        authority="Development Governance owns reuse-proof completeness and semantics.",
+        non_authorities=[
+            "does not authorize implementation",
+            "does not authorize execution",
+            "does not replace source fact owners",
+        ],
+        boundary="Consumes owner facts without transferring source-owner authority.",
+        determinism="Canonical owner normalization, fail-closed validation, and replay hashing.",
+        evidence_and_replay="Preserves owner artifact hashes, references, limitations, and uncertainty.",
+        activation_and_lifecycle="Runs at the existing Project Services pre-G64 seam only when proof is required.",
+    )
+    search_manifest = _owner_search_manifest(
+        baseline=baseline,
+        coverage=coverage,
+        record=record,
+        route_descriptor=route_descriptor,
+    )
+    ownership_roles = {
+        "architectural_owner": record["architectural_owner"],
+        "authority_owner": record["capability_owner"],
+        "implementation_owner": record["implementation_owner"],
+        "state_owner": record["capability_owner"],
+        "registry_owner": "PLATFORM_CAPABILITY_CERTIFICATION_REGISTRY",
+        "evidence_replay_owner": "GOVERNANCE_REPORT_EVIDENCE",
+        "lifecycle_owner": "DEVELOPMENT_GOVERNANCE",
+        "human_owner": "HUMAN_AUTHORITY",
+        "consumers": ["CONSTITUTIONAL_REUSE_PROOF_RUNTIME"],
+    }
+    compatibility = {
+        dimension: "DIRECTLY_COMPATIBLE" for dimension in COMPATIBILITY_DIMENSIONS
+    }
+    target_layers = scope.get("target_layers") or ["L3_GOVERNANCE_SYSTEM"]
+    return create_constitutional_reuse_proof_input(
+        proof_id=proof_id,
+        responsibility_signature=signature,
+        authenticated_baseline=baseline,
+        target_layers=target_layers,
+        search_manifest=search_manifest,
+        capability_inventory=[
+            {
+                "candidate_id": candidate_id,
+                "candidate_type": "CERTIFIED_RUNTIME",
+                "source_reference": record["certification_evidence"][0],
+                "source_hash": record["certification_record_hash"],
+                "maturity": [
+                    "CERTIFIED_METADATA",
+                    "EVIDENCE_PRODUCING",
+                    "RUNTIME_BOUND",
+                ],
+                "active": True,
+                "public_contract": True,
+            }
+        ],
+        ownership_matrix=[{"candidate_id": candidate_id, "roles": ownership_roles}],
+        registry_matrix=[
+            {
+                "candidate_id": candidate_id,
+                "registry_id": "PLATFORM_CAPABILITY_CERTIFICATION_REGISTRY",
+                "registry_version": PLATFORM_CAPABILITY_CERTIFICATION_REGISTRY_VERSION,
+                "record_hash": record["certification_record_hash"],
+                "status": record["certification_status"],
+                "runtime_bound": True,
+                "invocable": route_descriptor is not None,
+                "authority": "GOVERNANCE_METADATA_ONLY",
+                "consumers": ["PLATFORM_KNOWLEDGE_RUNTIME"],
+            }
+        ],
+        implementation_usage_graph=[
+            {
+                "candidate_id": candidate_id,
+                "module": record["implementation_owner"],
+                "api": (
+                    route_descriptor.get("adapter_name")
+                    if route_descriptor is not None
+                    else "CERTIFIED_MODULE_PUBLIC_SURFACE"
+                ),
+                "status": "ACTIVE_CERTIFIED",
+                "reachable": True,
+                "default_route": False,
+                "effects": ["CERTIFIED_BEHAVIOR_UNCHANGED"],
+                "consumers": ["CONSTITUTIONAL_REUSE_PROOF_RUNTIME"],
+                "assurance_refs": evidence_refs,
+                "history_disposition": "CURRENT_NOT_SUPERSEDED",
+            }
+        ],
+        equivalence_matrix=[
+            {
+                "candidate_id": candidate_id,
+                "disposition": "EXACT_EQUIVALENT",
+                "matched_fields": list(RESPONSIBILITY_FIELDS),
+                "mismatched_fields": [],
+                "evidence_refs": evidence_refs,
+            }
+        ],
+        compatibility_matrix=[
+            {
+                "candidate_id": candidate_id,
+                "dimensions": compatibility,
+                "evidence_refs": evidence_refs,
+            }
+        ],
+        extension_ladder=[],
+        duplicate_matrix=[],
+        negative_evidence={
+            "reuse_rejected": [],
+            "extend_rejected": [],
+            "consolidate_rejected": [],
+            "absence_scope": [],
+            "proposed_ownership": {},
+        },
+        evolution_evidence={
+            **{field: True for field in EVOLUTION_FIELDS},
+            "evidence_refs": evidence_refs,
+        },
+        authority_and_dependency_delta={
+            "authority_delta": "NONE",
+            "ownership_delta": "NONE",
+            "dependency_delta": "NONE",
+            "evidence_refs": evidence_refs,
+        },
+        migration_rollback_deprecation={
+            "migration": "NOT_REQUIRED__EXISTING_CERTIFIED_CAPABILITY_REUSED_UNCHANGED",
+            "rollback": "STOP_REUSE_WITHOUT_MUTATING_THE_EXISTING_OWNER",
+            "deprecation": "NO_EXISTING_SURFACE_DEPRECATED",
+            "evidence_refs": evidence_refs,
+        },
+        next_checkpoints=["G47_FRESH_DEVELOPMENT_GOVERNANCE_ASSESSMENT"],
+        known_limitations=[
+            "General keyword knowledge may identify additional related capabilities; only the G20 unique certified target and its explicit registry lookup are authoritative here.",
+            "External dynamic evidence is not inferred from local repository evidence.",
+            "Repository-only evidence is not operational proof.",
+        ],
+        created_at=created_at,
+    )
+
+
+def _acquire_authenticated_owner_baseline(
+    *,
+    root: Path,
+    expected_baseline: dict[str, Any] | None,
+) -> dict[str, Any]:
+    def git_value(*args: str) -> str:
+        completed = subprocess.run(
+            ["git", *args],
+            cwd=root,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        if completed.returncode != 0:
+            raise FailClosedRuntimeError("authenticated Git evidence is unavailable")
+        return completed.stdout.strip()
+
+    observed_identity = {
+        "commit": git_value("rev-parse", "HEAD"),
+        "parent": git_value("rev-parse", "HEAD^"),
+        "tree": git_value("rev-parse", "HEAD^{tree}"),
+        "worktree_clean": not bool(git_value("status", "--porcelain")),
+    }
+    if observed_identity["worktree_clean"] is not True:
+        raise FailClosedRuntimeError("reuse proof baseline must be clean")
+
+    if expected_baseline is not None:
+        baseline = _normalize_baseline(expected_baseline)
+        for field in ("commit", "parent", "tree", "worktree_clean"):
+            if baseline[field] != observed_identity[field]:
+                raise FailClosedRuntimeError("authenticated baseline evidence is contradictory")
+        _verify_governing_source_bytes(root, baseline["governing_sources"])
+        return baseline
+
+    sources = []
+    for relative in _OWNER_COMPOSITION_GOVERNING_SOURCES:
+        path = root / relative
+        if not path.is_file():
+            raise FailClosedRuntimeError("material governing source is unavailable")
+        sources.append(
+            {
+                "path": relative,
+                "sha256": "sha256:" + hashlib.sha256(path.read_bytes()).hexdigest(),
+            }
+        )
+    return _normalize_baseline(
+        {
+            **observed_identity,
+            "governing_sources": sources,
+            "known_limitations": [
+                "The baseline authenticates local Git objects and governing source bytes only.",
+                "No remote or operational state is inferred by the composition runtime.",
+            ],
+        }
+    )
+
+
+def _verify_governing_source_bytes(
+    root: Path,
+    sources: list[dict[str, str]],
+) -> None:
+    for source in sources:
+        path = root / source["path"]
+        if not path.is_file():
+            raise FailClosedRuntimeError("authenticated governing source is unavailable")
+        observed = "sha256:" + hashlib.sha256(path.read_bytes()).hexdigest()
+        if observed != source["sha256"]:
+            raise FailClosedRuntimeError("authenticated governing source hash mismatch")
+
+
+def _implementation_owner_path(root: Path, owner: str) -> Path | None:
+    relative = Path(*owner.split("."))
+    module_path = root / relative.with_suffix(".py")
+    package_path = root / relative / "__init__.py"
+    if module_path.is_file():
+        return module_path
+    if package_path.is_file():
+        return package_path
+    return None
+
+
+def _owner_evidence_references(
+    *,
+    coverage: dict[str, Any],
+    knowledge: dict[str, Any],
+    plan: dict[str, Any],
+    record: dict[str, Any],
+    capability_matrix: dict[str, Any],
+    conformance: dict[str, Any],
+) -> list[str]:
+    references = [
+        coverage["artifact_hash"],
+        knowledge["artifact_hash"],
+        plan["artifact_hash"],
+        record["certification_record_hash"],
+        capability_matrix["matrix_hash"],
+        replay_hash(conformance),
+        *record["certification_evidence"],
+    ]
+    return sorted({str(item) for item in references if str(item).strip()})
+
+
+def _owner_search_manifest(
+    *,
+    baseline: dict[str, Any],
+    coverage: dict[str, Any],
+    record: dict[str, Any],
+    route_descriptor: dict[str, Any] | None,
+) -> list[dict[str, Any]]:
+    searched = {
+        "CONSTITUTIONAL_GOVERNANCE": (
+            "authenticated governing source bytes and governance conformance",
+            "owner source hashing and existing conformance engine",
+        ),
+        "PCBV31": (
+            "authenticated Git commit, parent, tree, and clean status",
+            "read-only Git object and status inspection",
+        ),
+        "RUNTIME_API": (
+            "certified implementation owner and public module surface",
+            "certification registry and implementation-owner path validation",
+        ),
+        "REGISTRY_ROUTING": (
+            "certification registry and Platform route descriptors",
+            "existing G15 registry and Platform router metadata",
+        ),
+        "TEST_REPLAY_MIGRATION": (
+            "certification, capability-audit, and no-migration owner evidence",
+            "existing certification references and pure capability audit",
+        ),
+        "GIT_HISTORY": (
+            "current immutable Git identity and direct parent",
+            "read-only Git object inspection",
+        ),
+    }
+    manifest = []
+    for evidence_class in SEARCH_EVIDENCE_CLASSES:
+        if evidence_class in searched:
+            scope, method = searched[evidence_class]
+            observation = (
+                f"owner evidence authenticated for {record['capability_identifier']} "
+                f"at {baseline['commit']} with coverage {coverage['artifact_hash']}"
+            )
+            if evidence_class == "REGISTRY_ROUTING" and route_descriptor is None:
+                observation += "; no route descriptor exists and registry-only reuse is preserved"
+            manifest.append(
+                {
+                    "evidence_class": evidence_class,
+                    "scope": scope,
+                    "method": method,
+                    "observation": observation,
+                    "status": "SEARCHED",
+                    "material": True,
+                    "limitation": None,
+                }
+            )
+            continue
+        manifest.append(
+            {
+                "evidence_class": evidence_class,
+                "scope": "unchanged certified local capability reuse",
+                "method": "bounded G63 applicability reduction",
+                "observation": "no new caller, external effect, dynamic source, or legacy alternate is asserted",
+                "status": "NOT_APPLICABLE",
+                "material": False,
+                "limitation": "A scope change would require new owner evidence and recomposition.",
+            }
+        )
+    return manifest
 
 
 def create_constitutional_reuse_proof_input(
@@ -1466,6 +1946,7 @@ __all__ = [
     "EXTENSION_RUNGS",
     "PROOF_COMPLETE_FOR_EVOLUTION_PLANNING",
     "REUSE",
+    "compose_constitutional_reuse_proof_input",
     "create_constitutional_reuse_proof_input",
     "create_responsibility_signature",
     "evaluate_constitutional_reuse_proof",
