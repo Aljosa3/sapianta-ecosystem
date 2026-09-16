@@ -7,6 +7,9 @@ from dataclasses import dataclass
 from typing import Any
 
 from aigol.runtime.first_real_operator_usage import OPERATOR_COMPLETED, run_first_real_operator_usage
+from aigol.runtime.g76_revision_4_ratification_operator_binding_v1 import (
+    run_g76_revision_4_ratification_operator_binding_v1,
+)
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.transport.serialization import canonical_serialize, replay_hash
 
@@ -227,14 +230,47 @@ def reconstruct_runtime_operator_cli_lineage(
     return lineage
 
 
-def main(argv: list[str] | None = None) -> int:
+def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="python -m aigol.runtime.operator_cli")
-    parser.add_argument("prompt")
+    parser.add_argument("prompt", nargs="?")
     parser.add_argument("--operator-id", default=DEFAULT_OPERATOR_ID)
     parser.add_argument("--cli-id", default=DEFAULT_CLI_INVOCATION_ID)
     parser.add_argument("--created-at", default=DEFAULT_CREATED_AT)
     parser.add_argument("--timeout-seconds", type=int, default=20)
+    parser.add_argument(
+        "--g76-r4-ratification",
+        action="store_true",
+        help=(
+            "Present the exact G76 Revision 4 Human boundary through canonical "
+            "HIC/CHE and accept only its explicit positive Human command."
+        ),
+    )
+    parser.add_argument("--workspace", default=".")
+    parser.add_argument("--runtime-root", default=".runtime/g76-r4-ratification")
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = build_parser()
     args = parser.parse_args(argv)
+    if args.g76_r4_ratification:
+        if args.prompt is not None:
+            parser.error(
+                "the G76 Revision 4 operator binding does not accept an ordinary prompt"
+            )
+        run_g76_revision_4_ratification_operator_binding_v1(
+            repository_root=args.workspace,
+            session_identity=args.cli_id,
+            human_actor_identity=args.operator_id,
+            workspace_identity=args.workspace,
+            runtime_scope_identity=args.runtime_root,
+            created_at=args.created_at,
+            input_reader=input,
+            output_writer=print,
+        )
+        return 0
+    if args.prompt is None:
+        parser.error("prompt is required unless --g76-r4-ratification is selected")
     result = run_runtime_operator_cli(
         cli_invocation_id=args.cli_id,
         operator_id=args.operator_id,
