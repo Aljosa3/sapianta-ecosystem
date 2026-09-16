@@ -137,6 +137,7 @@ from aigol.runtime.canonical_human_entry_contract_v1 import (
     validate_canonical_che_response_envelope_v1,
 )
 from aigol.runtime.canonical_human_authority_act_contract_v1 import (
+    APPROVAL,
     AUTHORIZATION,
     CLARIFICATION_RESPONSE,
     COMMITMENT,
@@ -5766,6 +5767,25 @@ def _validate_canonical_che_expected_owner_revision_v1(
 ) -> None:
     if continuation is None:
         return
+    if continuation.expected_owner_state_identity.startswith(
+        "G70-04-G76-R4-OWNER-STATE-"
+    ):
+        from aigol.runtime.g76_revision_4_ratification_owner_composition_v1 import (
+            constitutional_ratification_owner_state_identity_v1,
+        )
+
+        expected = constitutional_ratification_owner_state_identity_v1(
+            continuation.expected_next_act_identity,
+            continuation.expected_owner_revision,
+        )
+        if (
+            continuation.expected_owner_state_identity != expected
+            or continuation.conversation_identity != expected
+        ):
+            raise FailClosedRuntimeError(
+                "CHE constitutional ratification owner revision is stale"
+            )
+        return
     workspace_state = latest_platform_core_workspace_state(
         Path(request.runtime_scope_identity) / request.session_identity
     )
@@ -5800,6 +5820,7 @@ def _canonical_che_authority_kind_for_owner_reply_v1(
         "EXACT_HUMAN_CANDIDATE_CONFIRMATION_ACT": CONFIRMATION,
         "EXACT_HUMAN_OBJECTIVE_COMMIT_ACT": COMMITMENT,
         BOUNDED_EVIDENCE_REDUCTION_POLICY_AUTHORIZATION: AUTHORIZATION,
+        "RATIFY_CONSTITUTIONAL_AMENDMENT": APPROVAL,
     }
     if permitted_reply_kind not in mapping:
         raise FailClosedRuntimeError(
@@ -5858,6 +5879,17 @@ def _validate_canonical_che_authority_owner_binding_v1(
     authority_act: CanonicalHumanAuthorityActV1,
 ) -> CanonicalHumanAuthorityActV1:
     """Authenticate act bindings against current owner-issued evidence."""
+
+    if continuation.expected_owner_state_identity.startswith(
+        "G70-04-G76-R4-OWNER-STATE-"
+    ):
+        from aigol.runtime.g76_revision_4_ratification_owner_composition_v1 import (
+            validate_constitutional_ratification_che_owner_binding_v1,
+        )
+
+        return validate_constitutional_ratification_che_owner_binding_v1(
+            request, continuation, authority_act
+        )
 
     workspace_state = latest_platform_core_workspace_state(
         Path(request.runtime_scope_identity) / request.session_identity
@@ -6792,6 +6824,223 @@ def _canonical_che_response_from_owner_result(
     )
 
 
+def _canonical_che_constitutional_ratification_projection_v1(
+    presentation: dict[str, Any],
+    *,
+    prior_continuation: CanonicalContinuationEnvelopeV1 | None,
+) -> tuple[CanonicalHumanEntryOwnerTransitionV1, str]:
+    """Project the existing G70-04 owner boundary into the sole CHE."""
+
+    from aigol.runtime.constitutional_human_ratification_contract_v1 import (
+        CONSTITUTIONAL_AMENDMENT_RATIFICATION_SCOPE,
+        CONSTITUTIONAL_GOVERNANCE_OWNER,
+        RATIFY_CONSTITUTIONAL_AMENDMENT,
+    )
+    from aigol.runtime.g76_revision_4_ratification_owner_composition_v1 import (
+        G76_REVISION_4_OWNER_COMPOSITION_VERSION,
+        G76_REVISION_4_RATIFICATION_OWNER_STATUS,
+        constitutional_ratification_owner_state_identity_v1,
+    )
+
+    expected_keys = {
+        "contract_version",
+        "owner_status",
+        "producing_owner",
+        "conversation_identity",
+        "owner_state_identity",
+        "proposal_revision",
+        "proposal_identity",
+        "proposal_digest",
+        "assessment_identity",
+        "assessment_digest",
+        "assessment_classification",
+        "authority_kind",
+        "authority_scope",
+        "ratification_payload",
+        "source_digests",
+    }
+    if set(presentation) != expected_keys or prior_continuation is not None:
+        raise FailClosedRuntimeError(
+            "CHE constitutional ratification presentation is malformed"
+        )
+    revision = presentation["proposal_revision"]
+    assessment_identity = presentation["assessment_identity"]
+    if not isinstance(revision, int) or isinstance(revision, bool) or revision < 1:
+        raise FailClosedRuntimeError(
+            "CHE constitutional ratification proposal revision is invalid"
+        )
+    if not isinstance(assessment_identity, str) or not assessment_identity:
+        raise FailClosedRuntimeError(
+            "CHE constitutional ratification assessment identity is invalid"
+        )
+    expected_state = constitutional_ratification_owner_state_identity_v1(
+        assessment_identity, revision
+    )
+    payload = presentation["ratification_payload"]
+    bindings = (
+        (presentation["contract_version"], G76_REVISION_4_OWNER_COMPOSITION_VERSION),
+        (presentation["owner_status"], G76_REVISION_4_RATIFICATION_OWNER_STATUS),
+        (presentation["producing_owner"], CONSTITUTIONAL_GOVERNANCE_OWNER),
+        (presentation["conversation_identity"], expected_state),
+        (presentation["owner_state_identity"], expected_state),
+        (presentation["authority_kind"], APPROVAL),
+        (
+            presentation["authority_scope"],
+            CONSTITUTIONAL_AMENDMENT_RATIFICATION_SCOPE,
+        ),
+    )
+    if any(actual != expected for actual, expected in bindings):
+        raise FailClosedRuntimeError(
+            "CHE constitutional ratification owner binding is invalid"
+        )
+    if (
+        not isinstance(payload, dict)
+        or payload.get("ratification_command")
+        != RATIFY_CONSTITUTIONAL_AMENDMENT
+        or payload.get("impact_assessment_identity") != assessment_identity
+        or payload.get("impact_assessment_digest")
+        != presentation["assessment_digest"]
+        or payload.get("amendment_proposal_identity")
+        != presentation["proposal_identity"]
+        or payload.get("amendment_proposal_digest")
+        != presentation["proposal_digest"]
+    ):
+        raise FailClosedRuntimeError(
+            "CHE constitutional ratification payload projection is invalid"
+        )
+    transition = CanonicalHumanEntryOwnerTransitionV1(
+        contract_version=CANONICAL_CHE_OWNER_TRANSITION_CONTRACT_VERSION,
+        producing_owner=CONSTITUTIONAL_GOVERNANCE_OWNER,
+        owner_state_identity=expected_state,
+        owner_revision_before=revision - 1,
+        owner_revision_after=revision,
+        response_disposition=PENDING_DISPOSITION,
+        advancement_outcome=ADVANCED,
+        next_act_identity=assessment_identity,
+        next_act_kind=RATIFY_CONSTITUTIONAL_AMENDMENT,
+        next_act_target_identity=assessment_identity,
+        next_act_target_digest=presentation["assessment_digest"],
+        next_act_expected_owner_revision=revision,
+        permitted_controls=(APPROVAL,),
+        payload_constraints={
+            "canonical_authority_act_binding": {
+                "authority_kind": APPROVAL,
+                "target_identity": assessment_identity,
+                "target_revision": revision,
+                "producing_owner": HUMAN_AUTHORITY_OWNER,
+                "expected_owner": CONSTITUTIONAL_GOVERNANCE_OWNER,
+                "authority_scope": CONSTITUTIONAL_AMENDMENT_RATIFICATION_SCOPE,
+            },
+            "ratification_payload": payload,
+        },
+        exact_human_act_required=True,
+        cancellation_permitted=False,
+        interruption_permitted=False,
+        refusal_identity=None,
+        refusal_type=NOT_APPLICABLE,
+        refusal_status=NOT_APPLICABLE,
+        terminal_identity=None,
+        terminal_type=NOT_APPLICABLE,
+        terminal_status=NOT_APPLICABLE,
+        retryability=NOT_APPLICABLE,
+        recovery_requirement=NOT_APPLICABLE,
+        delivery_resolution_status=DELIVERY_NOT_APPLICABLE,
+        resolved_response_identity=None,
+        resolved_response_hash=None,
+        replay_reference_status=REFERENCE_NOT_APPLICABLE,
+        certification_reference_status=REFERENCE_NOT_APPLICABLE,
+    )
+    return transition, G76_REVISION_4_RATIFICATION_OWNER_STATUS
+
+
+def _canonical_che_constitutional_ratification_result_projection_v1(
+    result: dict[str, Any],
+    *,
+    prior_continuation: CanonicalContinuationEnvelopeV1 | None,
+) -> tuple[CanonicalHumanEntryOwnerTransitionV1, str]:
+    """Project a Human-produced G70-04 result and stop before G70-05."""
+
+    from aigol.runtime.constitutional_human_ratification_contract_v1 import (
+        CONSTITUTIONAL_GOVERNANCE_OWNER,
+        ConstitutionalHumanRatificationArtifactV1,
+        validate_constitutional_human_ratification_artifact_v1,
+    )
+    from aigol.runtime.g76_revision_4_ratification_owner_composition_v1 import (
+        G76_REVISION_4_OWNER_COMPOSITION_VERSION,
+        G76_REVISION_4_RATIFICATION_RECORDED_STATUS,
+        constitutional_ratification_owner_state_identity_v1,
+    )
+
+    expected_keys = {
+        "contract_version",
+        "owner_status",
+        "producing_owner",
+        "conversation_identity",
+        "owner_state_identity",
+        "owner_revision",
+        "ratification_artifact",
+    }
+    if set(result) != expected_keys or prior_continuation is None:
+        raise FailClosedRuntimeError(
+            "CHE constitutional ratification result is malformed"
+        )
+    ratification = validate_constitutional_human_ratification_artifact_v1(
+        ConstitutionalHumanRatificationArtifactV1.from_dict(
+            result["ratification_artifact"]
+        )
+    )
+    revision = ratification.impact_assessment.amendment_proposal.proposal_revision
+    expected_state = constitutional_ratification_owner_state_identity_v1(
+        ratification.impact_assessment.assessment_identity, revision
+    )
+    bindings = (
+        (result["contract_version"], G76_REVISION_4_OWNER_COMPOSITION_VERSION),
+        (result["owner_status"], G76_REVISION_4_RATIFICATION_RECORDED_STATUS),
+        (result["producing_owner"], CONSTITUTIONAL_GOVERNANCE_OWNER),
+        (result["conversation_identity"], expected_state),
+        (result["owner_state_identity"], expected_state),
+        (result["owner_revision"], revision),
+        (prior_continuation.expected_owner_state_identity, expected_state),
+    )
+    if any(actual != expected for actual, expected in bindings):
+        raise FailClosedRuntimeError(
+            "CHE constitutional ratification result binding is invalid"
+        )
+    transition = CanonicalHumanEntryOwnerTransitionV1(
+        contract_version=CANONICAL_CHE_OWNER_TRANSITION_CONTRACT_VERSION,
+        producing_owner=CONSTITUTIONAL_GOVERNANCE_OWNER,
+        owner_state_identity=expected_state,
+        owner_revision_before=revision,
+        owner_revision_after=revision,
+        response_disposition=TERMINAL_DISPOSITION,
+        advancement_outcome=TERMINAL_ADVANCEMENT,
+        next_act_identity=None,
+        next_act_kind=None,
+        next_act_target_identity=None,
+        next_act_target_digest=None,
+        next_act_expected_owner_revision=NOT_APPLICABLE,
+        permitted_controls=(),
+        payload_constraints={},
+        exact_human_act_required=False,
+        cancellation_permitted=False,
+        interruption_permitted=False,
+        refusal_identity=None,
+        refusal_type=NOT_APPLICABLE,
+        refusal_status=NOT_APPLICABLE,
+        terminal_identity=ratification.ratification_identity,
+        terminal_type="HUMAN_RATIFICATION_RECORDED_NOT_CERTIFIED",
+        terminal_status="TERMINAL_COMPLETE",
+        retryability=NOT_RETRYABLE,
+        recovery_requirement=NO_RECOVERY_REQUIRED,
+        delivery_resolution_status=DELIVERY_NOT_APPLICABLE,
+        resolved_response_identity=None,
+        resolved_response_hash=None,
+        replay_reference_status=REFERENCE_NOT_CREATED,
+        certification_reference_status=REFERENCE_NOT_CREATED,
+    )
+    return transition, G76_REVISION_4_RATIFICATION_RECORDED_STATUS
+
+
 def _canonical_che_conversation_owner_projection_v1(
     request: CanonicalHumanEntryRequestEnvelopeV1,
     owner_result: dict[str, Any],
@@ -6801,6 +7050,23 @@ def _canonical_che_conversation_owner_projection_v1(
     certification_references: tuple[str, ...],
 ) -> tuple[CanonicalHumanEntryOwnerTransitionV1, str]:
     """Project only authenticated G66/Project Services owner result shapes."""
+
+    ratification_presentation = owner_result.get(
+        "constitutional_ratification_owner_presentation"
+    )
+    if isinstance(ratification_presentation, dict):
+        return _canonical_che_constitutional_ratification_projection_v1(
+            ratification_presentation,
+            prior_continuation=prior_continuation,
+        )
+    ratification_result = owner_result.get(
+        "constitutional_ratification_owner_result"
+    )
+    if isinstance(ratification_result, dict):
+        return _canonical_che_constitutional_ratification_result_projection_v1(
+            ratification_result,
+            prior_continuation=prior_continuation,
+        )
 
     capture = owner_result.get("production_conversation_binding")
     if not isinstance(capture, dict):
@@ -7034,6 +7300,21 @@ def _canonical_che_presentations(
     owner_result: dict[str, Any], owner_status: str
 ) -> tuple[str, ...]:
     presentations: list[str] = []
+    ratification = owner_result.get(
+        "constitutional_ratification_owner_presentation"
+    )
+    if isinstance(ratification, dict):
+        presentations.extend(
+            (
+                "G76 Revision 4 Constitutional Amendment Ratification",
+                "Proposal: " + str(ratification.get("proposal_identity")),
+                "Impact Assessment: "
+                + str(ratification.get("assessment_identity")),
+                "Impact Classification: "
+                + str(ratification.get("assessment_classification")),
+                "Required Human control: APPROVAL",
+            )
+        )
     g31_presentations = owner_result.get("g31_canonical_presentations")
     if isinstance(g31_presentations, list):
         presentations.extend(

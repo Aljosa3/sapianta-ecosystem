@@ -28,6 +28,11 @@ from aigol.runtime.canonical_human_entry_contract_v1 import (
     validate_canonical_che_request_envelope_v1,
     validate_canonical_che_response_envelope_v1,
 )
+from aigol.runtime.canonical_human_authority_act_contract_v1 import (
+    CANONICAL_HUMAN_AUTHORITY_ACT_CAPABILITY,
+    CanonicalHumanAuthorityActV1,
+    validate_canonical_human_authority_act_v1,
+)
 from aigol.runtime.human_interface_runtime_entry_service import (
     run_human_interface_runtime_entry,
 )
@@ -187,6 +192,52 @@ def create_canonical_hic_text_request_v1(
         source_encoding="UTF-8",
         source_modality="TEXT",
         declared_capabilities=("TEXT_INPUT", "TEXT_PRESENTATION"),
+        metadata={"transport_profile_version": profile.conformance_version},
+        created_at=created_at,
+    )
+
+
+def create_canonical_hic_human_authority_act_request_v1(
+    *,
+    profile: CanonicalHICProfileV1,
+    human_authority_act: CanonicalHumanAuthorityActV1 | dict[str, Any],
+    continuation: CanonicalContinuationEnvelopeV1 | dict[str, Any],
+    request_identity: str,
+    order_identity: str,
+    idempotency_identity: str,
+    created_at: str,
+) -> CanonicalHumanEntryRequestEnvelopeV1:
+    """Mechanically carry one already-issued Human act through the same HIC."""
+
+    act = validate_canonical_human_authority_act_v1(human_authority_act)
+    active = validate_canonical_che_continuation_envelope_v1(continuation)
+    if (
+        act.actor_identity != active.actor_identity
+        or act.session_identity != active.session_identity
+        or act.continuation_identity != active.continuation_identity
+        or act.interaction_identity != active.interaction_identity
+        or act.conversation_identity != active.conversation_identity
+    ):
+        raise FailClosedRuntimeError(
+            "HIC Human Authority Act Continuation binding is invalid"
+        )
+    return CanonicalHumanEntryRequestEnvelopeV1(
+        contract_version=CANONICAL_CHE_REQUEST_CONTRACT_VERSION,
+        interface_identity=profile.interface_identity,
+        adapter_identity=profile.adapter_identity,
+        actor_identity=act.actor_identity,
+        actor_class=HUMAN_ACTOR,
+        session_identity=act.session_identity,
+        workspace_identity=active.workspace_identity,
+        runtime_scope_identity=active.runtime_scope_identity,
+        request_identity=request_identity,
+        source_act_identity=act.authority_act_identity,
+        order_identity=order_identity,
+        idempotency_identity=idempotency_identity,
+        source_payload=act.to_dict(),
+        source_encoding="UTF-8",
+        source_modality="STRUCTURED",
+        declared_capabilities=(CANONICAL_HUMAN_AUTHORITY_ACT_CAPABILITY,),
         metadata={"transport_profile_version": profile.conformance_version},
         created_at=created_at,
     )
