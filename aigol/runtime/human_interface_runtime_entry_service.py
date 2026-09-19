@@ -139,10 +139,13 @@ from aigol.runtime.canonical_human_entry_contract_v1 import (
 from aigol.runtime.canonical_human_authority_act_contract_v1 import (
     APPROVAL,
     AUTHORIZATION,
+    CANCEL,
     CLARIFICATION_RESPONSE,
     COMMITMENT,
     CONFIRMATION,
     HUMAN_AUTHORITY_OWNER,
+    REJECT,
+    REWORK,
     CanonicalHumanAuthorityActV1,
     bind_canonical_human_authority_act_to_che_v1,
     canonical_human_authority_act_from_request_v1,
@@ -5768,6 +5771,24 @@ def _validate_canonical_che_expected_owner_revision_v1(
     if continuation is None:
         return
     if continuation.expected_owner_state_identity.startswith(
+        "STEP46-POLICY-DEFINITION-OWNER-STATE-"
+    ):
+        from aigol.runtime.constitutional_policy_definition_profile_v1 import (
+            step46_policy_definition_owner_state_identity_v1,
+        )
+
+        expected = step46_policy_definition_owner_state_identity_v1(
+            continuation.expected_owner_revision
+        )
+        if (
+            continuation.expected_owner_state_identity != expected
+            or continuation.conversation_identity != expected
+        ):
+            raise FailClosedRuntimeError(
+                "CHE Step46 policy-definition owner revision is stale"
+            )
+        return
+    if continuation.expected_owner_state_identity.startswith(
         "G70-04-G76-R4-OWNER-STATE-"
     ):
         from aigol.runtime.g76_revision_4_ratification_owner_composition_v1 import (
@@ -5879,6 +5900,17 @@ def _validate_canonical_che_authority_owner_binding_v1(
     authority_act: CanonicalHumanAuthorityActV1,
 ) -> CanonicalHumanAuthorityActV1:
     """Authenticate act bindings against current owner-issued evidence."""
+
+    if continuation.expected_owner_state_identity.startswith(
+        "STEP46-POLICY-DEFINITION-OWNER-STATE-"
+    ):
+        from aigol.runtime.constitutional_policy_definition_profile_v1 import (
+            validate_step46_policy_definition_che_owner_binding_v1,
+        )
+
+        return validate_step46_policy_definition_che_owner_binding_v1(
+            request, continuation, authority_act
+        )
 
     if continuation.expected_owner_state_identity.startswith(
         "G70-04-G76-R4-OWNER-STATE-"
@@ -6824,6 +6856,277 @@ def _canonical_che_response_from_owner_result(
     )
 
 
+def _canonical_che_step46_policy_definition_projection_v1(
+    presentation: dict[str, Any],
+    *,
+    prior_continuation: CanonicalContinuationEnvelopeV1 | None,
+) -> tuple[CanonicalHumanEntryOwnerTransitionV1, str]:
+    """Project the exact pre-G70 Step-46 owner boundary into the sole CHE."""
+
+    from aigol.runtime.constitutional_policy_definition_profile_v1 import (
+        STEP46_POLICY_DEFINITION_AUTHORITY_CLASS,
+        STEP46_POLICY_DEFINITION_FIELDS,
+        STEP46_POLICY_DEFINITION_OUTPUT,
+        STEP46_POLICY_DEFINITION_OWNER,
+        STEP46_POLICY_DEFINITION_OWNER_STATUS,
+        STEP46_POLICY_DEFINITION_PROFILE_VERSION,
+        STEP46_POLICY_DEFINITION_SCOPE,
+        STEP46_POLICY_DEFINITION_TARGET,
+        step46_policy_definition_owner_state_identity_v1,
+    )
+
+    expected_keys = {
+        "profile_contract_version",
+        "owner_status",
+        "producing_owner",
+        "conversation_identity",
+        "owner_state_identity",
+        "target_revision",
+        "target_identity",
+        "profile_authority_class",
+        "authority_scope",
+        "required_policy_fields",
+        "permitted_authority_kinds",
+        "profile_output",
+    }
+    if set(presentation) != expected_keys or prior_continuation is not None:
+        raise FailClosedRuntimeError(
+            "CHE Step46 policy-definition presentation is malformed"
+        )
+    revision = presentation["target_revision"]
+    if not isinstance(revision, int) or isinstance(revision, bool) or revision < 1:
+        raise FailClosedRuntimeError(
+            "CHE Step46 policy-definition target revision is invalid"
+        )
+    expected_state = step46_policy_definition_owner_state_identity_v1(revision)
+    bindings = (
+        (
+            presentation["profile_contract_version"],
+            STEP46_POLICY_DEFINITION_PROFILE_VERSION,
+        ),
+        (presentation["owner_status"], STEP46_POLICY_DEFINITION_OWNER_STATUS),
+        (presentation["producing_owner"], STEP46_POLICY_DEFINITION_OWNER),
+        (presentation["conversation_identity"], expected_state),
+        (presentation["owner_state_identity"], expected_state),
+        (presentation["target_identity"], STEP46_POLICY_DEFINITION_TARGET),
+        (
+            presentation["profile_authority_class"],
+            STEP46_POLICY_DEFINITION_AUTHORITY_CLASS,
+        ),
+        (presentation["authority_scope"], STEP46_POLICY_DEFINITION_SCOPE),
+        (presentation["profile_output"], STEP46_POLICY_DEFINITION_OUTPUT),
+        (
+            presentation["required_policy_fields"],
+            list(STEP46_POLICY_DEFINITION_FIELDS),
+        ),
+        (
+            presentation["permitted_authority_kinds"],
+            [APPROVAL, REWORK, REJECT, CANCEL],
+        ),
+    )
+    if any(actual != expected for actual, expected in bindings):
+        raise FailClosedRuntimeError(
+            "CHE Step46 policy-definition owner binding is invalid"
+        )
+    transition = CanonicalHumanEntryOwnerTransitionV1(
+        contract_version=CANONICAL_CHE_OWNER_TRANSITION_CONTRACT_VERSION,
+        producing_owner=STEP46_POLICY_DEFINITION_OWNER,
+        owner_state_identity=expected_state,
+        owner_revision_before=revision - 1,
+        owner_revision_after=revision,
+        response_disposition=PENDING_DISPOSITION,
+        advancement_outcome=ADVANCED,
+        next_act_identity=STEP46_POLICY_DEFINITION_TARGET,
+        next_act_kind=STEP46_POLICY_DEFINITION_AUTHORITY_CLASS,
+        next_act_target_identity=STEP46_POLICY_DEFINITION_TARGET,
+        next_act_target_digest=replay_hash(
+            {
+                "profile_contract_version": (
+                    STEP46_POLICY_DEFINITION_PROFILE_VERSION
+                ),
+                "target_identity": STEP46_POLICY_DEFINITION_TARGET,
+                "target_revision": revision,
+            }
+        ),
+        next_act_expected_owner_revision=revision,
+        permitted_controls=(APPROVAL, REWORK, REJECT, CANCEL),
+        payload_constraints={
+            "canonical_authority_act_binding": {
+                "profile_contract_version": (
+                    STEP46_POLICY_DEFINITION_PROFILE_VERSION
+                ),
+                "profile_authority_class": (
+                    STEP46_POLICY_DEFINITION_AUTHORITY_CLASS
+                ),
+                "authority_kinds": [APPROVAL, REWORK, REJECT, CANCEL],
+                "target_identity": STEP46_POLICY_DEFINITION_TARGET,
+                "target_revision": revision,
+                "producing_owner": HUMAN_AUTHORITY_OWNER,
+                "expected_owner": STEP46_POLICY_DEFINITION_OWNER,
+                "authority_scope": STEP46_POLICY_DEFINITION_SCOPE,
+            },
+            "required_policy_fields": list(STEP46_POLICY_DEFINITION_FIELDS),
+            "profile_output": STEP46_POLICY_DEFINITION_OUTPUT,
+            "substantive_policy_defaults": False,
+        },
+        exact_human_act_required=True,
+        cancellation_permitted=True,
+        interruption_permitted=True,
+        refusal_identity=None,
+        refusal_type=NOT_APPLICABLE,
+        refusal_status=NOT_APPLICABLE,
+        terminal_identity=None,
+        terminal_type=NOT_APPLICABLE,
+        terminal_status=NOT_APPLICABLE,
+        retryability=NOT_APPLICABLE,
+        recovery_requirement=NOT_APPLICABLE,
+        delivery_resolution_status=DELIVERY_NOT_APPLICABLE,
+        resolved_response_identity=None,
+        resolved_response_hash=None,
+        replay_reference_status=REFERENCE_NOT_APPLICABLE,
+        certification_reference_status=REFERENCE_NOT_APPLICABLE,
+    )
+    return transition, STEP46_POLICY_DEFINITION_OWNER_STATUS
+
+
+def _canonical_che_step46_policy_definition_result_projection_v1(
+    result: dict[str, Any],
+    *,
+    prior_continuation: CanonicalContinuationEnvelopeV1 | None,
+) -> tuple[CanonicalHumanEntryOwnerTransitionV1, str]:
+    """Project a Human Step-46 outcome and stop before every G70 stage."""
+
+    from aigol.runtime.constitutional_policy_definition_profile_v1 import (
+        APPROVE_EXACT_POLICY_DEFINITION,
+        STEP46_POLICY_DEFINITION_NO_EFFECT_STATUS,
+        STEP46_POLICY_DEFINITION_OWNER,
+        STEP46_POLICY_DEFINITION_PROFILE_VERSION,
+        STEP46_POLICY_DEFINITION_RECORDED_STATUS,
+        STEP46_POLICY_OUTCOME_BY_AUTHORITY_KIND,
+        Step46ConstitutionalPolicyDefinitionDecisionArtifactV1,
+        step46_policy_definition_owner_state_identity_v1,
+        validate_step46_policy_definition_decision_artifact_v1,
+    )
+
+    expected_keys = {
+        "profile_contract_version",
+        "owner_status",
+        "producing_owner",
+        "conversation_identity",
+        "owner_state_identity",
+        "owner_revision",
+        "authority_kind",
+        "profile_outcome",
+        "authority_act_identity",
+        "decision_artifact",
+        "constitutional_effect_created",
+        "g70_handoff_created",
+        "production_connection_created",
+    }
+    if set(result) != expected_keys or prior_continuation is None:
+        raise FailClosedRuntimeError(
+            "CHE Step46 policy-definition result is malformed"
+        )
+    revision = result["owner_revision"]
+    if not isinstance(revision, int) or isinstance(revision, bool) or revision < 1:
+        raise FailClosedRuntimeError(
+            "CHE Step46 policy-definition result revision is invalid"
+        )
+    expected_state = step46_policy_definition_owner_state_identity_v1(revision)
+    authority_kind = result["authority_kind"]
+    expected_outcome = STEP46_POLICY_OUTCOME_BY_AUTHORITY_KIND.get(authority_kind)
+    if expected_outcome is None or result["profile_outcome"] != expected_outcome:
+        raise FailClosedRuntimeError(
+            "CHE Step46 policy-definition outcome binding is invalid"
+        )
+    decision_value = result["decision_artifact"]
+    decision = None
+    if authority_kind == APPROVAL:
+        if not isinstance(decision_value, dict):
+            raise FailClosedRuntimeError(
+                "CHE Step46 APPROVAL requires a decision artifact"
+            )
+        decision = validate_step46_policy_definition_decision_artifact_v1(
+            Step46ConstitutionalPolicyDefinitionDecisionArtifactV1.from_dict(
+                decision_value
+            )
+        )
+        if (
+            result["owner_status"] != STEP46_POLICY_DEFINITION_RECORDED_STATUS
+            or result["profile_outcome"] != APPROVE_EXACT_POLICY_DEFINITION
+            or decision.target_revision != revision
+            or decision.human_authority_act.authority_act_identity
+            != result["authority_act_identity"]
+        ):
+            raise FailClosedRuntimeError(
+                "CHE Step46 approved result binding is invalid"
+            )
+        terminal_identity = decision.decision_identity
+        terminal_type = decision.decision_state
+    else:
+        if (
+            decision_value is not None
+            or result["owner_status"]
+            != STEP46_POLICY_DEFINITION_NO_EFFECT_STATUS
+        ):
+            raise FailClosedRuntimeError(
+                "CHE Step46 no-effect outcome created an artifact"
+            )
+        terminal_identity = result["authority_act_identity"]
+        terminal_type = "STEP46_POLICY_DEFINITION_NO_EFFECT"
+    bindings = (
+        (
+            result["profile_contract_version"],
+            STEP46_POLICY_DEFINITION_PROFILE_VERSION,
+        ),
+        (result["producing_owner"], STEP46_POLICY_DEFINITION_OWNER),
+        (result["conversation_identity"], expected_state),
+        (result["owner_state_identity"], expected_state),
+        (prior_continuation.expected_owner_state_identity, expected_state),
+        (prior_continuation.expected_owner_revision, revision),
+        (result["constitutional_effect_created"], False),
+        (result["g70_handoff_created"], False),
+        (result["production_connection_created"], False),
+    )
+    if any(actual != expected for actual, expected in bindings):
+        raise FailClosedRuntimeError(
+            "CHE Step46 policy-definition result boundary is invalid"
+        )
+    transition = CanonicalHumanEntryOwnerTransitionV1(
+        contract_version=CANONICAL_CHE_OWNER_TRANSITION_CONTRACT_VERSION,
+        producing_owner=STEP46_POLICY_DEFINITION_OWNER,
+        owner_state_identity=expected_state,
+        owner_revision_before=revision,
+        owner_revision_after=revision,
+        response_disposition=TERMINAL_DISPOSITION,
+        advancement_outcome=TERMINAL_ADVANCEMENT,
+        next_act_identity=None,
+        next_act_kind=None,
+        next_act_target_identity=None,
+        next_act_target_digest=None,
+        next_act_expected_owner_revision=NOT_APPLICABLE,
+        permitted_controls=(),
+        payload_constraints={},
+        exact_human_act_required=False,
+        cancellation_permitted=False,
+        interruption_permitted=False,
+        refusal_identity=None,
+        refusal_type=NOT_APPLICABLE,
+        refusal_status=NOT_APPLICABLE,
+        terminal_identity=terminal_identity,
+        terminal_type=terminal_type,
+        terminal_status="TERMINAL_COMPLETE",
+        retryability=NOT_RETRYABLE,
+        recovery_requirement=NO_RECOVERY_REQUIRED,
+        delivery_resolution_status=DELIVERY_NOT_APPLICABLE,
+        resolved_response_identity=None,
+        resolved_response_hash=None,
+        replay_reference_status=REFERENCE_NOT_CREATED,
+        certification_reference_status=REFERENCE_NOT_CREATED,
+    )
+    return transition, result["owner_status"]
+
+
 def _canonical_che_constitutional_ratification_projection_v1(
     presentation: dict[str, Any],
     *,
@@ -7050,6 +7353,21 @@ def _canonical_che_conversation_owner_projection_v1(
     certification_references: tuple[str, ...],
 ) -> tuple[CanonicalHumanEntryOwnerTransitionV1, str]:
     """Project only authenticated G66/Project Services owner result shapes."""
+
+    step46_presentation = owner_result.get(
+        "step46_policy_definition_owner_presentation"
+    )
+    if isinstance(step46_presentation, dict):
+        return _canonical_che_step46_policy_definition_projection_v1(
+            step46_presentation,
+            prior_continuation=prior_continuation,
+        )
+    step46_result = owner_result.get("step46_policy_definition_owner_result")
+    if isinstance(step46_result, dict):
+        return _canonical_che_step46_policy_definition_result_projection_v1(
+            step46_result,
+            prior_continuation=prior_continuation,
+        )
 
     ratification_presentation = owner_result.get(
         "constitutional_ratification_owner_presentation"
@@ -7300,6 +7618,37 @@ def _canonical_che_presentations(
     owner_result: dict[str, Any], owner_status: str
 ) -> tuple[str, ...]:
     presentations: list[str] = []
+    step46_presentation = owner_result.get(
+        "step46_policy_definition_owner_presentation"
+    )
+    if isinstance(step46_presentation, dict):
+        presentations.extend(
+            (
+                "Step46 Constitutional Policy Definition Profile V1",
+                "Target: " + str(step46_presentation.get("target_identity")),
+                "Required Human policy fields: "
+                + ", ".join(
+                    str(item)
+                    for item in step46_presentation.get(
+                        "required_policy_fields", []
+                    )
+                ),
+                "Allowed Human outcomes: APPROVAL, REWORK, REJECT, CANCEL",
+                "Output boundary: PRE_G70",
+            )
+        )
+    step46_result = owner_result.get("step46_policy_definition_owner_result")
+    if isinstance(step46_result, dict):
+        presentations.extend(
+            (
+                "Step46 Human outcome: "
+                + str(step46_result.get("profile_outcome")),
+                "Step46 owner status: "
+                + str(step46_result.get("owner_status")),
+                "Constitutional effect: NONE",
+                "G70 handoff: NOT_CREATED",
+            )
+        )
     ratification = owner_result.get(
         "constitutional_ratification_owner_presentation"
     )
