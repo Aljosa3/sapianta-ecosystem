@@ -572,6 +572,9 @@ def _execute_canonical_che_request_v1(
                 supplied_continuation,
             )
             if existing_delivery["delivery_state"] == _DELIVERY_RECORD_COMMITTED:
+                _reauthenticate_step46_owner_artifact_if_applicable_v1(
+                    canonical_request, existing_delivery
+                )
                 if canonical_authority_act is not None:
                     _persist_profile_a_owner_state_authorization_if_applicable_v1(
                         request=canonical_request,
@@ -732,6 +735,9 @@ def _execute_canonical_che_request_v1(
             authority_act=canonical_authority_act,
             reference_set=canonical_reference_set,
         )
+        _persist_step46_owner_artifact_if_applicable_v1(
+            canonical_request, owner_result, correlation
+        )
         if final_response.continuation_envelope is not None:
             _persist_canonical_che_continuation_v1(
                 canonical_request, final_response.continuation_envelope
@@ -750,6 +756,56 @@ def _execute_canonical_che_request_v1(
     finally:
         if scope_lock is not None:
             _release_canonical_che_continuation_scope_v1(scope_lock)
+
+
+def _persist_step46_owner_artifact_if_applicable_v1(
+    request: CanonicalHumanEntryRequestEnvelopeV1,
+    owner_result: dict[str, Any],
+    correlation: CanonicalCHEEvidenceCorrelationV1,
+) -> None:
+    result = owner_result.get("step46_policy_definition_owner_result")
+    if not isinstance(result, dict) or result.get("authority_kind") != APPROVAL:
+        return
+    from aigol.runtime.constitutional_policy_definition_profile_v1 import (
+        persist_step46_owner_artifact_evidence_v1,
+    )
+
+    if correlation.runtime_scope_identity != request.runtime_scope_identity:
+        raise FailClosedRuntimeError(
+            "CHE Step46 owner-artifact runtime scope is invalid"
+        )
+    persist_step46_owner_artifact_evidence_v1(
+        artifact=result.get("decision_artifact"),
+        correlation=correlation,
+    )
+
+
+def _reauthenticate_step46_owner_artifact_if_applicable_v1(
+    request: CanonicalHumanEntryRequestEnvelopeV1,
+    delivery_record: dict[str, Any],
+) -> None:
+    correlation_value = delivery_record.get("evidence_correlation")
+    if not isinstance(correlation_value, dict):
+        return
+    from aigol.runtime.constitutional_policy_definition_profile_v1 import (
+        STEP46_POLICY_DEFINITION_OWNER,
+        read_step46_owner_artifact_evidence_v1,
+    )
+
+    if (
+        correlation_value.get("producing_owner_identity")
+        != STEP46_POLICY_DEFINITION_OWNER
+        or correlation_value.get("authority_kind") != APPROVAL
+    ):
+        return
+    correlation = validate_canonical_che_evidence_correlation_v1(
+        correlation_value
+    )
+    read_step46_owner_artifact_evidence_v1(
+        runtime_scope_identity=request.runtime_scope_identity,
+        decision_identity=correlation.terminal_identity,
+        correlation=correlation,
+    )
 
 
 def _run_human_interface_runtime_entry_owner_execution_v1(

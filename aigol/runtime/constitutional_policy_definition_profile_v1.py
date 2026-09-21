@@ -12,9 +12,16 @@ from __future__ import annotations
 from copy import deepcopy
 from dataclasses import dataclass, replace
 import json
+import os
+from pathlib import Path
+import tempfile
 from types import MappingProxyType
 from typing import Any, Mapping
 
+from aigol.runtime.canonical_che_evidence_correlation_contract_v1 import (
+    CanonicalCHEEvidenceCorrelationV1,
+    validate_canonical_che_evidence_correlation_v1,
+)
 from aigol.runtime.canonical_human_authority_act_contract_v1 import (
     APPROVAL,
     CANCEL,
@@ -28,6 +35,8 @@ from aigol.runtime.canonical_human_authority_act_contract_v1 import (
 from aigol.runtime.canonical_human_entry_contract_v1 import (
     ACTIVE_CONTINUATION,
     HUMAN_ACTOR,
+    TERMINAL_ADVANCEMENT,
+    TERMINAL_DISPOSITION,
     CanonicalContinuationEnvelopeV1,
     CanonicalHumanEntryRequestEnvelopeV1,
     validate_canonical_che_continuation_envelope_v1,
@@ -57,6 +66,12 @@ STEP46_POLICY_DEFINITION_OWNER = "CONSTITUTIONAL_GOVERNANCE_OWNER"
 STEP46_POLICY_DEFINITION_OUTPUT = "PRE_G70"
 STEP46_POLICY_DEFINITION_RECORDED_NOT_CERTIFIED = (
     "HUMAN_POLICY_DEFINITION_RECORDED_NOT_CERTIFIED"
+)
+STEP46_OWNER_ARTIFACT_EVIDENCE_RECORD_VERSION = (
+    "STEP46_COMPLETE_OWNER_ARTIFACT_EVIDENCE_RECORD_V1"
+)
+STEP46_OWNER_ARTIFACT_EVIDENCE_DIRECTORY = (
+    "step46_complete_owner_artifact_evidence_v1"
 )
 
 STEP46_POLICY_DEFINITION_PRESENTATION_COMMAND = (
@@ -141,6 +156,19 @@ _DECISION_ARTIFACT_FIELDS = frozenset(
         "constitutional_effect_created",
         "g70_handoff_created",
         "production_connection_created",
+    }
+)
+
+_OWNER_ARTIFACT_EVIDENCE_RECORD_FIELDS = frozenset(
+    {
+        "record_contract_version",
+        "owner",
+        "runtime_scope_identity",
+        "decision_identity",
+        "artifact_digest",
+        "correlation_identity",
+        "canonical_artifact",
+        "record_integrity_digest",
     }
 )
 
@@ -597,6 +625,276 @@ def deserialize_step46_policy_definition_decision_v1(
     return artifact
 
 
+def step46_owner_artifact_evidence_path_v1(
+    runtime_scope_identity: str,
+    decision_identity: str,
+) -> Path:
+    """Return the sole content-addressed path for one Step46 owner artifact."""
+
+    runtime_scope = _require_text(
+        runtime_scope_identity, "Step46 owner-artifact runtime scope"
+    )
+    decision = _require_text(
+        decision_identity, "Step46 owner-artifact decision identity"
+    )
+    digest = replay_hash(
+        {"decision_identity": decision}
+    ).removeprefix("sha256:")
+    return (
+        Path(runtime_scope)
+        / STEP46_OWNER_ARTIFACT_EVIDENCE_DIRECTORY
+        / f"artifact-{digest}.json"
+    )
+
+
+def _step46_owner_artifact_record_integrity_digest_v1(
+    record: Mapping[str, Any],
+) -> str:
+    return replay_hash(
+        {
+            key: record[key]
+            for key in sorted(record)
+            if key != "record_integrity_digest"
+        }
+    )
+
+
+def _validate_step46_owner_artifact_correlation_v1(
+    artifact: Step46ConstitutionalPolicyDefinitionDecisionArtifactV1,
+    correlation: CanonicalCHEEvidenceCorrelationV1 | Mapping[str, Any],
+) -> CanonicalCHEEvidenceCorrelationV1:
+    canonical_correlation = (
+        correlation
+        if isinstance(correlation, CanonicalCHEEvidenceCorrelationV1)
+        else CanonicalCHEEvidenceCorrelationV1.from_dict(dict(correlation))
+    )
+    canonical_correlation = validate_canonical_che_evidence_correlation_v1(
+        canonical_correlation
+    )
+    request = artifact.che_request
+    continuation = artifact.che_continuation
+    act = artifact.human_authority_act
+    expected_owner_state = step46_policy_definition_owner_state_identity_v1(
+        artifact.target_revision
+    )
+    bindings = (
+        (canonical_correlation.runtime_scope_identity, request.runtime_scope_identity),
+        (canonical_correlation.request_identity, request.request_identity),
+        (canonical_correlation.idempotency_identity, request.idempotency_identity),
+        (canonical_correlation.actor_identity, artifact.human_actor_identity),
+        (canonical_correlation.interaction_identity, continuation.interaction_identity),
+        (
+            canonical_correlation.conversation_identity,
+            continuation.conversation_identity,
+        ),
+        (
+            canonical_correlation.continuation_identity,
+            continuation.continuation_identity,
+        ),
+        (canonical_correlation.authority_act_identity, act.authority_act_identity),
+        (canonical_correlation.authority_kind, APPROVAL),
+        (
+            canonical_correlation.authority_requesting_owner_identity,
+            STEP46_POLICY_DEFINITION_OWNER,
+        ),
+        (canonical_correlation.authority_target_identity, artifact.target_identity),
+        (
+            canonical_correlation.authority_target_revision,
+            artifact.target_revision,
+        ),
+        (canonical_correlation.authority_payload_digest, act.payload_digest),
+        (
+            canonical_correlation.producing_owner_identity,
+            STEP46_POLICY_DEFINITION_OWNER,
+        ),
+        (canonical_correlation.owner_state_identity, expected_owner_state),
+        (canonical_correlation.owner_revision_before, artifact.target_revision),
+        (canonical_correlation.owner_revision_after, artifact.target_revision),
+        (canonical_correlation.owner_advancement, TERMINAL_ADVANCEMENT),
+        (canonical_correlation.owner_disposition, TERMINAL_DISPOSITION),
+        (canonical_correlation.terminal_identity, artifact.decision_identity),
+    )
+    if any(actual != expected for actual, expected in bindings):
+        raise FailClosedRuntimeError(
+            "Step46 owner-artifact CHE correlation binding is invalid"
+        )
+    return canonical_correlation
+
+
+def _step46_owner_artifact_evidence_record_v1(
+    artifact: Step46ConstitutionalPolicyDefinitionDecisionArtifactV1,
+    correlation: CanonicalCHEEvidenceCorrelationV1,
+) -> dict[str, Any]:
+    record = {
+        "record_contract_version": (
+            STEP46_OWNER_ARTIFACT_EVIDENCE_RECORD_VERSION
+        ),
+        "owner": STEP46_POLICY_DEFINITION_OWNER,
+        "runtime_scope_identity": correlation.runtime_scope_identity,
+        "decision_identity": artifact.decision_identity,
+        "artifact_digest": artifact.artifact_digest,
+        "correlation_identity": correlation.correlation_identity,
+        "canonical_artifact": serialize_step46_policy_definition_decision_v1(
+            artifact
+        ),
+        "record_integrity_digest": "",
+    }
+    record["record_integrity_digest"] = (
+        _step46_owner_artifact_record_integrity_digest_v1(record)
+    )
+    return record
+
+
+def _read_step46_owner_artifact_evidence_record_v1(
+    path: Path,
+    *,
+    correlation: CanonicalCHEEvidenceCorrelationV1 | Mapping[str, Any],
+) -> tuple[
+    Step46ConstitutionalPolicyDefinitionDecisionArtifactV1,
+    dict[str, Any],
+]:
+    try:
+        record = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise FailClosedRuntimeError(
+            "Step46 owner-artifact evidence is unreadable"
+        ) from exc
+    if (
+        not isinstance(record, dict)
+        or set(record) != _OWNER_ARTIFACT_EVIDENCE_RECORD_FIELDS
+        or record["record_contract_version"]
+        != STEP46_OWNER_ARTIFACT_EVIDENCE_RECORD_VERSION
+        or record["owner"] != STEP46_POLICY_DEFINITION_OWNER
+        or record["record_integrity_digest"]
+        != _step46_owner_artifact_record_integrity_digest_v1(record)
+    ):
+        raise FailClosedRuntimeError(
+            "Step46 owner-artifact evidence record is invalid"
+        )
+    artifact = deserialize_step46_policy_definition_decision_v1(
+        record["canonical_artifact"]
+    )
+    canonical_correlation = _validate_step46_owner_artifact_correlation_v1(
+        artifact, correlation
+    )
+    expected_path = step46_owner_artifact_evidence_path_v1(
+        canonical_correlation.runtime_scope_identity,
+        artifact.decision_identity,
+    )
+    if (
+        path != expected_path
+        or record["runtime_scope_identity"]
+        != canonical_correlation.runtime_scope_identity
+        or record["decision_identity"] != artifact.decision_identity
+        or record["artifact_digest"] != artifact.artifact_digest
+        or record["correlation_identity"]
+        != canonical_correlation.correlation_identity
+        or record["canonical_artifact"]
+        != serialize_step46_policy_definition_decision_v1(artifact)
+    ):
+        raise FailClosedRuntimeError(
+            "Step46 owner-artifact evidence binding is invalid"
+        )
+    return artifact, record
+
+
+def read_step46_owner_artifact_evidence_v1(
+    *,
+    runtime_scope_identity: str,
+    decision_identity: str,
+    correlation: CanonicalCHEEvidenceCorrelationV1 | Mapping[str, Any],
+) -> Step46ConstitutionalPolicyDefinitionDecisionArtifactV1:
+    """Read and reauthenticate persisted evidence without replaying authority."""
+
+    path = step46_owner_artifact_evidence_path_v1(
+        runtime_scope_identity, decision_identity
+    )
+    artifact, _ = _read_step46_owner_artifact_evidence_record_v1(
+        path, correlation=correlation
+    )
+    if artifact.decision_identity != decision_identity:
+        raise FailClosedRuntimeError(
+            "Step46 owner-artifact decision identity conflicts"
+        )
+    return artifact
+
+
+def persist_step46_owner_artifact_evidence_v1(
+    *,
+    artifact: Step46ConstitutionalPolicyDefinitionDecisionArtifactV1
+    | Mapping[str, Any],
+    correlation: CanonicalCHEEvidenceCorrelationV1 | Mapping[str, Any],
+) -> Path:
+    """Persist one immutable evidence-only Step46 artifact before receipt."""
+
+    canonical_artifact = validate_step46_policy_definition_decision_artifact_v1(
+        artifact
+    )
+    canonical_correlation = _validate_step46_owner_artifact_correlation_v1(
+        canonical_artifact, correlation
+    )
+    path = step46_owner_artifact_evidence_path_v1(
+        canonical_correlation.runtime_scope_identity,
+        canonical_artifact.decision_identity,
+    )
+    record = _step46_owner_artifact_evidence_record_v1(
+        canonical_artifact, canonical_correlation
+    )
+    if path.exists():
+        _, existing = _read_step46_owner_artifact_evidence_record_v1(
+            path, correlation=canonical_correlation
+        )
+        if existing != record:
+            raise FailClosedRuntimeError(
+                "Step46 owner-artifact evidence identity conflicts"
+            )
+        return path
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary_name = ""
+    try:
+        descriptor, temporary_name = tempfile.mkstemp(
+            prefix=".step46-owner-artifact-",
+            suffix=".tmp",
+            dir=path.parent,
+            text=True,
+        )
+        with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+            handle.write(canonical_serialize(record) + "\n")
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.link(temporary_name, path)
+        directory_descriptor = os.open(path.parent, os.O_RDONLY)
+        try:
+            os.fsync(directory_descriptor)
+        finally:
+            os.close(directory_descriptor)
+    except FileExistsError:
+        _, existing = _read_step46_owner_artifact_evidence_record_v1(
+            path, correlation=canonical_correlation
+        )
+        if existing != record:
+            raise FailClosedRuntimeError(
+                "Step46 owner-artifact evidence identity conflicts"
+            )
+    except OSError as exc:
+        raise FailClosedRuntimeError(
+            "Step46 owner-artifact evidence write failed"
+        ) from exc
+    finally:
+        if temporary_name and Path(temporary_name).exists():
+            Path(temporary_name).unlink()
+
+    _, persisted = _read_step46_owner_artifact_evidence_record_v1(
+        path, correlation=canonical_correlation
+    )
+    if persisted != record:
+        raise FailClosedRuntimeError(
+            "Step46 owner-artifact evidence read-back mismatch"
+        )
+    return path
+
+
 def step46_policy_definition_owner_result_v1(
     target_revision: int,
 ) -> dict[str, Any]:
@@ -761,11 +1059,16 @@ __all__ = [
     "STEP46_POLICY_DEFINITION_SCOPE",
     "STEP46_POLICY_DEFINITION_TARGET",
     "STEP46_POLICY_OUTCOME_BY_AUTHORITY_KIND",
+    "STEP46_OWNER_ARTIFACT_EVIDENCE_DIRECTORY",
+    "STEP46_OWNER_ARTIFACT_EVIDENCE_RECORD_VERSION",
     "Step46ConstitutionalPolicyDefinitionDecisionArtifactV1",
     "compose_step46_policy_definition_result_v1",
     "deserialize_step46_policy_definition_decision_v1",
+    "persist_step46_owner_artifact_evidence_v1",
     "present_step46_policy_definition_boundary_v1",
+    "read_step46_owner_artifact_evidence_v1",
     "serialize_step46_policy_definition_decision_v1",
+    "step46_owner_artifact_evidence_path_v1",
     "step46_policy_definition_owner_result_v1",
     "step46_policy_definition_owner_state_identity_v1",
     "step46_policy_definition_payload_digest_v1",
