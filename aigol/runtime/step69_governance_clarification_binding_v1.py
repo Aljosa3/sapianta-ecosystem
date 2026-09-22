@@ -45,6 +45,16 @@ RECORD_IDENTITY = "STEP69-CLARIFICATION-" + replay_hash({
 }).removeprefix("sha256:")
 
 
+def canonical_runtime_base_v1() -> Path:
+    """Return the repository-owned runtime base without consulting process CWD."""
+    return Path(__file__).resolve().parents[2]
+
+
+def canonical_runtime_history_root_v1() -> Path:
+    """Resolve the authorized runtime/history parent for a caller of this binding."""
+    return canonical_runtime_base_v1() / "runtime" / "history"
+
+
 def _text(value: object) -> bool:
     return type(value) is str and bool(value.strip()) and "\x00" not in value
 

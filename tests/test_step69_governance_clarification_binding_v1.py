@@ -2,12 +2,28 @@
 from copy import deepcopy
 import json
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 
 import pytest
 
 from aigol.runtime import step69_governance_clarification_binding_v1 as binding
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.transport.serialization import canonical_serialize, replay_hash
+
+
+def test_canonical_runtime_history_root_is_repository_anchored_and_cwd_independent(tmp_path, monkeypatch):
+    base = binding.canonical_runtime_base_v1()
+    expected = base / "runtime" / "history"
+    monkeypatch.chdir(tmp_path)
+    first = binding.canonical_runtime_history_root_v1()
+    other_cwd = tmp_path / "other-cwd"
+    other_cwd.mkdir()
+    monkeypatch.chdir(other_cwd)
+    second = binding.canonical_runtime_history_root_v1()
+    assert base.is_absolute()
+    assert first == expected == second
+    assert first.relative_to(base) == Path("runtime", "history")
+    assert binding._path(first).parent.parent == first
 
 
 def payload(outcome="APPROVAL"):
