@@ -64,6 +64,8 @@ def query_platform_knowledge(
     capability_identifier: str | None = None,
     goal_target: str | None = None,
     workspace_state: dict[str, Any] | None = None,
+    structured_requirement_state: dict[str, Any] | None = None,
+    prior_d1_candidates: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Return a deterministic read-only Platform Knowledge response.
 
@@ -78,6 +80,8 @@ def query_platform_knowledge(
     discovery = discover_candidate_capabilities(
         message=raw_query,
         workspace_state=workspace_state,
+        structured_requirement_state=structured_requirement_state,
+        prior_d1_candidates=prior_d1_candidates,
     )
     selected_goal_target = _selected_goal_target(
         explicit_goal_target=goal_target,

@@ -363,12 +363,17 @@ def validate_d1_candidate(candidate: Any) -> dict[str, Any]:
 
 
 def d1_inspection_required(value: Any) -> bool:
-    """Validate every encountered D1 marker; never silently interpret it as legacy."""
+    """Validate D1/D2 inspection markers; never silently interpret them as legacy."""
     if isinstance(value, list):
         results = [d1_inspection_required(item) for item in value]
         return any(results)
     if not isinstance(value, dict):
         return False
+    if "structured_relevance" in value:
+        validate_structured_discovery_relevance(value)
+        return True
+    if "structured_candidate_source_hash" in value or value.get("reuse_decision_basis") == "structured_inspection":
+        _d2_fail("structured candidate lost its parent comparison binding")
     if "d1" in value or "p1_admission_input" in value or "p1_candidate_hash" in value or value.get("reuse_decision_basis") == "source_claim_inspection":
         validate_d1_candidate(value)
         return True
@@ -395,8 +400,270 @@ def d1_inspection_required(value: Any) -> bool:
         nested = [d1_inspection_required(item) for key, item in value.items()
                   if key != "d1_admission_inputs" and isinstance(item, (dict, list))]
         return bool(inputs) or any(nested)
-    results = [d1_inspection_required(item) for item in value.values() if isinstance(item, (dict, list))]
+    # Existing consumers carry both the bound discovery and exact candidate-list
+    # projections. Validate the parent before accepting those repeated bodies.
+    bound = [value[key] for key in ("d1_candidate_discovery", "candidate_capability_discovery")
+             if isinstance(value.get(key), dict) and "structured_relevance" in value[key]]
+    skipped = set()
+    if bound:
+        for discovery in bound:
+            validate_structured_discovery_relevance(discovery)
+        for key in ("candidate_capabilities", "candidate_capabilities_received"):
+            if key in value:
+                if not any(value[key] == discovery["candidate_capabilities"] for discovery in bound):
+                    _d2_fail("consumer candidate projection differs from bound discovery")
+                skipped.add(key)
+    results = [d1_inspection_required(item) for key, item in value.items()
+               if key not in skipped and isinstance(item, (dict, list))]
     return any(results)
+
+
+D2_SCHEMA = "PROJECT_SERVICES_STRUCTURED_DISCOVERY_RELEVANCE_V1"
+D2_RULESET = "SOURCE_BOUND_WHOLE_FIELD_RELEVANCE_V1"
+D2_GROUPS = (
+    "RELEVANT_FOR_INSPECTION",
+    "POSSIBLY_RELEVANT_REQUIRES_CLARIFICATION",
+    "UNKNOWN_RELEVANCE",
+    "NOT_RELEVANT_WITHIN_PROVEN_SCOPE",
+)
+
+
+def _d2_fail(message: str) -> None:
+    raise FailClosedRuntimeError("D2 relevance: " + message)
+
+
+def _d2_query(state: Any) -> dict[str, Any]:
+    from aigol.runtime.platform_core_conversation_working_memory_runtime_v2 import (
+        validate_conversation_working_memory_state_v2,
+    )
+    _p1_json_types(state)
+    source = validate_conversation_working_memory_state_v2(deepcopy(state))
+    slots = source["semantic_memory"]["semantic_slots"]
+    usable = {
+        s["slot_id"] for s in slots
+        if s["status"] in {"ASSERTED", "CONFIRMED"} and s["completeness"] == "COMPLETE"
+    }
+    # A complete slot cannot borrow meaning from an unresolved dependency.
+    while True:
+        narrowed = {s["slot_id"] for s in slots if s["slot_id"] in usable
+                    and set(s["depends_on"]) <= usable}
+        if narrowed == usable:
+            break
+        usable = narrowed
+    anchor = any(s["slot_id"] in usable and (
+        s["slot_class"] in {"OPERATIVE_SUBJECT", "DESIRED_OUTCOME"}
+        or (s["slot_class"] == "GOVERNING_QUALIFIER" and s["slot_role"] == "OUTPUT")
+    ) for s in slots)
+    return {"source_state": source, "state_digest": replay_hash(source),
+            "semantic_revision": source["semantic_revision"],
+            "usable_slot_ids": sorted(usable),
+            "query_eligibility": "SUFFICIENT_FOR_INSPECTION_QUERY" if anchor else "QUERY_INSUFFICIENT"}
+
+
+def _d2_descriptor_evidence() -> tuple[dict[str, Any], dict[str, Any]]:
+    from aigol.runtime.certified_capability_invocation_binding_runtime import (
+        certified_capability_semantic_descriptors,
+    )
+    descriptors = certified_capability_semantic_descriptors()
+    registry = {r["capability_identifier"]: r for r in list_platform_capability_certifications()}
+    for identifier, descriptor in descriptors.items():
+        body = deepcopy(descriptor)
+        digest = body.pop("semantic_descriptor_hash", None)
+        if digest != replay_hash(body) or descriptor["capability_identifier"] != identifier:
+            _d2_fail("descriptor integrity mismatch")
+        if identifier not in registry or descriptor["semantic_descriptor_authority"] != "PLATFORM_CORE":
+            _d2_fail("descriptor owner binding unavailable")
+    return descriptors, registry
+
+
+def _d2_assessment(candidate: dict[str, Any], query: dict[str, Any],
+                   descriptors: dict[str, Any], registry: dict[str, Any]) -> dict[str, Any]:
+    identifier = candidate["capability_id"]
+    candidate_hash = replay_hash(candidate)
+    candidate_key = replay_hash({"identity": identifier, "candidate_hash": candidate_hash})
+    evidence: list[dict[str, Any]] = []
+    descriptor = descriptors.get(identifier)
+    currentness = "UNKNOWN"
+    d1 = candidate.get("d1")
+    ambiguous = False
+    responsibilities: dict[str, list[str]] = {}
+    if d1 is not None:
+        validate_d1_candidate(candidate)
+        currentness = d1["currentness"]
+        ambiguous = d1["ambiguity"]
+        for claim in d1["source_claims"]:
+            evidence.append({"kind": "P1_CLAIM", "identity": replay_hash(claim),
+                             "digest": claim["source_version_or_digest"],
+                             "source": deepcopy(claim["source_artifact"]),
+                             "scope": deepcopy(claim["source_scope"]),
+                             "owner": deepcopy(claim["source_owner"]),
+                             "currentness": claim["currentness_status"]})
+            if claim["claim_mode"] == "OWNER_ASSERTION":
+                # P1 has already invoked the real G47 snapshot/owner validators.
+                for responsibility in claim["source_scope"]:
+                    responsibilities.setdefault(responsibility, []).append(replay_hash(claim))
+    if descriptor is not None:
+        record = registry[identifier]
+        descriptor_currentness = (
+            "CURRENT" if record["certification_status"] in {"VERIFIED", "CERTIFIED"}
+            and record["superseded_by"] is None else "STALE"
+        )
+        currentness = descriptor_currentness if d1 is None else (
+            "STALE" if "STALE" in {currentness, descriptor_currentness} else currentness)
+        evidence.append({"kind": "G28_DESCRIPTOR", "identity": identifier,
+                         "digest": descriptor["semantic_descriptor_hash"],
+                         "registry_digest": record["certification_record_hash"],
+                         "source": "aigol.runtime.certified_capability_invocation_binding_runtime.certified_capability_semantic_descriptors",
+                         "owner": "PLATFORM_CORE", "scope": "EXISTING_G28_ADAPTER_DECLARATIONS",
+                         "currentness": descriptor_currentness})
+    slots = query["source_state"]["semantic_memory"]["semantic_slots"]
+    usable = set(query["usable_slot_ids"])
+    comparisons = []
+    mappings = {"OPERATIVE_ACTION": "supported_actions", "OPERATIVE_SUBJECT": "supported_subjects",
+                "DESIRED_OUTCOME": "expected_outcomes", "WORK_TYPE": "supported_work_types"}
+    anchor = False
+    contradiction = False
+    unknown = False
+    for slot in slots:
+        kind, role, value = slot["slot_class"], slot["slot_role"], slot["canonical_value"]
+        supported, excluded = False, False
+        relation_evidence = []
+        hint = kind == "SEMANTIC_REFERENCE" and role in {"CAPABILITY_HINT", "EVIDENCE"}
+        output = kind == "DESIRED_OUTCOME" or (kind == "GOVERNING_QUALIFIER" and role == "OUTPUT")
+        field = "expected_outcomes" if output else mappings.get(kind)
+        if slot["slot_id"] in usable and field:
+            if descriptor is not None:
+                supported = value in descriptor[field]
+                excluded = (value in descriptor["excluded_meanings"] if kind != "WORK_TYPE"
+                            else value not in descriptor["supported_work_types"])
+                if supported or excluded:
+                    relation_evidence.append(descriptor["semantic_descriptor_hash"])
+            if kind == "OPERATIVE_SUBJECT" and value in responsibilities:
+                supported = True
+                relation_evidence.extend(responsibilities[value])
+        if hint:
+            outcome, reason = "NOT_APPLICABLE", "LOCATOR_IS_NOT_SEMANTIC_PROOF"
+        elif supported and excluded:
+            outcome, reason = "UNKNOWN", "CONFLICTING_FIELD_EVIDENCE"
+            ambiguous = True
+        elif supported:
+            outcome, reason = "MATCH", "EXACT_DECLARED_FIELD"
+        elif excluded:
+            outcome, reason = "CONTRADICTION", "EXPLICIT_BOUNDED_EXCLUSION"
+        else:
+            outcome = "UNKNOWN"
+            reason = ("SCOPE_UNKNOWN" if kind == "SEMANTIC_REFERENCE" and role == "SCOPE"
+                      else "REQUIREMENT_SLOT_UNRESOLVED" if slot["slot_id"] not in usable
+                      else "RELATION_NOT_ESTABLISHED")
+        if slot["status"] in {"CONFLICTED", "STALE"} or slot["completeness"] in {"CONFLICTED", "STALE"}:
+            ambiguous = True
+        anchor = anchor or (supported and (kind == "OPERATIVE_SUBJECT" or output))
+        contradiction = contradiction or outcome == "CONTRADICTION"
+        unknown = unknown or outcome == "UNKNOWN"
+        comparisons.append({"slot_id": slot["slot_id"], "slot_class": kind, "slot_role": role,
+                            "canonical_value": value, "outcome": outcome, "reason_code": reason,
+                            "evidence_references": sorted(set(relation_evidence))})
+    for kind in mappings:
+        if not any(s["slot_class"] == kind and (kind != "DESIRED_OUTCOME" or s["slot_role"] == "PRIMARY") for s in slots):
+            unknown = True
+            comparisons.append({"slot_id": None, "slot_class": kind, "slot_role": "PRIMARY",
+                                "canonical_value": None, "outcome": "UNKNOWN",
+                                "reason_code": "REQUIRED_COMPARISON_MISSING", "evidence_references": []})
+    for kind, role in (("SEMANTIC_REFERENCE", "SCOPE"), ("GOVERNING_QUALIFIER", "CONSTRAINTS")):
+        supplied = any(s["slot_class"] == kind and (
+            s["slot_role"] == role if role == "SCOPE" else s["slot_role"] != "OUTPUT") for s in slots)
+        if not supplied:
+            comparisons.append({"slot_id": None, "slot_class": kind, "slot_role": role,
+                                "canonical_value": None, "outcome": "NOT_APPLICABLE",
+                                "reason_code": "OPTIONAL_FIELD_ABSENT", "evidence_references": []})
+    control = query["source_state"]["semantic_memory"]["protocol_control"]
+    ambiguous = ambiguous or control["clarification_control"] is not None or any(
+        not set(s["depends_on"]) <= usable for s in slots)
+    historical = query["source_state"]["envelope"]["availability_state"] != "ACTIVE"
+    if query["query_eligibility"] == "QUERY_INSUFFICIENT":
+        classification = D2_GROUPS[2]
+    elif ambiguous:
+        classification = D2_GROUPS[1] if anchor else D2_GROUPS[2]
+    elif contradiction and currentness == "CURRENT" and not historical:
+        classification = D2_GROUPS[3]
+    elif anchor:
+        classification = D2_GROUPS[1] if unknown or currentness != "CURRENT" or historical else D2_GROUPS[0]
+    else:
+        classification = D2_GROUPS[2]
+    return {"candidate_identity": identifier, "candidate_hash": candidate_hash,
+            "candidate_key": candidate_key, "field_comparisons": comparisons,
+            "evidence": evidence, "currentness": currentness,
+            "scope": "SUPPLIED_OPERATIONAL_SCOPE_UNKNOWN" if any(
+                c["reason_code"] == "SCOPE_UNKNOWN" for c in comparisons) else "MATCHED_DECLARATIONS_ONLY",
+            "ambiguity": ambiguous, "classification": classification,
+            "reason_codes": sorted({c["reason_code"] for c in comparisons}),
+            "revalidation_required": True, "authority_effect": "NONE"}
+
+
+def _d2_extend_discovery(base: dict[str, Any], *, state: dict[str, Any],
+                         workspace_state: dict[str, Any] | None,
+                         options: dict[str, bool], prior_d1_candidates: list[dict[str, Any]] | None) -> dict[str, Any]:
+    if any(type(flag) is not bool for flag in options.values()):
+        _d2_fail("discovery options must be Boolean")
+    query = _d2_query(state)
+    descriptors, registry = _d2_descriptor_evidence()
+    result = deepcopy(base)
+    candidates = result["candidate_capabilities"]
+    identifiers = [c["capability_id"] for c in candidates]
+    if len(set(identifiers)) != len(identifiers):
+        _d2_fail("ambiguous candidate identity collision")
+    for identifier, descriptor in sorted(descriptors.items()):
+        if identifier not in identifiers:
+            candidates.append({"capability_id": identifier, "goal_target": identifier,
+                               "display_name": identifier, "matched_terms": [], "workspace_match": False,
+                               "certified_artifacts": [], "reuse_decision_basis": "structured_inspection",
+                               "confidence_score": 0, "requires_human_capability_name": False,
+                               "structured_candidate_source_hash": descriptor["semantic_descriptor_hash"]})
+    assessments = [_d2_assessment(c, query, descriptors, registry) for c in candidates]
+    ordered = sorted(assessments, key=lambda a: (D2_GROUPS.index(a["classification"]),
+                                               a["candidate_identity"], a["candidate_key"]))
+    binding = {**query, "workspace_state": deepcopy(workspace_state), "discovery_options": options,
+               "prior_d1_candidates": deepcopy(prior_d1_candidates)}
+    extension = {"schema_version": D2_SCHEMA, "ruleset_version": D2_RULESET,
+                 "requirement_binding": binding, "query_eligibility": query["query_eligibility"],
+                 "candidate_assessments": ordered,
+                 "ordered_candidate_keys": [a["candidate_key"] for a in ordered],
+                 "ambiguity": any(a["ambiguity"] for a in assessments) or sum(
+                     a["classification"] in D2_GROUPS[:2] for a in assessments) > 1,
+                 "reason_codes": ["INSPECTION_ONLY", "REVALIDATION_REQUIRED"],
+                 "inspection_only": True, "authority_effect": "NONE"}
+    extension["relevance_binding_hash"] = replay_hash(extension)
+    result.update(structured_relevance=extension, candidate_capability_count=len(candidates),
+                  selected_candidate_capability=None, selected_goal_target="general_project_goal",
+                  capability_resolution_decision="INSPECTION_REQUIRED",
+                  ambiguity_remaining_after_deterministic_analysis=extension["ambiguity"])
+    result.pop("artifact_hash", None)
+    result["artifact_hash"] = replay_hash(result)
+    return result
+
+
+def validate_structured_discovery_relevance(artifact: Any) -> dict[str, Any]:
+    """Rebuild from owner-validated inputs, including every comparison and parent field."""
+    if not isinstance(artifact, dict) or not isinstance(artifact.get("structured_relevance"), dict):
+        _d2_fail("structured discovery extension missing")
+    extension = artifact["structured_relevance"]
+    if extension.get("schema_version") != D2_SCHEMA or extension.get("ruleset_version") != D2_RULESET:
+        _d2_fail("unsupported relevance contract")
+    binding = extension.get("requirement_binding")
+    if not isinstance(binding, dict):
+        _d2_fail("requirement binding missing")
+    options = binding.get("discovery_options")
+    if not isinstance(options, dict) or set(options) != {
+        "active_workspace_fallback_allowed", "generic_capability_catalog_allowed"
+    } or any(type(v) is not bool for v in options.values()):
+        _d2_fail("invalid discovery options")
+    expected = discover_candidate_capabilities(
+        message=artifact.get("raw_prompt"), workspace_state=binding.get("workspace_state"),
+        structured_requirement_state=binding.get("source_state"),
+        prior_d1_candidates=binding.get("prior_d1_candidates"), **options)
+    if "structured_relevance" not in expected or expected != artifact:
+        _d2_fail("relevance differs from validated source projection")
+    return deepcopy(artifact)
 
 
 PLATFORM_CORE_PROJECT_SERVICES_VERSION = "G14_08A_PLATFORM_CORE_PROJECT_SERVICES_EXTRACTION_V1"
@@ -5347,7 +5614,7 @@ def project_knowledge_context_from_workspace(
     modify_requested = any(term in lowered for term in ("improve", "change", "modify", "refine", "update"))
     continue_requested = any(term in lowered for term in ("continue", "extend", "add to", "build on"))
     discovery = candidate_capability_discovery if isinstance(candidate_capability_discovery, dict) else {}
-    if d1_inspection_required(workspace_state) and not d1_inspection_required(discovery):
+    if not d1_inspection_required(discovery) and d1_inspection_required(workspace_state):
         discovery = discover_candidate_capabilities(message=message, workspace_state=workspace_state)
     discovery_target = str(discovery.get("selected_goal_target") or "")
     capability_decision = (
@@ -5540,9 +5807,23 @@ def discover_candidate_capabilities(
     workspace_state: dict[str, Any] | None,
     active_workspace_fallback_allowed: bool = True,
     generic_capability_catalog_allowed: bool = True,
+    structured_requirement_state: dict[str, Any] | None = None,
+    prior_d1_candidates: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Infer candidate Platform Core capabilities from ordinary human language."""
 
+    if structured_requirement_state is not None:
+        _d2_query(structured_requirement_state)
+        base = discover_candidate_capabilities(
+            message=message, workspace_state=workspace_state,
+            active_workspace_fallback_allowed=active_workspace_fallback_allowed,
+            generic_capability_catalog_allowed=generic_capability_catalog_allowed,
+            prior_d1_candidates=prior_d1_candidates)
+        return _d2_extend_discovery(
+            base, state=structured_requirement_state, workspace_state=workspace_state,
+            options={"active_workspace_fallback_allowed": active_workspace_fallback_allowed,
+                     "generic_capability_catalog_allowed": generic_capability_catalog_allowed},
+            prior_d1_candidates=prior_d1_candidates)
     raw_message = require_string(message, "message")
     lowered = " ".join(raw_message.lower().split())
     clause_roles = interpret_request_clause_roles(raw_message)
@@ -5590,7 +5871,25 @@ def discover_candidate_capabilities(
     d1_inputs = knowledge_index.get("d1_admission_inputs", [])
     if not isinstance(d1_inputs, list):
         _p1_fail("d1_admission_inputs must be an array")
-    d1_candidates = [admit_p1_source_claims(item) for item in d1_inputs]
+    prior_by_id = {}
+    if prior_d1_candidates is not None:
+        if not isinstance(prior_d1_candidates, list):
+            _d2_fail("prior D1 candidates must be an array")
+        for candidate in prior_d1_candidates:
+            if not isinstance(candidate, dict) or not isinstance(candidate.get("capability_id"), str):
+                _d2_fail("invalid prior candidate")
+            identifier = candidate["capability_id"]
+            if identifier in prior_by_id:
+                _d2_fail("duplicate historical identity")
+            prior_by_id[identifier] = candidate
+    d1_candidates = []
+    for item in d1_inputs:
+        parsed = parse_p1_admission_input(item)
+        identity = _p1_object(parsed["subject_identity"], {"subject_id", "raw_subject_ids", "identity_evidence"})
+        d1_candidates.append(admit_p1_source_claims(
+            item, prior_candidate=prior_by_id.pop(_p1_string(identity["subject_id"]), None)))
+    if prior_by_id:
+        _d2_fail("historical candidate has no parent admission")
     subjects = [item["capability_id"] for item in d1_candidates]
     if len(subjects) != len(set(subjects)):
         _p1_fail("duplicate subject admissions must be combined explicitly")
