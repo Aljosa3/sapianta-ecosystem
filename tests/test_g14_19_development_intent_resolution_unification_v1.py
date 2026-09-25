@@ -159,6 +159,15 @@ def test_previously_failing_prompt_uses_same_resolution_for_send_and_approve(
             return True
 
     adapter = _install_fake_provider_and_worker(monkeypatch)
+    entries = []
+    original_entry = aigol_cli.run_human_interface_runtime_entry
+
+    def observe_entry(**kwargs):
+        result = original_entry(**kwargs)
+        entries.append((kwargs, result))
+        return result
+
+    monkeypatch.setattr(aigol_cli, "run_human_interface_runtime_entry", observe_entry)
     inputs = iter(["Implement governed policy.", "/send", "/approve", "exit"])
     monkeypatch.setattr("sys.stdin", TtyStdin())
     monkeypatch.setattr("builtins.input", lambda _prompt="": next(inputs))
@@ -182,11 +191,19 @@ def test_previously_failing_prompt_uses_same_resolution_for_send_and_approve(
     assert result == 0
     assert "Governed implementation summary" in output
     assert "Human confirmation recorded. Entering certified runtime." in output
-    assert "runtime_binding_status: AIGOL_NEXT_RUNTIME_BOUND" in output
-    assert "runtime_entered: True" in output
-    assert "governance_authorization_reached: True" in output
-    assert "provider_invocation_reached: True" in output
-    assert "worker_execution_reached: True" in output
-    assert "replay_certification_reached: True" in output
-    assert "runtime_bound_count: 1" in output
-    assert adapter.calls == 1
+    # CF's current G59 contract also applies to this legacy CLI fixture:
+    # /approve delegates the same intent, but cannot synthesize typed readiness.
+    assert len(entries) == 1
+    arguments, entry = entries[0]
+    intent = resolve_development_intent(message="Implement governed policy.")
+    assert arguments["human_requests"] == [intent["canonical_runtime_prompt"]]
+    assert intent["same_decision_for_send_and_approve"] is True
+    flow = entry["production_conversation_flow_binding"]
+    assert flow["requested_target_owner"] == "DEVELOPMENT_GOVERNANCE"
+    assert flow["route_sufficiency_status"] == "NOT_READY"
+    assert flow["objective_commitment_required"] is True
+    assert flow["worker_invoked"] is False
+    assert "runtime_binding_status: AIGOL_NEXT_RUNTIME_BINDING_NOT_REQUIRED" in output
+    assert "runtime_entered: False" in output
+    assert "runtime_bound_count: 0" in output
+    assert adapter.calls == 0

@@ -611,3 +611,54 @@ def test_explicit_projection_tampering_fails_che_binding() -> None:
     projection["owner_state"] = "DIFFERENT-STATE"
     with pytest.raises(FailClosedRuntimeError):
         CanonicalOwnerProjectionV1.from_dict(projection)
+
+
+CH_HARDENING_MESSAGE = (
+    "\nHardening\n\nScenario: Routing\nCoverage: +1 Scenario\n"
+    "Replay: Recorded\nOperator feedback: Optional"
+)
+
+
+def test_owner_console_padding_is_removed_without_changing_internal_text() -> None:
+    from copy import deepcopy
+
+    owner = {"conversation_output_tail": [CH_HARDENING_MESSAGE + "\n\t", "  ", "Done"]}
+    before = deepcopy(owner)
+    projected = che_service._canonical_che_presentations(owner, "UNCHANGED")
+    assert projected == (CH_HARDENING_MESSAGE[1:], "Done")
+    assert owner == before
+    assert "\n\nScenario: Routing\n" in projected[0]
+
+
+@pytest.mark.parametrize("message", [CH_HARDENING_MESSAGE, "Valid message\n", "  Valid message"])
+def test_direct_padded_canonical_presentation_still_fails_closed(message: str) -> None:
+    from dataclasses import replace
+
+    with pytest.raises(FailClosedRuntimeError, match="boundary whitespace"):
+        replace(_presentation(), presentation_message=(message,))
+
+
+def test_console_padding_does_not_change_che_evidence_or_owner_transition(tmp_path: Path) -> None:
+    from copy import deepcopy
+
+    owner = {
+        "conversation_output_tail": [CH_HARDENING_MESSAGE[1:]],
+        "runtime_entered": False,
+        "execution_authorized": False,
+        "worker_execution_reached": False,
+        "provider_invocation_reached": False,
+        "artifact_hash": "sha256:" + "a" * 64,
+        "replay_reference": str(tmp_path / "owner-replay"),
+    }
+    padded = deepcopy(owner)
+    padded["conversation_output_tail"] = [CH_HARDENING_MESSAGE]
+    clean_response = che_service._canonical_che_response_from_owner_result(
+        _request(tmp_path), owner, prior_continuation=None, strict_owner_projection=False,
+    )
+    padded_response = che_service._canonical_che_response_from_owner_result(
+        _request(tmp_path), padded, prior_continuation=None, strict_owner_projection=False,
+    )
+    assert padded_response.to_dict() == clean_response.to_dict()
+    assert padded_response.advancement_state == NOT_ADVANCED
+    assert padded_response.owner_transition.permitted_controls == ()
+    assert padded_response.presentation.presentation_message == (CH_HARDENING_MESSAGE[1:],)

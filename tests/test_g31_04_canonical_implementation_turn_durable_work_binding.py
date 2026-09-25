@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 import json
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -32,19 +33,108 @@ REQUEST = (
 )
 
 
-def _context(tmp_path: Path, *, session_id: str = "G31-04-CONTEXT") -> dict:
-    workspace = tmp_path / "workspace"
-    workspace.mkdir(exist_ok=True)
-    (workspace / ".git").mkdir(exist_ok=True)
-    return prepare_unified_human_interface_project_context(
-        interface_name="aicli",
-        session_id=session_id,
-        message=REQUEST,
-        runtime_root=tmp_path / "runtime",
-        workspace=workspace,
-        created_at=CREATED_AT,
+def _authenticated_workspace(tmp_path: Path) -> Path:
+    """Use real local Git identities and existing conformance source bytes."""
+    from runtime.governance.conformance_rules import (
+        CONSTITUTIONAL_DOCS, ENFORCEMENT_CONTENT_RULES, LINEAGE_EVIDENCE,
+    )
+    from aigol.runtime.constitutional_reuse_proof_runtime import (
+        _OWNER_COMPOSITION_GOVERNING_SOURCES,
     )
 
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    def git(*args: str) -> None:
+        subprocess.run(["git", *args], cwd=workspace, check=True, capture_output=True)
+    git("init")
+    git("config", "user.email", "g31-fixture@example.invalid")
+    git("config", "user.name", "G31 Contract Fixture")
+    git("commit", "--allow-empty", "-m", "fixture parent")
+    sources = set(_OWNER_COMPOSITION_GOVERNING_SOURCES) | {
+        rule.path for rule in (*CONSTITUTIONAL_DOCS, *ENFORCEMENT_CONTENT_RULES, *LINEAGE_EVIDENCE)
+    }
+    sources.add("aigol/runtime/human_interface_runtime_entry_service.py")
+    for relative in sorted(sources):
+        target = workspace / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes((Path(__file__).resolve().parents[1] / relative).read_bytes())
+    git("add", ".")
+    git("commit", "-m", "fixture owner evidence")
+    return workspace
+
+
+def _explicit_proof(workspace: Path, request: str, *, new_capability: bool = False) -> dict:
+    """Reuse G63 input recipes, never its frozen owner/evaluator fixtures."""
+    from test_g63_05_constitutional_reuse_proof_runtime import _proof_input, _ladder
+    from aigol.runtime.constitutional_reuse_proof_runtime import (
+        _acquire_authenticated_owner_baseline,
+        create_constitutional_reuse_proof_input,
+        create_responsibility_signature,
+    )
+    from aigol.runtime.platform_capability_certification_registry import (
+        lookup_platform_capability_certification,
+    )
+
+    if new_capability:
+        proof = _proof_input(
+            candidate_ids=(), create_new=True,
+            extension_ladder=_ladder(feasible_index=None, candidate_id=None, owner=None),
+        )
+    else:
+        candidates = ("CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY", "CANONICAL_PLATFORM_PRESENTATION_LAYER")
+        record = lookup_platform_capability_certification(candidates[0])
+        proof = _proof_input(
+            candidate_ids=candidates,
+            equivalence_disposition="COMPLEMENTARY_FRAGMENT",
+            compatibility_result="ADAPTER_COMPATIBLE",
+            extension_ladder=_ladder(
+                feasible_index=5, candidate_id=candidates[0], owner=record["capability_owner"],
+            ),
+            duplicate_matrix=[{
+                "candidate_ids": list(candidates),
+                "overlap_type": "COMPLEMENTARY_FRAGMENTATION",
+                "consolidation_feasibility": "FEASIBLE",
+                "owner_conflict_resolved": True,
+                "evidence_refs": ["G31 bounded complementary-capability fixture"],
+            }],
+        )
+    signature = {
+        key: value for key, value in proof["responsibility_signature"].items()
+        if key not in {"artifact_type", "runtime_version", "signature_hash"}
+    }
+    signature["semantic_responsibility"] = request
+    fields = {
+        key: value for key, value in proof.items()
+        if key not in {"artifact_type", "runtime_version", "input_hash", "responsibility_signature_hash"}
+    }
+    fields["responsibility_signature"] = create_responsibility_signature(**signature)
+    fields["authenticated_baseline"] = _acquire_authenticated_owner_baseline(
+        root=workspace, expected_baseline=None,
+    )
+    fields["created_at"] = CREATED_AT
+    fields["known_limitations"] = [
+        "Synthetic test-local equivalence/feasibility inputs; no production authority.",
+        "Git identities, governing bytes, source owners and evaluation are real.",
+    ]
+    return create_constitutional_reuse_proof_input(**fields)
+
+
+def _context(
+    tmp_path: Path, *, session_id: str = "G31-04-CONTEXT",
+    request: str = REQUEST, new_capability: bool = False,
+) -> dict:
+    workspace = _authenticated_workspace(tmp_path)
+    context = prepare_unified_human_interface_project_context(
+        interface_name="aicli", session_id=session_id, message=request,
+        runtime_root=tmp_path / "runtime", workspace=workspace, created_at=CREATED_AT,
+        reuse_proof_input=_explicit_proof(workspace, request, new_capability=new_capability),
+    )
+    admission = context["reuse_proof_production_admission"]
+    assert admission["admission_status"] == "READY_FOR_FRESH_G47"
+    assert admission["proof_requirement"] == "REQUIRED_SATISFIED"
+    assert admission["reuse_proof_result"]["planning_authorized"] is False
+    assert context["constitutional_development_governance"]["planning_eligible"] is True
+    return context
 
 def _binding(tmp_path: Path, *, session_id: str = "G31-04-BINDING") -> dict:
     return _context(tmp_path, session_id=session_id)[
@@ -125,18 +215,13 @@ def test_repository_scope_is_explicitly_unresolved_without_invented_paths(
 def test_aicli_renders_canonical_proposal_and_exact_identities_before_approval(
     tmp_path: Path,
 ) -> None:
-    output: list[str] = []
-    result = aicli.run_reference_uhi_session(
-        session_id="G31-04-AICLI-PREAPPROVAL",
-        created_at=CREATED_AT,
-        runtime_root=tmp_path / "runtime",
-        workspace=tmp_path,
-        input_reader=_reader([REQUEST, "/send"]),
-        output_writer=output.append,
-    )
-    rendered = "\n".join(output)
+    # G66 gates raw first turns. Test rendering from a genuinely admitted
+    # Project Services proposal; test the first-turn gate separately below.
+    context = _context(tmp_path)
+    summary = context["human_conversation_experience"]["approval_summary"]
+    rendered = aicli._render_summary(summary)
 
-    assert result["pending_approval"] is True
+    assert context["development_intent_resolution"]["requires_human_approval"] is True
     assert "Canonical durable governed-work proposal" in rendered
     assert "development_composition_plan_hash: sha256:" in rendered
     assert "durable_governed_work_hash: sha256:" in rendered
@@ -144,8 +229,39 @@ def test_aicli_renders_canonical_proposal_and_exact_identities_before_approval(
     assert "approval_request_hash: sha256:" in rendered
     assert "approval_is_execution_authorization: False" in rendered
     assert "acli_governed_development_" not in rendered
-    assert result["aicli_authorizes"] is False
-    assert result["aicli_executes"] is False
+
+
+def test_aicli_development_request_routes_before_objective_commitment(tmp_path: Path) -> None:
+    from aigol.runtime.platform_query_router import route_platform_query
+    request = "Implement and " + REQUEST[0].lower() + REQUEST[1:]
+    route = route_platform_query(query=request, created_at=CREATED_AT)
+    assert route["selected_service"] == "GOVERNED_DEVELOPMENT_RUNTIME"
+    result = aicli.run_reference_uhi_session(
+        session_id="G31-04-AICLI-PREAPPROVAL", created_at=CREATED_AT,
+        runtime_root=tmp_path / "runtime", workspace=tmp_path,
+        input_reader=_reader([request, "/send", "/approve", "/exit"]),
+        output_writer=lambda _: None,
+    )
+    context = result["platform_core_project_services_context"]
+    flow = context["production_conversation_flow_binding"]
+    assert flow["requested_target_flow_id"] == "CFA-DEVELOPMENT-GOVERNANCE-V1"
+    assert flow["permitted_next_flow_id"] == "CFA-OBJECTIVE-COMMITMENT-V1"
+    assert result["pending_approval"] is False
+    assert result["runtime_entered"] is False
+    assert context["canonical_implementation_turn_binding"] is None
+
+
+def test_missing_reuse_proof_still_withholds_binding(tmp_path: Path) -> None:
+    workspace = _authenticated_workspace(tmp_path)
+    context = prepare_unified_human_interface_project_context(
+        interface_name="aicli", session_id="G31-MISSING-PROOF", message=REQUEST,
+        runtime_root=tmp_path / "runtime", workspace=workspace, created_at=CREATED_AT,
+    )
+    assert context["reuse_proof_production_admission"]["admission_status"] == (
+        "WAITING_FOR_REUSE_PROOF_EVIDENCE"
+    )
+    assert context["canonical_implementation_turn_binding"] is None
+    assert context["constitutional_development_governance"] is None
 
 
 @pytest.mark.parametrize(
@@ -371,13 +487,9 @@ def test_insufficient_goal_uses_existing_clarification_without_binding(
 def test_new_capability_decision_projects_existing_gap_without_new_selector(
     tmp_path: Path,
 ) -> None:
-    context = prepare_unified_human_interface_project_context(
-        interface_name="aicli",
-        session_id="G31-04-NEW-CAPABILITY",
-        message="Implement a new read-only Platform Core capability.",
-        runtime_root=tmp_path / "runtime",
-        workspace=tmp_path,
-        created_at=CREATED_AT,
+    context = _context(
+        tmp_path, session_id="G31-04-NEW-CAPABILITY",
+        request="Implement a new read-only Platform Core capability.", new_capability=True,
     )
     binding = context["canonical_implementation_turn_binding"]
     coverage = binding["capability_composition_coverage_artifact"]

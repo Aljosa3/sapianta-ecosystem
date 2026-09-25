@@ -73,6 +73,10 @@ def infer_platform_project_objective(
         if isinstance(intent.get("candidate_capability_discovery"), dict)
         else {}
     )
+    from aigol.runtime.platform_core_project_services import d1_inspection_required, discover_candidate_capabilities
+    if d1_inspection_required(workspace) and not d1_inspection_required(discovery):
+        discovery = discover_candidate_capabilities(message=prompt, workspace_state=workspace)
+    inspection = d1_inspection_required(discovery) or d1_inspection_required(workspace)
     subject = _objective_subject(normalized, discovery)
     requested_outcomes = _requested_outcomes(lowered)
     source_work_type = str(intent.get("requested_work_type") or intent.get("work_type") or "")
@@ -84,6 +88,8 @@ def infer_platform_project_objective(
         and work_type_source != "EXPLICIT_NON_MUTATING_OBJECTIVE"
     )
     missing_information: list[str] = []
+    if inspection:
+        missing_information.append("independent inspection/reuse proof")
     if not subject:
         missing_information.append("project objective subject")
     if not requested_outcomes:
@@ -122,8 +128,8 @@ def infer_platform_project_objective(
         "source_development_intent_work_type": source_work_type,
         "objective_work_type_source": work_type_source,
         "work_type_binding_required": requested_work_type != source_work_type,
-        "mutation_allowed": requested_work_type == "IMPLEMENTATION" and intent.get("mutation_allowed") is True,
-        "runtime_implementation": requested_work_type == "IMPLEMENTATION" and intent.get("runtime_implementation") is True,
+        "mutation_allowed": not inspection and requested_work_type == "IMPLEMENTATION" and intent.get("mutation_allowed") is True,
+        "runtime_implementation": not inspection and requested_work_type == "IMPLEMENTATION" and intent.get("runtime_implementation") is True,
         "objective_status": status,
         "objective_sufficient": sufficient,
         "objective_ambiguity_detected": ambiguity,
@@ -161,6 +167,11 @@ def infer_platform_project_objective(
         **OBJECTIVE_BOUNDARY_FLAGS,
     }
     artifact["artifact_hash"] = replay_hash(artifact)
+    if inspection:
+        artifact["d1_candidate_discovery"] = deepcopy(discovery)
+        body = deepcopy(artifact)
+        body.pop("artifact_hash", None)
+        artifact["artifact_hash"] = replay_hash(body)
     return artifact
 
 
@@ -262,6 +273,15 @@ def validate_platform_project_objective(artifact: dict[str, Any]) -> dict[str, A
         flags = artifact.get("boundary_flags")
         if not isinstance(flags, dict) or flags.get(field_name) is not expected:
             raise FailClosedRuntimeError("project objective boundary flags are invalid")
+    from aigol.runtime.platform_core_project_services import d1_inspection_required
+    if d1_inspection_required(artifact):
+        if (artifact.get("objective_sufficient") is not False
+                or artifact.get("coverage_composition_eligible") is not False
+                or artifact.get("development_plan_composition_eligible") is not False
+                or artifact.get("mutation_allowed") is not False
+                or artifact.get("runtime_implementation") is not False
+                or artifact.get("objective_status") == OBJECTIVE_SUFFICIENT):
+            raise FailClosedRuntimeError("inspection evidence cannot establish planning eligibility")
     artifact_hash = artifact.get("artifact_hash")
     body = deepcopy(artifact)
     body.pop("artifact_hash", None)

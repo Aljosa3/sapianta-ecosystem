@@ -7745,8 +7745,12 @@ def _canonical_che_presentations(
         )
     output_tail = owner_result.get("conversation_output_tail")
     if isinstance(output_tail, list):
+        # Runtime console layout is owner-generated text, not a canonical
+        # presentation payload. Remove only its outer padding at projection.
         presentations.extend(
-            item for item in output_tail if isinstance(item, str) and item
+            item.strip()
+            for item in output_tail
+            if isinstance(item, str) and item.strip()
         )
     if not presentations:
         presentations.append(f"Canonical Human Entry owner status: {owner_status}")

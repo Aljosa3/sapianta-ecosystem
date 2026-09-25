@@ -199,6 +199,9 @@ def prepare_implementation_turn_capability_coverage(
     created_at: str,
 ) -> dict[str, Any]:
     """Prepare the existing deterministic coverage input before planning."""
+    from aigol.runtime.platform_core_project_services import d1_inspection_required
+    if d1_inspection_required(knowledge_reuse_artifact):
+        raise FailClosedRuntimeError("inspection evidence cannot establish implementation or gap authority")
 
     raw_request = _require_string(request, "request")
     knowledge_reuse = _validate_hash_bound_snapshot(
@@ -277,6 +280,9 @@ def validate_implementation_turn_durable_work_binding(
     require_ready: bool = False,
 ) -> dict[str, Any]:
     """Fail closed unless every nested identity in the binding is unchanged."""
+    from aigol.runtime.platform_core_project_services import d1_inspection_required
+    if d1_inspection_required(artifact):
+        raise FailClosedRuntimeError("inspection evidence cannot establish implementation or gap authority")
 
     if not isinstance(artifact, dict):
         raise FailClosedRuntimeError("implementation turn durable-work binding must be a dict")
@@ -589,6 +595,9 @@ def _repository_context(
 def _bounded_project_capability_gap_evidence(
     *, knowledge_reuse: dict[str, Any], coverage: dict[str, Any]
 ) -> bool:
+    from aigol.runtime.platform_core_project_services import d1_inspection_required
+    if d1_inspection_required([knowledge_reuse, coverage]):
+        return False
     discovery = coverage.get("candidate_capability_discovery")
     decisions = {
         str(knowledge_reuse.get("capability_resolution_decision") or ""),
@@ -607,6 +616,9 @@ def _project_capability_gap_coverage_projection(
     coverage: dict[str, Any],
 ) -> dict[str, Any]:
     """Project an existing NEW_CAPABILITY decision into the existing gap contract."""
+    from aigol.runtime.platform_core_project_services import d1_inspection_required
+    if d1_inspection_required(coverage):
+        raise FailClosedRuntimeError("inspection evidence cannot establish implementation or gap authority")
 
     projected = deepcopy(coverage)
     source_hash = projected.get("artifact_hash")
@@ -686,6 +698,9 @@ def _project_required_extension_gap(
     knowledge_reuse: dict[str, Any],
 ) -> dict[str, Any]:
     """Preserve reuse while projecting existing new-work evidence into the plan."""
+    from aigol.runtime.platform_core_project_services import d1_inspection_required
+    if d1_inspection_required([coverage, knowledge_reuse]):
+        raise FailClosedRuntimeError("inspection evidence cannot establish implementation or gap authority")
 
     projected = deepcopy(coverage)
     source_hash = projected.get("artifact_hash")

@@ -108,26 +108,85 @@ def test_clarification_is_goal_oriented_when_inference_is_insufficient(tmp_path:
     assert any("outcome" in question.lower() for question in conversation["clarification_questions"])
 
 
-def test_aicli_remains_thin_adapter_for_capability_resolution(tmp_path: Path) -> None:
-    calls: list[dict] = []
+def test_aicli_remains_thin_adapter_for_capability_resolution(tmp_path: Path, monkeypatch) -> None:
+    import re
+    from test_g66_13_canonical_typed_semantic_composition_convergence import _manifest
 
-    def runtime_runner(**kwargs):
-        calls.append(kwargs)
-        return {"canonical_runtime_entry_status": "CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY_BOUND"}
+    # A raw development turn no longer enters the legacy runner. Use the
+    # current certified normalization route with exact G59/G66 controls.
+    _manifest(tmp_path / "workspace" / "artifact")
+    manifest_path = (
+        tmp_path / "workspace" / "artifact" / "manifest"
+        / "000_implementation_manifest_recorded.json"
+    )
+    calls: list[dict] = []
+    original_entry = aicli.run_human_interface_runtime_entry
+    def observe_entry(**kwargs):
+        result = original_entry(**kwargs)
+        calls.append(result)
+        return result
+    monkeypatch.setattr(aicli, "run_human_interface_runtime_entry", observe_entry)
+
+    output: list[str] = []
+    fixed = iter([
+        "I have an idea to improve governance documentation.", "/send",
+        "action: Implement and normalize", "/send",
+        "subject: a repository implementation change", "/send",
+        "outcome: canonical change evidence", "/send",
+        "work-type: ANALYSIS", "/send",
+    ])
+    phase = 0
+    def reader(_prompt: str) -> str:
+        nonlocal phase
+        try:
+            return next(fixed)
+        except StopIteration:
+            controls = ("confirm", "commit")
+            if phase in (0, 2):
+                control = controls[phase // 2]
+                matches = re.findall(r"/" + control + r" sha256:[0-9a-f]{64}", "\n".join(output))
+                assert matches, control
+                phase += 1
+                return matches[-1]
+            if phase in (1, 3):
+                phase += 1
+                return "/send"
+            return "/exit"
+
+    def unexpected_runner(**kwargs):
+        raise AssertionError("AiCLI must not bypass certified admission through the legacy runner")
 
     result = aicli.run_reference_uhi_session(
-        session_id="G14-47-AICLI",
-        runtime_root=tmp_path,
-        workspace=".",
-        input_reader=_reader(["I have an idea to improve governance documentation.", "/send", "/approve", "/exit"]),
-        output_writer=lambda _line: None,
-        runtime_runner=runtime_runner,
+        session_id="G14-47-AICLI", created_at=CREATED_AT,
+        runtime_root=tmp_path / "runtime", workspace=tmp_path / "workspace",
+        input_reader=reader, output_writer=output.append,
+        runtime_runner=unexpected_runner, artifact_references=[str(manifest_path)],
     )
-
-    context = result["platform_core_project_services_context"]
-    assert result["runtime_entered"] is True
     assert calls
+    confirmed = next(
+        call for call in calls
+        if (call.get("canonical_typed_semantic_composition") or {}).get("control")
+        == "CANDIDATE_CONFIRMATION"
+    )
+    assert confirmed["production_conversation_binding"]["objective_readiness_report"][
+        "readiness_disposition"
+    ] == "READY"
+    committed = next(
+        call for call in calls
+        if (call.get("canonical_typed_semantic_composition") or {}).get("control")
+        == "OBJECTIVE_COMMITMENT"
+    )
+    admission = committed["committed_objective_admission"]
+    assert admission["admission_status"] == "COMMITTED_OBJECTIVE_ADMITTED_TO_PLATFORM_CORE"
+    assert admission["platform_core_admission"]["admission_status"] == (
+        "EXPLICIT_CERTIFIED_CAPABILITY_REQUEST_ADMITTED"
+    )
+    assert admission["authorization_granted"] is False
+    assert admission["worker_dispatched"] is False
+    assert admission["execution_started"] is False
+    assert result["runtime_entered"] is False
+    context = result["platform_core_project_services_context"]
     assert context["interface_authority"] is False
-    assert context["development_intent_resolution"]["candidate_capability_discovery"][
-        "capability_discovery_authority"
-    ] == "PLATFORM_CORE"
+    assert context["semantic_capability_runtime_route"]["selected_capability_identifier"] == (
+        "PLATFORM_CHANGE_NORMALIZATION"
+    )

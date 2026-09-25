@@ -3,6 +3,12 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from dataclasses import fields
+from datetime import datetime
+import hashlib
+import json
+import re
+import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -23,7 +29,374 @@ from aigol.runtime.self_knowledge_request_classification import (
     classify_self_knowledge_request,
     validate_self_knowledge_request_classification,
 )
-from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
+from aigol.runtime.transport.serialization import canonical_serialize, load_json, replay_hash, write_json_immutable
+
+
+
+P1_SCHEMA = "PROJECT_SERVICES_P1_SOURCE_CLAIM_ADMISSION_CONTRACT_V1"
+D1_SCHEMA = "PROJECT_SERVICES_CANDIDATE_D1_V1"
+P1_REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
+_P1_CLAIM_FIELDS = frozenset((
+    "claim_subject_id", "claim_type", "claim_value", "source_owner", "source_artifact",
+    "source_version_or_digest", "source_scope", "source_authority_effect", "claim_mode",
+    "observed_or_asserted_at", "currentness_status", "invalidation_status",
+))
+
+
+def _p1_fail(message: str) -> None:
+    raise FailClosedRuntimeError("P1 admission: " + message)
+
+
+def _p1_object(value: Any, keys: set[str] | frozenset[str]) -> dict[str, Any]:
+    if not isinstance(value, dict) or set(value) != keys:
+        _p1_fail("closed object fields invalid")
+    return value
+
+
+def _p1_string(value: Any) -> str:
+    if not isinstance(value, str) or not value or value != value.strip():
+        _p1_fail("nonempty canonical string required")
+    return value
+
+
+def _p1_strings(value: Any) -> list[str]:
+    if not isinstance(value, list) or not value:
+        _p1_fail("nonempty string array required")
+    for item in value:
+        _p1_string(item)
+    if value != sorted(set(value)):
+        _p1_fail("string array must be sorted and unique")
+    return value
+
+
+def _p1_json_types(value: Any) -> None:
+    """Reject non-JSON Python values and overflowed JSON numbers without coercion."""
+    import math
+    if value is None or type(value) in (str, bool, int):
+        return
+    if type(value) is float:
+        if not math.isfinite(value):
+            _p1_fail("non-finite JSON number")
+        return
+    if type(value) is list:
+        for item in value:
+            _p1_json_types(item)
+        return
+    if type(value) is dict and all(type(key) is str for key in value):
+        for item in value.values():
+            _p1_json_types(item)
+        return
+    _p1_fail("strict JSON types required")
+
+
+def parse_p1_admission_input(value: str | dict[str, Any]) -> dict[str, Any]:
+    """Strict JSON boundary: duplicate keys and non-finite values never coerce."""
+    def pairs(items: list[tuple[str, Any]]) -> dict[str, Any]:
+        result: dict[str, Any] = {}
+        for key, item in items:
+            if key in result:
+                _p1_fail("duplicate JSON key")
+            result[key] = item
+        return result
+    if not isinstance(value, str):
+        _p1_json_types(value)
+    try:
+        encoded = value if isinstance(value, str) else json.dumps(value, allow_nan=False)
+        parsed = json.loads(encoded, object_pairs_hook=pairs,
+                            parse_constant=lambda _: _p1_fail("non-finite JSON number"))
+    except (TypeError, ValueError) as exc:
+        raise FailClosedRuntimeError("P1 admission: invalid JSON") from exc
+    _p1_json_types(parsed)
+    return _p1_object(parsed, {"schema_version", "subject_identity", "source_claims", "admission_context"})
+
+
+def _p1_pointer(value: Any, pointer: Any) -> Any:
+    if pointer is None:
+        return value
+    if not isinstance(pointer, str) or (pointer and not pointer.startswith("/")):
+        _p1_fail("invalid JSON pointer")
+    if pointer == "":
+        return value
+    for token in pointer[1:].split("/"):
+        if re.search(r"~(?![01])", token):
+            _p1_fail("invalid pointer escape")
+        key = token.replace("~1", "/").replace("~0", "~")
+        try:
+            if isinstance(value, list):
+                if not re.fullmatch(r"0|[1-9][0-9]*", key):
+                    _p1_fail("noncanonical array pointer")
+                value = value[int(key)]
+            elif isinstance(value, dict):
+                value = value[key]
+            else:
+                _p1_fail("pointer does not resolve")
+        except (KeyError, IndexError):
+            _p1_fail("pointer does not resolve")
+    return value
+
+
+def _p1_source(reference: Any, checkpoint: str, *, historical: bool = False) -> tuple[Any, bool]:
+    ref = _p1_object(reference, {"path", "content_hash", "pointer"})
+    name = _p1_string(ref["path"])
+    path = Path(name)
+    root = P1_REPOSITORY_ROOT.resolve()
+    if path.is_absolute() or ".." in path.parts or "\\" in name or path.as_posix() != name:
+        _p1_fail("source path is not repository-relative canonical POSIX")
+    resolved = (root / path).resolve()
+    if not resolved.is_relative_to(root):
+        _p1_fail("source path escapes repository")
+    digest = ref["content_hash"]
+    if not isinstance(digest, str) or not re.fullmatch(r"sha256:[0-9a-f]{64}", digest):
+        _p1_fail("invalid source digest")
+    try:
+        original = subprocess.run(["git", "show", f"{checkpoint}:{name}"], cwd=root,
+                                  capture_output=True, check=True).stdout
+    except subprocess.CalledProcessError as exc:
+        raise FailClosedRuntimeError("P1 admission: source absent from checkpoint") from exc
+    if "sha256:" + hashlib.sha256(original).hexdigest() != digest:
+        _p1_fail("checkpoint source digest mismatch")
+    stale = not resolved.is_file() or resolved.read_bytes() != original
+    if stale and not historical:
+        _p1_fail("source changed or missing; no prior admission supplied")
+    if ref["pointer"] is None:
+        return original, stale
+    try:
+        # Reuse strict parsing without imposing the admission envelope on source records.
+        def pairs(items: list[tuple[str, Any]]) -> dict[str, Any]:
+            result: dict[str, Any] = {}
+            for key, value in items:
+                if key in result:
+                    _p1_fail("duplicate source JSON key")
+                result[key] = value
+            return result
+        obj = json.loads(original, object_pairs_hook=pairs,
+                         parse_constant=lambda _: _p1_fail("non-finite source JSON"))
+    except (ValueError, UnicodeError) as exc:
+        raise FailClosedRuntimeError("P1 admission: source is not valid JSON") from exc
+    _p1_json_types(obj)
+    return _p1_pointer(obj, ref["pointer"]), stale
+
+
+def _p1_existing_model(model: Any, value: Any) -> Any:
+    obj = _p1_object(value, {field.name for field in fields(model)})
+    kwargs = {key: tuple(item) if isinstance(item, list) else item for key, item in obj.items()}
+    return model(**kwargs)
+
+
+def _p1_owner_context(context: Any, baseline: str | None) -> Any:
+    from aigol.runtime import constitutional_development_governance_orchestration as g47
+    obj = _p1_object(context, {"cdd_classification", "evidence_snapshot"})
+    cdd = g47.validate_cdd_classification(_p1_existing_model(g47.DevelopmentGovernanceCDDClassification,
+                                                           obj["cdd_classification"]))
+    snapshot = deepcopy(obj["evidence_snapshot"])
+    _p1_object(snapshot, {field.name for field in fields(g47.DevelopmentGovernanceEvidenceSnapshot)})
+    if not isinstance(snapshot["evidence_items"], list):
+        _p1_fail("owner evidence_items must be an array")
+    snapshot["evidence_items"] = tuple(_p1_existing_model(g47.DevelopmentGovernanceEvidenceReference, item)
+                                       for item in snapshot["evidence_items"])
+    if baseline != cdd.baseline_reference:
+        _p1_fail("owner baseline mismatch")
+    return g47.validate_development_governance_evidence_snapshot(
+        g47.DevelopmentGovernanceEvidenceSnapshot(**snapshot),
+        expected_cdd_id=cdd.cdd_id, expected_baseline=cdd.baseline_reference)
+
+
+def admit_p1_source_claims(value: str | dict[str, Any], *, prior_candidate: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Validate source-owned evidence; never grant reuse, certification or execution."""
+    obj = parse_p1_admission_input(value)
+    if obj["schema_version"] != P1_SCHEMA:
+        _p1_fail("unsupported schema version")
+    identity = _p1_object(obj["subject_identity"], {"subject_id", "raw_subject_ids", "identity_evidence"})
+    subject = _p1_string(identity["subject_id"])
+    raw_ids = _p1_strings(identity["raw_subject_ids"])
+    context = _p1_object(obj["admission_context"], {"repository_checkpoint", "baseline_id", "owner_context"})
+    checkpoint = context["repository_checkpoint"]
+    if not isinstance(checkpoint, str) or not re.fullmatch(r"[0-9a-f]{40}", checkpoint):
+        _p1_fail("invalid checkpoint")
+    if context["baseline_id"] is not None:
+        _p1_string(context["baseline_id"])
+    if not isinstance(identity["identity_evidence"], list) or not identity["identity_evidence"]:
+        _p1_fail("identity evidence required")
+    claims = obj["source_claims"]
+    if not isinstance(claims, list) or not claims:
+        _p1_fail("nonempty source_claims required")
+    # These input collections are sets of evidence, not an ordered authority chain.
+    identity["identity_evidence"] = [json.loads(item) for item in sorted({
+        canonical_serialize(item) for item in identity["identity_evidence"]
+    })]
+    obj["source_claims"] = [json.loads(item) for item in sorted({
+        canonical_serialize(item) for item in claims
+    })]
+    if prior_candidate is not None:
+        prior = deepcopy(prior_candidate)
+        digest = prior.pop("p1_candidate_hash", None)
+        if digest != replay_hash(prior) or prior.get("p1_admission_input") != obj:
+            _p1_fail("prior admission integrity/input mismatch")
+        if not isinstance(prior.get("d1"), dict) or prior["d1"].get("disposition") != "INSPECTION_ONLY":
+            _p1_fail("prior disposition invalid")
+    historical = prior_candidate is not None
+    identity_records = [_p1_source(ref, checkpoint, historical=historical) for ref in identity["identity_evidence"]]
+    if any(stale for _, stale in identity_records):
+        _p1_fail("identity evidence changed; canonical merge unavailable")
+    bound_raw: set[str] = set()
+    for record, _ in identity_records:
+        if isinstance(record, dict):
+            if record.get("capability_id") == subject:
+                sources = record.get("sources", [])
+                if isinstance(sources, list):
+                    bound_raw.update(item.get("capability_key") for item in sources if isinstance(item, dict)
+                                     and isinstance(item.get("capability_key"), str))
+            if record.get("subject_id") == subject:
+                bound_raw.add(subject)
+    claims = obj["source_claims"]
+    if not isinstance(claims, list) or not claims:
+        _p1_fail("nonempty source_claims required")
+    owner_snapshot = None
+    if context["owner_context"] is not None:
+        owner_snapshot = _p1_owner_context(context["owner_context"], context["baseline_id"])
+        if any(item.subject_id == subject for item in owner_snapshot.evidence_items):
+            bound_raw.add(subject)
+    if not set(raw_ids) <= bound_raw:
+        _p1_fail("raw identity relationship not established")
+    if subject not in raw_ids:
+        from aigol.runtime.capability_normalization_runtime import normalize_capability_identity
+        rules_path = P1_REPOSITORY_ROOT / "governance/AIGOL_CAPABILITY_NORMALIZATION_RULES_V1.json"
+        # No permissive built-in fallback; the checkpoint owns the locator rules.
+        try:
+            rules_bytes = subprocess.run(["git", "show", f"{checkpoint}:governance/AIGOL_CAPABILITY_NORMALIZATION_RULES_V1.json"],
+                                         cwd=P1_REPOSITORY_ROOT, capture_output=True, check=True).stdout
+            if rules_path.read_bytes() != rules_bytes:
+                _p1_fail("normalization rules changed")
+            rules = json.loads(rules_bytes)
+        except (OSError, ValueError, subprocess.CalledProcessError) as exc:
+            raise FailClosedRuntimeError("P1 admission: normalization rules unavailable") from exc
+        for raw in raw_ids:
+            normalized = normalize_capability_identity(raw, rules)
+            explicit = rules.get("aliases", {}).get(raw)
+            if normalized["capability_id"] != subject or (
+                (normalized["suffix_collapsed"] == "true" or normalized["version_collapsed"] == "true")
+                and explicit != normalized["canonical_key"]
+            ):
+                _p1_fail("normalization collapse is not an explicit identity binding")
+    output: list[dict[str, Any]] = []
+    for item in claims:
+        claim = deepcopy(_p1_object(item, _P1_CLAIM_FIELDS))
+        if claim["claim_subject_id"] != subject or claim["source_authority_effect"] != "NONE":
+            _p1_fail("claim subject/authority mismatch")
+        if claim["currentness_status"] != "UNKNOWN" or claim["invalidation_status"] != "UNKNOWN":
+            _p1_fail("input cannot self-assert currentness or invalidation")
+        _p1_string(claim["claim_type"])
+        _p1_string(claim["claim_value"])
+        scope = _p1_strings(claim["source_scope"])
+        owner = _p1_object(claim["source_owner"], {"id", "authority_reference"})
+        source, stale = _p1_source(claim["source_artifact"], checkpoint, historical=historical)
+        if claim["source_version_or_digest"] != claim["source_artifact"]["content_hash"]:
+            _p1_fail("source version/digest mismatch")
+        timestamp = claim["observed_or_asserted_at"]
+        if timestamp is not None:
+            if not isinstance(timestamp, str) or not timestamp.endswith("Z"):
+                _p1_fail("source timestamp must be UTC RFC3339")
+            try:
+                datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+            except ValueError:
+                _p1_fail("invalid timestamp")
+            if not isinstance(source, dict) or source.get("observed_or_asserted_at") != timestamp:
+                _p1_fail("timestamp not established by source")
+        if claim["claim_mode"] == "OBSERVATION":
+            if owner != {"id": None, "authority_reference": None}:
+                _p1_fail("observation cannot self-assert ownership")
+            if claim["claim_type"] != "DEVELOPMENT_STATE" or claim["claim_value"] not in {"IMPLEMENTED", "PARTIAL", "NOT_STARTED"}:
+                _p1_fail("unsupported development observation")
+            if not isinstance(source, dict) or source.get("status") != claim["claim_value"]:
+                _p1_fail("observation differs from source record")
+            if source.get("capability_key", source.get("subject_id")) not in raw_ids:
+                _p1_fail("observation source identity mismatch")
+            ref = claim["source_artifact"]
+            if ref["pointer"] is None or scope != [ref["path"] + "#" + ref["pointer"]]:
+                _p1_fail("observation scope must be its exact source record")
+            current = "STALE" if stale else "CURRENT" if context["baseline_id"] is None else "UNKNOWN"
+        elif claim["claim_mode"] == "OWNER_ASSERTION":
+            if owner_snapshot is None:
+                _p1_fail("owner assertion requires existing G47 evidence")
+            matches = [e for e in owner_snapshot.evidence_items if e.evidence_id == owner["authority_reference"]]
+            if len(matches) != 1:
+                _p1_fail("owner evidence reference not unique")
+            evidence = matches[0]
+            if (claim["claim_type"] != "REALIZATION_COMPLETENESS" or evidence.claim_type != claim["claim_type"]
+                    or evidence.claim_value != claim["claim_value"] or evidence.subject_id != subject
+                    or evidence.canonical_owner != owner["id"] or list(evidence.declared_responsibilities) != scope
+                    or evidence.source_reference != claim["source_artifact"]["path"]
+                    or evidence.content_hash != claim["source_version_or_digest"]):
+                _p1_fail("claim differs from existing owner evidence")
+            current = "STALE" if stale or evidence.supersession_state != "CURRENT" or evidence.compatibility_status == "INCOMPATIBLE" else (
+                "CURRENT" if evidence.compatibility_status in {"COMPATIBLE", "NOT_APPLICABLE"} else "UNKNOWN")
+        else:
+            _p1_fail("unknown claim mode")
+        claim["currentness_status"] = current
+        claim["invalidation_status"] = "INVALID" if current == "STALE" else "UNKNOWN" if current == "UNKNOWN" else "NOT_ESTABLISHED"
+        output.append(claim)
+    output = [json.loads(item) for item in sorted({canonical_serialize(item) for item in output})]
+    ambiguity = any(a["claim_type"] == b["claim_type"] and a["claim_value"] != b["claim_value"]
+                    for i, a in enumerate(output) for b in output[i + 1:])
+    states = {item["currentness_status"] for item in output}
+    candidate = {
+        "capability_id": subject, "goal_target": subject, "display_name": subject,
+        "matched_terms": [], "workspace_match": False, "certified_artifacts": [],
+        "reuse_decision_basis": "source_claim_inspection", "confidence_score": 0,
+        "requires_human_capability_name": False,
+        "p1_admission_input": obj,
+        "d1": {"schema_version": D1_SCHEMA, "disposition": "INSPECTION_ONLY", "source_claims": output,
+               "currentness": "STALE" if "STALE" in states else "UNKNOWN" if "UNKNOWN" in states else "CURRENT",
+               "ambiguity": ambiguity, "revalidation_required": True},
+    }
+    candidate["p1_candidate_hash"] = replay_hash(candidate)
+    return candidate
+
+
+def validate_d1_candidate(candidate: Any) -> dict[str, Any]:
+    if not isinstance(candidate, dict) or "p1_admission_input" not in candidate:
+        _p1_fail("D1 candidate lost its admission input")
+    expected = admit_p1_source_claims(candidate["p1_admission_input"], prior_candidate=candidate)
+    if expected != candidate:
+        _p1_fail("D1 candidate differs from validated projection; revalidation required")
+    return deepcopy(candidate)
+
+
+def d1_inspection_required(value: Any) -> bool:
+    """Validate every encountered D1 marker; never silently interpret it as legacy."""
+    if isinstance(value, list):
+        results = [d1_inspection_required(item) for item in value]
+        return any(results)
+    if not isinstance(value, dict):
+        return False
+    if "d1" in value or "p1_admission_input" in value or "p1_candidate_hash" in value or value.get("reuse_decision_basis") == "source_claim_inspection":
+        validate_d1_candidate(value)
+        return True
+    if "d1_admission_inputs" in value:
+        inputs = value["d1_admission_inputs"]
+        if not isinstance(inputs, list):
+            _p1_fail("d1_admission_inputs must be an array")
+        expected = [admit_p1_source_claims(item) for item in inputs]
+        if "candidate_capabilities" in value:
+            candidates = value["candidate_capabilities"]
+            if not isinstance(candidates, list):
+                _p1_fail("candidate array required")
+            for item in expected:
+                matches = [c for c in candidates if isinstance(c, dict) and c.get("capability_id") == item["capability_id"]]
+                if len(matches) != 1 or matches[0] != item:
+                    _p1_fail("parent admission/candidate projection mismatch")
+            selected = value.get("selected_candidate_capability")
+            if selected is not None and selected not in candidates:
+                _p1_fail("selected candidate differs from source candidate")
+            for candidate in candidates:
+                d1_inspection_required(candidate)
+            if expected and value.get("capability_resolution_decision") != "INSPECTION_REQUIRED":
+                _p1_fail("inspection discovery classification promoted")
+        nested = [d1_inspection_required(item) for key, item in value.items()
+                  if key != "d1_admission_inputs" and isinstance(item, (dict, list))]
+        return bool(inputs) or any(nested)
+    results = [d1_inspection_required(item) for item in value.values() if isinstance(item, (dict, list))]
+    return any(results)
 
 
 PLATFORM_CORE_PROJECT_SERVICES_VERSION = "G14_08A_PLATFORM_CORE_PROJECT_SERVICES_EXTRACTION_V1"
@@ -4932,7 +5305,7 @@ def project_knowledge_index_model(
                     str(mapping.get("governed_request") or mapping.get("source_goal") or ""),
                 ]
             )
-    return {
+    result = {
         "knowledge_reuse_version": PLATFORM_CORE_PROJECT_KNOWLEDGE_REUSE_VERSION,
         "platform_core_project_services_version": PLATFORM_CORE_PROJECT_SERVICES_VERSION,
         "knowledge_source": "deterministic_workspace_state",
@@ -4947,6 +5320,11 @@ def project_knowledge_index_model(
         "requires_human_approval_before_execution": True,
         "acli_next_executes_recommendation": False,
     }
+
+    if "d1_admission_inputs" in prior_index:
+        d1_inspection_required(prior_index)
+        result["d1_admission_inputs"] = deepcopy(prior_index["d1_admission_inputs"])
+    return result
 
 
 def project_knowledge_context_from_workspace(
@@ -4969,6 +5347,8 @@ def project_knowledge_context_from_workspace(
     modify_requested = any(term in lowered for term in ("improve", "change", "modify", "refine", "update"))
     continue_requested = any(term in lowered for term in ("continue", "extend", "add to", "build on"))
     discovery = candidate_capability_discovery if isinstance(candidate_capability_discovery, dict) else {}
+    if d1_inspection_required(workspace_state) and not d1_inspection_required(discovery):
+        discovery = discover_candidate_capabilities(message=message, workspace_state=workspace_state)
     discovery_target = str(discovery.get("selected_goal_target") or "")
     capability_decision = (
         str(discovery.get("capability_resolution_decision") or "")
@@ -4980,7 +5360,14 @@ def project_knowledge_context_from_workspace(
         if isinstance(discovery.get("candidate_capabilities"), list)
         else []
     )
-    if known and already_requested:
+    inspection = d1_inspection_required(discovery) or d1_inspection_required(workspace_state)
+    if inspection:
+        classification = "INSPECTION_REQUIRED"
+        new_work_required = None
+        reuse_recommended = False
+        capability_decision = "INSPECTION_REQUIRED"
+        reason = "Source-backed development evidence requires inspection and independent proof."
+    elif known and already_requested:
         classification = "ALREADY_SATISFIED"
         new_work_required = False
         reuse_recommended = True
@@ -5026,6 +5413,8 @@ def project_knowledge_context_from_workspace(
             *certified_artifacts_for_goal_target(goal_target),
         ]
     )
+    if inspection:
+        artifacts = []
     milestones = unique_strings(
         knowledge_index.get("related_milestones_by_target", {}).get(goal_target, [])
         if isinstance(knowledge_index.get("related_milestones_by_target"), dict)
@@ -5158,7 +5547,7 @@ def discover_candidate_capabilities(
     lowered = " ".join(raw_message.lower().split())
     clause_roles = interpret_request_clause_roles(raw_message)
     target_text = " ".join(clause_roles["capability_target_clauses"]).lower()
-    if _invalid_continuation_reference(lowered):
+    if _invalid_continuation_reference(lowered) and not d1_inspection_required(workspace_state):
         return _empty_candidate_capability_discovery(raw_message)
     knowledge_index = (
         workspace_state.get("project_knowledge_index")
@@ -5198,9 +5587,20 @@ def discover_candidate_capabilities(
             )
         )
     candidates = sorted(candidates, key=lambda item: (-int(item.get("confidence_score") or 0), item["capability_id"]))
+    d1_inputs = knowledge_index.get("d1_admission_inputs", [])
+    if not isinstance(d1_inputs, list):
+        _p1_fail("d1_admission_inputs must be an array")
+    d1_candidates = [admit_p1_source_claims(item) for item in d1_inputs]
+    subjects = [item["capability_id"] for item in d1_candidates]
+    if len(subjects) != len(set(subjects)):
+        _p1_fail("duplicate subject admissions must be combined explicitly")
+    candidates.extend(sorted(d1_candidates, key=lambda item: item["capability_id"]))
     selected = candidates[0] if candidates else None
     ambiguity_remaining = len(candidates) > 1 and int(candidates[0]["confidence_score"]) == int(candidates[1]["confidence_score"])
-    if selected is None:
+    if d1_candidates:
+        decision = "INSPECTION_REQUIRED"
+        ambiguity_remaining = ambiguity_remaining or len(d1_candidates) > 1 or any(c["d1"]["ambiguity"] for c in d1_candidates)
+    elif selected is None:
         decision = "NEW_CAPABILITY"
     elif selected.get("workspace_match") is True and _already_satisfied_request_detected(lowered):
         decision = "EXISTING_CAPABILITY"
@@ -5230,6 +5630,8 @@ def discover_candidate_capabilities(
         "human_interface_authority": False,
         "replay_visible": True,
     }
+    if d1_inputs:
+        artifact["d1_admission_inputs"] = deepcopy(d1_inputs)
     artifact["artifact_hash"] = replay_hash(artifact)
     return artifact
 
@@ -5578,7 +5980,9 @@ def resolve_development_intent(
     )
     mutation_allowed = work_type_resolution["mutation_allowed"] is True
     runtime_implementation = work_type_resolution["runtime_implementation"] is True
+    inspection = d1_inspection_required(candidate_capability_discovery)
     summary_admissible = (
+        not inspection and
         (goal_detected or guided_detected)
         and not clarification_required
         and native_runtime_admissible
@@ -5587,6 +5991,9 @@ def resolve_development_intent(
         and runtime_implementation
         and not work_type_conflict
     )
+    if inspection:
+        mutation_allowed = False
+        runtime_implementation = False
     runtime_binding_admissible = summary_admissible
     read_only_work_binding_admissible = read_only_work_binding_admissible_for_intent(
         requested_work_type=requested_work_type,
@@ -7148,7 +7555,11 @@ def goal_mapping_from_workspace(
         if isinstance(workspace_state, dict)
         else None
     )
-    if "github actions" in lowered:
+    if d1_inspection_required(discovery) or d1_inspection_required(workspace_state):
+        governed_request = message
+        goal_type = "INSPECTION_REQUIRED"
+        target = discovered_target or "general_project_goal"
+    elif "github actions" in lowered:
         governed_request = "Add GitHub Actions support."
         goal_type = "EXTENDS_PROJECT"
         target = "github_actions"

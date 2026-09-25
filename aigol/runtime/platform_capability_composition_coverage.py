@@ -247,6 +247,8 @@ def discover_platform_capability_composition_coverage(
             query=raw_query,
             workspace_state=workspace_state,
         )
+        from aigol.runtime.platform_core_project_services import d1_inspection_required
+        inspection = d1_inspection_required(discovery)
         route_descriptors = _route_descriptors()
         generation_profile = canonical_generation_evidence_profile()
         facets = _discover_facets(raw_query)
@@ -288,6 +290,14 @@ def discover_platform_capability_composition_coverage(
             if residual_gaps
             else COVERAGE_COMPLETE
         )
+        if inspection:
+            coverage = []
+            residual_gaps = []
+            compositions = []
+            minimal_extension = {"classification": DISCOVERY_AMBIGUOUS_FAILED_CLOSED,
+                                 "required": False, "recommended_components": [],
+                                 "rationale": "Inspection evidence requires independent scope and reuse proof."}
+            status = COVERAGE_FAILED_CLOSED
         failure_reason = (
             "Replay evidence hash or lineage validation failed."
             if replay_invalid
@@ -395,6 +405,15 @@ def validate_platform_capability_composition_coverage(
     for field, expected in COVERAGE_BOUNDARY_FLAGS.items():
         if artifact.get(field) is not expected:
             raise FailClosedRuntimeError("capability composition coverage boundary flags invalid")
+    from aigol.runtime.platform_core_project_services import d1_inspection_required
+    if d1_inspection_required(artifact):
+        if (artifact.get("coverage_status") != COVERAGE_FAILED_CLOSED
+                or artifact.get("discovered_reusable_capabilities") != []
+                or artifact.get("capability_coverage") != []
+                or artifact.get("certified_reusable_compositions") != []
+                or artifact.get("uncovered_residual_gaps") != []
+                or artifact.get("minimal_required_platform_extension", {}).get("required") is not False):
+            raise FailClosedRuntimeError("inspection cannot establish coverage or capability gap")
     body = deepcopy(artifact)
     actual_hash = body.pop("artifact_hash", None)
     if replay_hash(body) != actual_hash:

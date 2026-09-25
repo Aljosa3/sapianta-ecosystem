@@ -23,6 +23,7 @@ from aigol.runtime.platform_core_project_services import (
     PLATFORM_CORE_PROJECT_KNOWLEDGE_REUSE_VERSION,
     PLATFORM_CORE_PROJECT_SERVICES_VERSION,
     discover_candidate_capabilities,
+    d1_inspection_required,
     project_knowledge_context_from_workspace,
 )
 from aigol.runtime.transport.serialization import replay_hash
@@ -167,6 +168,27 @@ def query_platform_knowledge(
         "root_cause_trace_boundary_preserved": True,
         **PLATFORM_KNOWLEDGE_BOUNDARY_FLAGS,
     }
+    if d1_inspection_required(discovery):
+        selected = discovery.get("selected_candidate_capability") or {}
+        response["d1_candidate_discovery"] = deepcopy(discovery)
+        response["d1_certification_binding"] = {
+            "schema_version": "PLATFORM_KNOWLEDGE_D1_CERTIFICATION_BINDING_V1",
+            "selected_subject_id": selected.get("capability_id"),
+            "binding_status": "UNBOUND", "candidate_certification_state": "UNKNOWN",
+            "lookup_result": deepcopy(certification_record),
+            "reason_codes": ["APPLICABILITY_NOT_ESTABLISHED" if certification_record else "NO_RECORD_FOUND_BY_LOOKUP"],
+            "revalidation_required": True,
+        }
+        response.update({
+            "query_classification": "PROJECT_CAPABILITY_KNOWLEDGE",
+            "canonical_capability_identifier": None, "certified_capability_exists": False,
+            "capability_owner": None, "architectural_owner": None, "implementation_owner": None,
+            "certification_status": "UNKNOWN", "certification_scope": None,
+            "certification_milestone": None, "certification_evidence": [], "certification_record_hash": None,
+            "is_certified": False, "knowledge_reuse_classification": "INSPECTION_REQUIRED",
+            "reuse_recommended": False, "duplicate_work_avoided": False, "new_work_required": None,
+            "recommended_platform_service": None,
+        })
     response["artifact_hash"] = replay_hash(response)
     return response
 
@@ -185,6 +207,42 @@ def validate_platform_knowledge_response(response: dict[str, Any]) -> dict[str, 
             raise FailClosedRuntimeError("platform knowledge response boundary flags invalid")
     if response.get("human_interface_authority") is not False:
         raise FailClosedRuntimeError("platform knowledge response human interface authority invalid")
+    inspection = d1_inspection_required(response.get("d1_candidate_discovery"))
+    binding = response.get("d1_certification_binding")
+    if inspection or binding is not None:
+        if not inspection or not isinstance(binding, dict) or set(binding) != {
+            "schema_version", "selected_subject_id", "binding_status", "candidate_certification_state",
+            "lookup_result", "reason_codes", "revalidation_required"
+        }:
+            raise FailClosedRuntimeError("D1 certification binding is incomplete")
+        selected = response["d1_candidate_discovery"].get("selected_candidate_capability") or {}
+        if (binding["schema_version"] != "PLATFORM_KNOWLEDGE_D1_CERTIFICATION_BINDING_V1"
+                or binding["binding_status"] != "UNBOUND" or binding["candidate_certification_state"] != "UNKNOWN"
+                or binding["selected_subject_id"] != selected.get("capability_id")
+                or binding["revalidation_required"] is not True
+                or not isinstance(binding["reason_codes"], list) or not binding["reason_codes"]
+                or any(not isinstance(r, str) for r in binding["reason_codes"])
+                or binding["reason_codes"] != sorted(set(binding["reason_codes"]))):
+            raise FailClosedRuntimeError("invalid D1 certification separation")
+        for key in ("is_certified", "certified_capability_exists", "reuse_recommended", "duplicate_work_avoided"):
+            if response.get(key) is not False:
+                raise FailClosedRuntimeError("D1 certification/reuse promotion")
+        for key in ("canonical_capability_identifier", "capability_owner", "architectural_owner", "implementation_owner",
+                    "certification_scope", "certification_milestone", "certification_record_hash", "recommended_platform_service", "new_work_required"):
+            if response.get(key) is not None:
+                raise FailClosedRuntimeError("D1 flat certification fields must remain unbound")
+        if (response.get("certification_status") != "UNKNOWN" or response.get("certification_evidence") != []
+                or response.get("query_classification") != "PROJECT_CAPABILITY_KNOWLEDGE"
+                or response.get("knowledge_reuse_classification") != "INSPECTION_REQUIRED"):
+            raise FailClosedRuntimeError("D1 combined certification classification forbidden")
+        record = binding["lookup_result"]
+        if record is not None:
+            if not isinstance(record, dict):
+                raise FailClosedRuntimeError("invalid separate certification result")
+            body = deepcopy(record)
+            digest = body.pop("certification_record_hash", None)
+            if replay_hash(body) != digest:
+                raise FailClosedRuntimeError("separate certification result hash mismatch")
     artifact_hash = response.get("artifact_hash")
     if not isinstance(artifact_hash, str) or not artifact_hash.startswith("sha256:"):
         raise FailClosedRuntimeError("platform knowledge response hash is required")
