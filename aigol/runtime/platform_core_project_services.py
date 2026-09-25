@@ -890,8 +890,15 @@ def prepare_unified_human_interface_project_context(
     reuse_proof_proposed_scope: dict[str, Any] | None = None,
     human_intent_precedence_decision: dict[str, Any] | None = None,
     production_conversation_flow_binding: dict[str, Any] | None = None,
+    continuation_d2_input: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Prepare the canonical Platform Core project-services context for any UHI."""
+
+    if continuation_d2_input is not None:
+        if (not isinstance(continuation_d2_input, dict) or set(continuation_d2_input) != {"conversation_state"}
+                or not isinstance(production_conversation_flow_binding, dict)
+                or production_conversation_flow_binding.get("objective_commitment_required") is not True):
+            _d2_fail("asserted continuation input requires the Objective gate")
 
     session_root = Path(runtime_root) / require_string(session_id, "session_id")
     prior_state = latest_platform_core_workspace_state(session_root)
@@ -1128,6 +1135,8 @@ def prepare_unified_human_interface_project_context(
                     else None
                 ),
                 precedence_reused_for_continuation=owner_bound_continuation,
+                continuation_d2_input=continuation_d2_input,
+                continuation_runtime_root=runtime_root,
             )
         if validated_flow_binding["requested_target_flow_id"] in {
             CFA_SELF_KNOWLEDGE,
@@ -2296,6 +2305,308 @@ def _execute_bound_read_only_flow(
     return router, operational_classification, intent, isolation
 
 
+def _bind_continuation_d2_inspection(
+    *, state: Any, message: str, workspace: str | Path, session_id: str,
+    observed_at: str, flow_binding: dict[str, Any], precedence: dict[str, Any],
+    runtime_root: str | Path | None = None,
+) -> dict[str, Any]:
+    """Bind an admitted semantic turn to its final snapshot; never route or mutate CWM."""
+    from aigol.runtime import platform_core_conversation_working_memory_runtime_v2 as cwm
+    from aigol.runtime import platform_core_conversation_interpreter_proposal_runtime_v2 as proposal_owner
+    from aigol.runtime import human_interface_conversation_runtime_v2 as hir
+    from aigol.runtime.platform_core_conversation_objective_readiness_runtime_v2 import validate_objective_readiness_report_v2
+    from aigol.runtime.production_conversation_flow_binding import (
+        validate_production_conversation_flow_binding_replay_predecessors_v1,
+        validate_human_intent_precedence_decision_v1,
+        validate_owner_bound_clarification_envelope_v1,
+    )
+    try:
+        flow = validate_production_conversation_flow_binding_replay_predecessors_v1(flow_binding)
+        original = validate_human_intent_precedence_decision_v1(
+            precedence, expected_session_identity=session_id,
+            expected_request_hash=flow["request_hash"])
+        if flow["objective_commitment_required"] is not True or hir.classify_hir_conversation_turn_v2(message) != hir.SEMANTIC_TURN:
+            _d2_fail("continuation inspection requires an admitted gated semantic turn")
+        source = cwm.validate_conversation_working_memory_state_v2(
+            state, expected_workspace_identity=workspace,
+            expected_session_identity=session_id + ":production-conversation-v1")
+        observed = cwm._canonical_timestamp(observed_at, "observed_at")
+        cwm._reject_v2_expired(source, observed)
+        if source["envelope"]["availability_state"] != cwm.ACTIVE:
+            _d2_fail("continuation snapshot is not active")
+        for key in ("conversation_identity", "workspace_identity_hash", "session_identity_hash"):
+            if source["envelope"][key] != flow[key]:
+                _d2_fail("continuation snapshot identity mismatch")
+        if (original["request_identity"] != flow["request_identity"]
+                or original["workspace_identity_hash"] != flow["workspace_identity_hash"]
+                or original["request_classification_hash"] != flow["request_classification_hash"]
+                or source["revision"] != flow["cwm_revision"]
+                or replay_hash(source) != flow["cwm_state_hash"]):
+            _d2_fail("continuation request or snapshot binding mismatch")
+        refs = flow["ordered_predecessor_references"]
+        def predecessor(stage: str) -> dict[str, Any]:
+            matches = [r for r in refs if r["stage"] == stage]
+            if len(matches) != 1:
+                _d2_fail("continuation requires exactly one " + stage)
+            return load_json(Path(matches[0]["replay_reference"]))
+        if predecessor("HUMAN_INTENT_PRECEDENCE") != original:
+            _d2_fail("continuation original request predecessor mismatch")
+        proposal = predecessor("INTERPRETER_PROPOSAL")
+        commit = predecessor("PROPOSAL_COMMIT")
+        validation = predecessor("PROPOSAL_VALIDATION")
+        readiness = validate_objective_readiness_report_v2(predecessor("OBJECTIVE_READINESS"))
+        if (proposal["interpreter_identity"] != hir.DETERMINISTIC_HIR_PARSER_IDENTITY
+                or commit["disposition"] != "COMMITTED"
+                or validation["validation_disposition"] != "ADMISSIBLE"
+                or replay_hash(proposal) != flow["proposal_hash"]
+                or replay_hash(commit) != flow["semantic_commit_hash"]
+                or replay_hash(validation) != flow["proposal_validation_hash"]
+                or commit["proposal_id"] != proposal["proposal_id"]
+                or flow["proposal_identity"] != proposal["proposal_id"]):
+            _d2_fail("continuation semantic admission lineage mismatch")
+        before = proposal["expected_cwm_revision"]
+        semantic_before = proposal["expected_semantic_revision"]
+        turn = proposal_owner.create_source_turn_binding_v2(
+            conversation_identity=source["envelope"]["conversation_identity"],
+            session_identity_hash=source["envelope"]["session_identity_hash"],
+            expected_cwm_revision=before, source_turn_text=message)
+        for key in ("source_turn_identity", "source_turn_digest"):
+            if any(item[key] != turn[key] for item in (proposal, commit, flow)):
+                _d2_fail("continuation current turn substitution")
+        if (commit["source_global_revision"] != before
+                or commit["source_semantic_revision"] != semantic_before
+                or source["revision"] < commit["target_global_revision"]
+                or source["semantic_revision"] < commit["target_semantic_revision"]):
+            _d2_fail("continuation transition revision mismatch")
+        for key, expected in {
+            "conversation_identity": flow["conversation_identity"],
+            "workspace_identity_hash": flow["workspace_identity_hash"],
+            "session_identity_hash": flow["session_identity_hash"],
+            "global_revision": source["revision"], "semantic_revision": source["semantic_revision"],
+            "state_integrity_checksum": source["integrity_checksum"],
+            "state_digest": cwm._checksum(source), "evaluated_at": observed,
+        }.items():
+            if readiness[key] != expected:
+                _d2_fail("continuation final readiness snapshot mismatch")
+        continuation = [r for r in refs if r["stage"] == "OWNER_BOUND_CLARIFICATION_CONTINUATION"]
+        if len(continuation) > 1:
+            _d2_fail("duplicate continuation predecessor")
+        if original["request_hash"] != replay_hash(message) and not continuation:
+            _d2_fail("changed turn lacks continuation predecessor")
+        if continuation:
+            prior = validate_owner_bound_clarification_envelope_v1(
+                load_json(Path(continuation[0]["replay_reference"])),
+                expected_session_identity=session_id,
+                expected_originating_owner="CONVERSATION_LAYER_PLUS_HUMAN_AUTHORITY")
+            if prior["conversation_identity"] != flow["conversation_identity"] or prior["expected_revision"] != before:
+                _d2_fail("continuation predecessor revision mismatch")
+        if runtime_root is not None:
+            current = cwm.load_conversation_working_memory_state_v2(
+                runtime_root=Path(runtime_root) / "production_conversation_cwm",
+                workspace_identity=workspace,
+                session_identity=session_id + ":production-conversation-v1", observed_at=observed)
+            if current != source:
+                _d2_fail("continuation owner state absent, stale or substituted")
+        return {
+            "original_request_identity": flow["request_identity"],
+            "original_request_hash": flow["request_hash"], **turn,
+            "continuation_predecessors": deepcopy(continuation),
+            "pre_transition_revision": before, "pre_transition_semantic_revision": semantic_before,
+            "post_transition_revision": source["revision"], "semantic_revision": source["semantic_revision"],
+            "snapshot_checksum": source["integrity_checksum"], "snapshot_replay_hash": replay_hash(source),
+            "observed_at": observed, "flow_binding_hash": flow["artifact_hash"],
+            "inspection_only": True, "authority_effect": "NONE", "c4_status": "UNBOUND",
+        }
+    except FailClosedRuntimeError:
+        raise
+    except (KeyError, TypeError, ValueError, OSError) as exc:
+        raise FailClosedRuntimeError("D2 continuation binding is malformed") from exc
+
+
+def validate_continuation_d2_inspection_context(
+    context: Any, *, runtime_root: str | Path | None = None,
+) -> dict[str, Any]:
+    """Validate historical integrity; a supplied runtime_root additionally checks live state."""
+    if not isinstance(context, dict):
+        _d2_fail("continuation context must be an object")
+    try:
+        body = deepcopy(context)
+        digest = body.pop("artifact_hash")
+        if digest != replay_hash(body):
+            _d2_fail("continuation parent context hash mismatch")
+        knowledge = context["knowledge_reuse"]
+        discovery = validate_structured_discovery_relevance(knowledge["candidate_capability_discovery"])
+        message = knowledge["governed_request"]
+        if context["message_hash"] != replay_hash(message):
+            _d2_fail("continuation context message mismatch")
+        flow = context["production_conversation_flow_binding"]
+        precedence = context["human_intent_precedence_decision"]
+        metadata = _bind_continuation_d2_inspection(
+            state=discovery["structured_relevance"]["requirement_binding"]["source_state"],
+            message=message, workspace=context["workspace"], session_id=context["session_id"],
+            observed_at=context["created_at"], flow_binding=flow, precedence=precedence,
+            runtime_root=runtime_root)
+        metadata["relevance_binding_hash"] = discovery["structured_relevance"]["relevance_binding_hash"]
+        metadata["binding_hash"] = replay_hash(metadata)
+        if knowledge["continuation_d2_binding"] != metadata:
+            _d2_fail("continuation metadata differs from source projection")
+        expected = project_knowledge_context_from_workspace(
+            message=message,
+            workspace_state=discovery["structured_relevance"]["requirement_binding"]["workspace_state"],
+            goal_target="general_project_goal", governed_request=message,
+            candidate_capability_discovery=discovery)
+        expected["continuation_d2_binding"] = metadata
+        if expected != knowledge:
+            _d2_fail("continuation knowledge projection promoted or substituted")
+        if (context["production_conversation_flow_binding_hash"] != flow["artifact_hash"]
+                or context["human_intent_precedence_decision_hash"] != precedence["artifact_hash"]):
+            _d2_fail("continuation parent lineage hash mismatch")
+        for key in ("project_objective_inference", "operational_turn_binding", "admission_precedence",
+                    "canonical_implementation_turn_binding", "constitutional_development_governance",
+                    "reuse_proof_production_admission", "reuse_proof_g47_scope_binding",
+                    "governed_read_only_work_result", "explicit_canonical_artifact_ingress",
+                    "semantic_capability_runtime_route", "durable_governed_work_artifact"):
+            if context[key] is not None:
+                _d2_fail("continuation inspection cannot supply " + key)
+        intent = context["development_intent_resolution"]
+        if (intent["summary_admissible"] is not False or intent["runtime_binding_admissible"] is not False
+                or intent["canonical_runtime_prompt"] is not None or intent["objective_commitment_required"] is not True
+                or intent["requested_target_flow_id"] != flow["requested_target_flow_id"]
+                or intent["permitted_next_flow_id"] != flow["permitted_next_flow_id"]):
+            _d2_fail("continuation inspection cannot promote Objective authority")
+        experience = context["human_conversation_experience"]
+        for key in ("mutation_allowed", "runtime_implementation"):
+            if experience[key] is not False:
+                _d2_fail("continuation inspection cannot promote execution authority")
+        for key in ("interface_authority", "interface_executes_project_services"):
+            if context[key] is not False:
+                _d2_fail("continuation inspection cannot promote interface authority")
+        if set(context) != {
+            'admission_precedence',
+            'admission_precedence_hash',
+            'admission_precedence_reference',
+            'artifact_attachment_retry_state',
+            'artifact_hash',
+            'artifact_type',
+            'canonical_implementation_turn_binding',
+            'canonical_implementation_turn_binding_hash',
+            'clarification_continuity',
+            'constitutional_development_governance',
+            'constitutional_development_governance_hash',
+            'created_at',
+            'development_intent_resolution',
+            'development_intent_resolution_authority',
+            'durable_governed_work_artifact',
+            'durable_governed_work_authority',
+            'explicit_canonical_artifact_ingress',
+            'explicit_canonical_artifact_ingress_reference',
+            'governed_read_only_work_result',
+            'human_conversation_experience',
+            'human_conversation_experience_authority',
+            'human_intent_precedence_before_restored_context',
+            'human_intent_precedence_decision',
+            'human_intent_precedence_decision_hash',
+            'interface_authority',
+            'interface_executes_project_services',
+            'interface_name',
+            'knowledge_reuse',
+            'message_hash',
+            'operational_clarification_envelope',
+            'operational_turn_binding',
+            'operational_turn_binding_hash',
+            'operational_turn_binding_reference',
+            'owner_bound_clarification_envelope',
+            'platform_core_human_conversation_experience_version',
+            'platform_core_project_services_version',
+            'production_conversation_flow_binding',
+            'production_conversation_flow_binding_hash',
+            'production_flow_isolation_enforcement',
+            'production_flow_isolation_enforcement_hash',
+            'production_flow_isolation_enforcement_reference',
+            'project_guidance',
+            'project_guidance_authority',
+            'project_knowledge_reuse_authority',
+            'project_objective_inference',
+            'project_objective_inference_authority',
+            'project_workspace_authority',
+            'project_workspace_replay_reference',
+            'project_workspace_restored',
+            'replay_reference',
+            'replay_visible',
+            'reuse_proof_g47_scope_binding',
+            'reuse_proof_g47_scope_binding_hash',
+            'reuse_proof_production_admission',
+            'reuse_proof_production_admission_hash',
+            'runtime_version',
+            'semantic_capability_runtime_route',
+            'session_id',
+            'workspace',
+        }:
+            _d2_fail("unsupported continuation context field")
+        for key in ('project_objective_inference', 'operational_turn_binding', 'operational_turn_binding_reference', 'operational_turn_binding_hash', 'admission_precedence', 'admission_precedence_reference', 'admission_precedence_hash', 'operational_clarification_envelope', 'artifact_attachment_retry_state', 'canonical_implementation_turn_binding', 'constitutional_development_governance', 'constitutional_development_governance_hash', 'reuse_proof_production_admission', 'reuse_proof_production_admission_hash', 'reuse_proof_g47_scope_binding', 'reuse_proof_g47_scope_binding_hash', 'canonical_implementation_turn_binding_hash', 'governed_read_only_work_result', 'explicit_canonical_artifact_ingress', 'explicit_canonical_artifact_ingress_reference', 'semantic_capability_runtime_route', 'durable_governed_work_artifact'):
+            if context[key] is not None:
+                _d2_fail("continuation authority/reference field promoted")
+        for key, value in {'artifact_type': 'UNIFIED_HUMAN_INTERFACE_PROJECT_CONTEXT_ARTIFACT_V1', 'project_workspace_authority': 'PLATFORM_CORE', 'project_guidance_authority': 'PLATFORM_CORE', 'project_knowledge_reuse_authority': 'PLATFORM_CORE', 'development_intent_resolution_authority': 'PLATFORM_CORE', 'project_objective_inference_authority': 'PLATFORM_CORE', 'human_conversation_experience_authority': 'PLATFORM_CORE', 'durable_governed_work_authority': 'PLATFORM_CORE', 'interface_authority': False, 'interface_executes_project_services': False, 'replay_visible': True}.items():
+            if context[key] != value or type(context[key]) is not type(value):
+                _d2_fail("continuation context constant/authority changed")
+        refs = flow["ordered_predecessor_references"]
+        clarifications = [r for r in refs if r["stage"] == "OWNER_BOUND_CLARIFICATION"]
+        if len(clarifications) != 1:
+            _d2_fail("continuation clarification missing")
+        clarification = load_json(Path(clarifications[0]["replay_reference"]))
+        if context["owner_bound_clarification_envelope"] != clarification:
+            _d2_fail("continuation clarification substituted")
+        required = ", ".join(clarification["required_field_or_evidence_codes"])
+        question = (f"Provide the next Conversation field exactly as: {required}."
+                    if clarification["reason_code"] == "OBJECTIVE_READINESS_REQUIRED"
+                    else f"Provide the missing Conversation evidence before Objective Commitment: {required}.")
+        flow_binding = flow
+        development_intent = {
+            "clarification_required": True,
+            "clarification_questions": [question],
+            "summary_admissible": False,
+            "runtime_binding_admissible": False,
+            "canonical_runtime_prompt": None,
+            "work_type": None,
+            "objective_commitment_required": True,
+            "requested_target_flow_id": flow_binding["requested_target_flow_id"],
+            "permitted_next_flow_id": flow_binding["permitted_next_flow_id"],
+        }
+        conversation_experience = {
+            "response_mode": "CLARIFICATION",
+            "user_headline": "Conversation Objective readiness is incomplete.",
+            "user_explanation": (
+                "Platform Core preserved the requested actionable target but did "
+                "not infer an Objective, admit work, or enter Governance."
+            ),
+            "recommended_next_user_action": question,
+            "clarification_questions": [question],
+            "owner_bound_clarification_envelope": deepcopy(clarification),
+            "objective_commitment_required": True,
+            "mutation_allowed": False,
+            "runtime_implementation": False,
+        }
+        conversation_experience["artifact_hash"] = replay_hash(conversation_experience)
+        if (context["development_intent_resolution"] != development_intent
+                or context["human_conversation_experience"] != conversation_experience):
+            _d2_fail("continuation Objective gate projection changed")
+        isolation = context["production_flow_isolation_enforcement"]
+        if (load_json(Path(context["production_flow_isolation_enforcement_reference"])) != isolation
+                or isolation["artifact_hash"] != context["production_flow_isolation_enforcement_hash"]):
+            _d2_fail("continuation flow isolation substituted")
+        # Reject added authority-bearing fields as well as modifications of existing ones.
+        if any(key not in {"clarification_required", "clarification_questions", "summary_admissible",
+                           "runtime_binding_admissible", "canonical_runtime_prompt", "work_type",
+                           "objective_commitment_required", "requested_target_flow_id", "permitted_next_flow_id"}
+               for key in intent):
+            _d2_fail("unsupported continuation intent field")
+        return deepcopy(context)
+    except FailClosedRuntimeError:
+        raise
+    except (KeyError, TypeError, ValueError, OSError) as exc:
+        raise FailClosedRuntimeError("D2 continuation context is malformed") from exc
+
+
 def _objective_commitment_gate_project_context(
     *,
     interface_name: str,
@@ -2311,6 +2622,8 @@ def _objective_commitment_gate_project_context(
     production_flow_isolation: dict[str, Any],
     clarification_continuity: dict[str, Any] | None = None,
     precedence_reused_for_continuation: bool = False,
+    continuation_d2_input: dict[str, Any] | None = None,
+    continuation_runtime_root: str | Path | None = None,
 ) -> dict[str, Any]:
     clarification_references = [
         reference
@@ -2366,21 +2679,39 @@ def _objective_commitment_gate_project_context(
     conversation_experience["artifact_hash"] = replay_hash(
         conversation_experience
     )
-    goal_mapping = goal_mapping_from_workspace(
-        message=message,
-        workspace_state=prior_state,
-    )
-    knowledge_reuse = (
-        goal_mapping.get("contextual_task_mapping")
-        if isinstance(goal_mapping, dict)
-        and isinstance(goal_mapping.get("contextual_task_mapping"), dict)
-        else project_knowledge_context_from_workspace(
+    if continuation_d2_input is not None:
+        if (not isinstance(continuation_d2_input, dict) or set(continuation_d2_input) != {"conversation_state"}
+                or continuation_runtime_root is None):
+            _d2_fail("continuation inspection requires exact input and owner root")
+        state = continuation_d2_input["conversation_state"]
+        metadata = _bind_continuation_d2_inspection(
+            state=state, message=message, workspace=workspace, session_id=session_id,
+            observed_at=created_at, flow_binding=flow_binding, precedence=precedence,
+            runtime_root=continuation_runtime_root)
+        discovery = discover_candidate_capabilities(
+            message=message, workspace_state=prior_state, structured_requirement_state=state)
+        knowledge_reuse = project_knowledge_context_from_workspace(
+            message=message, workspace_state=prior_state, goal_target="general_project_goal",
+            governed_request=message, candidate_capability_discovery=discovery)
+        metadata["relevance_binding_hash"] = discovery["structured_relevance"]["relevance_binding_hash"]
+        metadata["binding_hash"] = replay_hash(metadata)
+        knowledge_reuse["continuation_d2_binding"] = metadata
+    else:
+        goal_mapping = goal_mapping_from_workspace(
             message=message,
             workspace_state=prior_state,
-            goal_target="general_project_goal",
-            governed_request=message,
         )
-    )
+        knowledge_reuse = (
+            goal_mapping.get("contextual_task_mapping")
+            if isinstance(goal_mapping, dict)
+            and isinstance(goal_mapping.get("contextual_task_mapping"), dict)
+            else project_knowledge_context_from_workspace(
+                message=message,
+                workspace_state=prior_state,
+                goal_target="general_project_goal",
+                governed_request=message,
+            )
+        )
     artifact = {
         "artifact_type": "UNIFIED_HUMAN_INTERFACE_PROJECT_CONTEXT_ARTIFACT_V1",
         "runtime_version": PLATFORM_CORE_UHI_PROJECT_SERVICES_INTEGRATION_VERSION,
@@ -2461,6 +2792,8 @@ def _objective_commitment_gate_project_context(
         / "uhi_project_services"
         / f"{next_uhi_project_context_index(session_root):03d}_uhi_project_context_recorded.json"
     )
+    if continuation_d2_input is not None:
+        validate_continuation_d2_inspection_context(artifact, runtime_root=continuation_runtime_root)
     write_json_immutable(project_context_path, artifact)
     return artifact
 

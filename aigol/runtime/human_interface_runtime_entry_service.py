@@ -1142,7 +1142,13 @@ def _run_human_interface_runtime_entry_owner_execution_v1(
                 production_binding["g60_02_admission_handoff"] = prepared
                 production_binding["g60_02_execution_preparation"] = prepared
             else:
+                typed = production_binding.get("canonical_typed_semantic_composition")
+                continuation_input = None
+                if (isinstance(typed, dict) and typed.get("control") == "SEMANTIC_TURN"
+                        and production_binding["production_conversation_flow_binding"]["objective_commitment_required"] is True):
+                    continuation_input = {"conversation_state": deepcopy(production_binding["conversation_state"])}
                 context = prepare_unified_human_interface_project_context(
+                    continuation_d2_input=continuation_input,
                     interface_name=interface,
                     session_id=session,
                     message=request,
