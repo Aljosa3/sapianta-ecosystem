@@ -4,9 +4,13 @@ from __future__ import annotations
 
 from copy import deepcopy
 import json
+from unittest.mock import patch
 
 import pytest
 
+from aigol.runtime import (
+    constitutional_development_workflow_integration_runtime as g42,
+)
 from aigol.runtime.constitutional_development_continuity_manager_runtime import (
     CHECKPOINT_ACTIVE,
     CHECKPOINT_INVALIDATED,
@@ -211,8 +215,12 @@ def _repair_evidence(
     *,
     boundaries: list[str] | None = None,
     superseding: str | None = None,
+    validation_scope_hash: str | None = None,
 ) -> dict:
-    scope_hash = checkpoint["required_revalidation_scope_hash"]
+    # These approval/repair/validation references are synthetic, not Human facts.
+    scope_hash = (
+        validation_scope_hash or checkpoint["required_revalidation_scope_hash"]
+    )
     return record_external_repair_continuity_evidence(
         repair_evidence_id="REPAIR-EVIDENCE-G44-01",
         checkpoint_artifact=checkpoint,
@@ -313,15 +321,84 @@ def test_checkpoint_is_deterministic_for_identical_evidence(tmp_path) -> None:
 def test_compliant_external_repair_authorizes_only_workflow_continuation(
     tmp_path,
 ) -> None:
-    capture = _checkpoint(tmp_path)
+    # Observe calls through the real validator; never replace its decisions.
+    native_validator = g42._validate_source_binding
+    with patch.object(
+        g42, "_validate_source_binding", wraps=native_validator,
+    ) as binding_check:
+        capture = _checkpoint(tmp_path)
+        assert binding_check.call_count == 1
+        pre_source, pre_reference, pre_hash = binding_check.call_args.args
+        preserved_source = deepcopy(pre_source)
+        assert pre_hash != preserved_source["normalized_change_hash"]
+        source_replay = (
+            tmp_path / "normalization_base/000_normalized_change_recorded.json"
+        )
+        original_source_bytes = source_replay.read_bytes()
+        pre_workflow = json.loads(
+            (
+                tmp_path / "workflow_base_blocked"
+                / "002_constitutional_development_validation_workflow_recorded.json"
+            ).read_text(encoding="utf-8")
+        )["artifact"]
+        pre_diagnosis = json.loads(
+            (
+                tmp_path / "supervisor_base_blocked"
+                / "002_constitutional_development_supervisor_diagnosis_recorded.json"
+            ).read_text(encoding="utf-8")
+        )["artifact"]
+        assert pre_workflow["workflow_status"] == g42.FAILED_CLOSED
+        assert pre_workflow["failure_reason"] == (
+            "G42-01 normalized change binding mismatch"
+        )
+        blocker = pre_diagnosis["earliest_constitutional_blocker"]
+        assert blocker["boundary"] == "G42_WORKFLOW_INPUT_BINDING"
+        assert blocker["evidence_status"] == "BINDING_MISMATCH"
+        assert pre_diagnosis["minimal_repair_boundary"][
+            "implementation_change_authorized"
+        ] is False
+
+        post = _healthy_post_repair(tmp_path)
+        assert binding_check.call_count == 2
+        post_source, post_reference, post_hash = binding_check.call_args.args
+        assert post_source == pre_source == preserved_source
+        assert post_reference == pre_reference == (
+            preserved_source["normalization_id"]
+        )
+        assert post_hash == preserved_source["normalized_change_hash"]
+        assert source_replay.read_bytes() == original_source_bytes
+    assert g42._validate_source_binding is native_validator
     checkpoint = deepcopy(
         capture["constitutional_development_checkpoint_artifact"]
     )
     resume_point = capture[
         "constitutional_development_resume_point_artifact"
     ]
-    post = _healthy_post_repair(tmp_path)
+    assert checkpoint["certified_repair_boundary"]["boundary"] == (
+        blocker["boundary"]
+    )
+    assert checkpoint["workflow_hash"] == pre_workflow["workflow_hash"]
+    assert resume_point["must_not_repeat_boundary_ranks"] == [0]
+    assert checkpoint["preserved_stage_lineage"][0]["artifact_hash"] == (
+        preserved_source["artifact_hash"]
+    )
+    assert post[0]["workflow_status"] == g42.DEVELOPMENT_VALIDATION_PLANNING_READY
+    assert post[0]["runtime_version"] == pre_workflow["runtime_version"]
+    assert post[0]["default_planning_entry"] == (
+        pre_workflow["default_planning_entry"]
+    )
+    assert post[0]["source_normalized_change_artifact_hash"] == (
+        preserved_source["artifact_hash"]
+    )
+    assert post[2]["diagnosis_status"] == "WORKFLOW_HEALTHY"
+    assert post[2]["missing_evidence"] == []
     evidence = _repair_evidence(checkpoint, resume_point, post[0])
+    assert evidence["modified_boundaries"] == [blocker["boundary"]]
+    assert evidence["pre_repair_workflow_hash"] == pre_workflow["workflow_hash"]
+    assert evidence["post_repair_workflow_hash"] == post[0]["workflow_hash"]
+    assert evidence["preserved_replay_lineage_hash"] == (
+        checkpoint["replay_lineage_hash"]
+    )
     result = _resume(tmp_path, capture, *post, evidence)
 
     assert result["continuation_status"] == CONTINUATION_AUTHORIZED
@@ -329,6 +406,17 @@ def test_compliant_external_repair_authorizes_only_workflow_continuation(
     assert result["execution_authorized"] is False
     assert result["validation_executed"] is False
     assert result["repair_performed"] is False
+    decision = result["constitutional_development_continuation_decision_artifact"]
+    assert decision["preserved_stage_lineage"] == (
+        checkpoint["preserved_stage_lineage"]
+    )
+    assert decision["required_revalidation_scope_hash"] == (
+        checkpoint["required_revalidation_scope_hash"]
+    )
+    assert decision["mutation_authorized"] is False
+    assert decision["validation_execution_authorized"] is False
+    assert decision["human_approval_recorded_by_manager"] is False
+    assert all(value is False for value in decision["authority_flags"].values())
     assert capture["constitutional_development_checkpoint_artifact"] == checkpoint
     reconstruction = reconstruct_constitutional_development_continuation_replay(
         result["replay_reference"]
@@ -353,6 +441,35 @@ def test_out_of_boundary_repair_fails_closed(tmp_path) -> None:
     result = _resume(tmp_path, capture, *post, evidence)
     assert result["continuation_status"] == RESUME_FAILED_CLOSED
     assert "exceeded the certified boundary" in result["failure_reason"]
+
+
+@pytest.mark.parametrize(
+    ("wrong_scope", "superseding", "reason"),
+    [
+        (True, None, "required validation evidence missing"),
+        (
+            False, "SYNTHETIC-SUPERSEDING-MUTATION",
+            "checkpoint superseded by another mutation",
+        ),
+    ],
+)
+def test_wrong_validation_scope_or_supersession_cannot_resume(
+    tmp_path, wrong_scope, superseding, reason,
+) -> None:
+    capture = _checkpoint(tmp_path)
+    checkpoint = capture["constitutional_development_checkpoint_artifact"]
+    resume_point = capture["constitutional_development_resume_point_artifact"]
+    post = _healthy_post_repair(tmp_path)
+    evidence = _repair_evidence(
+        checkpoint, resume_point, post[0],
+        validation_scope_hash=_hash("wrong-scope") if wrong_scope else None,
+        superseding=superseding,
+    )
+    result = _resume(tmp_path, capture, *post, evidence)
+    assert result["continuation_status"] == RESUME_FAILED_CLOSED
+    assert reason in result["failure_reason"]
+    assert result["continuation_authorized"] is False
+    assert result["execution_authorized"] is False
 
 
 def test_invalidated_and_superseded_checkpoints_cannot_resume(tmp_path) -> None:

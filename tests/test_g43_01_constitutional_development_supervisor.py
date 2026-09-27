@@ -259,6 +259,60 @@ def test_supervisor_identifies_g42_input_binding_as_earliest_blocker(
     ] is True
 
 
+@pytest.mark.parametrize(
+    ("source_available", "boundary", "rank", "native_status", "failure_reason"),
+    [
+        (
+            False,
+            "PLATFORM_CHANGE_NORMALIZATION",
+            0,
+            "UNAVAILABLE",
+            "normalized change artifact must be a JSON object",
+        ),
+        (
+            True,
+            "G42_WORKFLOW_INPUT_BINDING",
+            1,
+            "BINDING_MISMATCH",
+            "G42-01 normalized change binding mismatch",
+        ),
+    ],
+)
+def test_missing_normalized_evidence_is_not_a_proven_binding_mismatch(
+    tmp_path, source_available, boundary, rank, native_status, failure_reason,
+) -> None:
+    """Synthetic evidence only; native owners retain all result semantics."""
+    source = _normalized_change(tmp_path)
+    capture = plan_constitutional_development_validation(
+        workflow_id="WORKFLOW-DA8-SYNTHETIC",
+        session_id="SESSION-DA8-SYNTHETIC",
+        normalized_change_artifact=source if source_available else None,
+        normalized_change_reference=source["normalization_id"],
+        normalized_change_hash=_hash("wrong-normalized-binding"),
+        created_by="SYNTHETIC_TEST_FIXTURE",
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / "workflow",
+    )
+    workflow = capture["constitutional_development_validation_workflow_artifact"]
+    assert workflow["workflow_status"] == "FAILED_CLOSED"
+    assert workflow["failure_reason"] == failure_reason
+    diagnosis = _supervise(tmp_path, workflow, tmp_path / "workflow")[
+        "constitutional_development_supervisor_diagnosis_artifact"
+    ]
+    assert diagnosis["diagnosis_status"] == BLOCKER_DIAGNOSED
+    blocker = diagnosis["earliest_constitutional_blocker"]
+    assert blocker["boundary"] == boundary
+    assert blocker["boundary_rank"] == rank
+    assert blocker["evidence_status"] == native_status
+    assert diagnosis["missing_evidence"][0]["observed_evidence_status"] == (
+        native_status
+    )
+    assert diagnosis["minimal_repair_boundary"][
+        "implementation_change_authorized"
+    ] is False
+    assert diagnosis["automatic_repair_performed"] is False
+
+
 def test_supervisor_identifies_missing_ive_4_mode_evidence(
     tmp_path,
 ) -> None:
