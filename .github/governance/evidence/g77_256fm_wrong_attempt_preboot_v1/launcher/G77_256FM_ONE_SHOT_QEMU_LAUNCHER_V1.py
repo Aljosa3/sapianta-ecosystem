@@ -352,10 +352,153 @@ def current_bootstrap_asset_bindings(vector: str) -> dict[str, str]:
     raise RuntimeError("bootstrap operation vector unsupported")
 
 
+def _successor_bootstrap_sources(
+    repository_root: Path, repository_head: str, repository_tree: str,
+) -> dict[str, bytes]:
+    """Derive the LJ command tuple only from authenticated CURRENT inputs."""
+    head, tree = governed_checkout_identity(
+        repository_root, fresh_context.WRONG_SCOPE, repository_head, repository_tree
+    )
+    fresh_context.authenticate_wrong_scope_current_instance(repository_root)
+    sources = {}
+    for name, relative, expected in (
+        ("user-data", WRONG_SCOPE_CLOUD_INIT, WRONG_SCOPE_CLOUD_INIT_SHA256),
+        ("meta-data", CLOUD_INIT_META_DATA, None),
+        ("network-config", CLOUD_INIT_NETWORK_CONFIG, None),
+    ):
+        path = repository_root / relative
+        committed = subprocess.check_output(
+            ["git", "show", f"{head}:{relative}"], cwd=repository_root
+        )
+        if path.is_symlink() or path.read_bytes() != committed:
+            raise RuntimeError("successor bootstrap source is not committed candidate bytes")
+        if expected is not None and hashlib.sha256(committed).hexdigest() != expected:
+            raise RuntimeError("successor LJ template identity mismatch")
+        sources[name] = committed
+    adapter = repository_root / fresh_context.WRONG_SCOPE_ADAPTER_SOURCE_RELATIVE_PATH
+    arguments = (
+        sha256_path(adapter),
+        "95ca9b753b2e4256b6530652d5a6e2a8220fed68c52f774928e1e39721f4ca67",
+        head, tree,
+        "4e5d01699796d4bb451818408f7cd6a080b6d55fde518df8a9dd2acd3f1a73bb",
+    )
+    guest_path = f"{fresh_context.GUEST_HARNESS_ROOT}/{fresh_context.ADAPTER_BOOTSTRAP_FILENAME}"
+    text = sources["user-data"].decode("utf-8")
+    old = bootstrap_guest_command_arguments(text, guest_path)
+    old_command = " ".join(("/usr/bin/python3", guest_path, *old))
+    if text.count(old_command) != 1:
+        raise RuntimeError("successor LJ command projection is ambiguous")
+    sources["user-data"] = text.replace(
+        old_command, " ".join(("/usr/bin/python3", guest_path, *arguments)), 1
+    ).encode("utf-8")
+    return sources
+
+
+def _successor_bootstrap_paths(repository_root: Path, operation_root: Path) -> tuple[Path, Path]:
+    root = repository_root.resolve()
+    relative = operation_root.relative_to(root)
+    if (len(relative.parts) != 5 or relative.parts[:3] != (".github", "governance", "evidence")
+            or relative.parts[-1] != "operation_state" or ".." in relative.parts
+            or operation_root.absolute() != operation_root.resolve()):
+        raise RuntimeError("successor bootstrap operation root is noncanonical")
+    directory = operation_root.parent / "bootstrap"
+    if directory.is_symlink() or directory.absolute() != directory.resolve():
+        raise RuntimeError("successor bootstrap path is unsafe")
+    return directory / "user-data", directory / "seed.img"
+
+
+def _validate_successor_bootstrap_assets(
+    repository_root: Path, repository_head: str, repository_tree: str,
+    operation_root: Path,
+) -> dict[str, str]:
+    sources = _successor_bootstrap_sources(repository_root, repository_head, repository_tree)
+    cloud, seed = _successor_bootstrap_paths(repository_root, operation_root)
+    for path in (cloud, seed):
+        if path.is_symlink() or not path.is_file():
+            raise RuntimeError("successor bootstrap asset absent or unsafe")
+    if cloud.read_bytes() != sources["user-data"]:
+        raise RuntimeError("successor cloud-init candidate binding mismatch")
+    members = subprocess.check_output(
+        ["isoinfo", "-i", str(seed), "-R", "-f"], stderr=subprocess.DEVNULL
+    ).decode().splitlines()
+    if sorted(members) != sorted("/" + name for name in sources):
+        raise RuntimeError("successor seed projection members mismatch")
+    for name, expected in sources.items():
+        actual = subprocess.check_output(
+            ["isoinfo", "-i", str(seed), "-R", "-x", "/" + name],
+            stderr=subprocess.DEVNULL,
+        )
+        if actual != expected:
+            raise RuntimeError("successor seed source projection mismatch")
+    return {"cloud_init_path": cloud.relative_to(repository_root).as_posix(),
+            "cloud_init_sha256": sha256_path(cloud),
+            "seed_path": str(seed), "seed_sha256": sha256_path(seed)}
+
+
+def derive_successor_bootstrap(
+    *, repository_root: Path, predecessor_context_path: Path,
+    repository_head: str, repository_tree: str, operation_evidence_root: Path,
+) -> dict[str, str]:
+    """Reuse FM review authentication and LJ's three-source NoCloud projection."""
+    predecessor = fresh_context.load_context(predecessor_context_path, repository_root=repository_root)
+    if (context_vector(predecessor) != fresh_context.WRONG_SCOPE
+            or (repository_head, repository_tree) !=
+            (predecessor["repository_head"], predecessor["repository_tree"])
+            or operation_evidence_root == Path(predecessor["operation_evidence_root"])):
+        raise RuntimeError("successor candidate/predecessor binding mismatch")
+    head = git(repository_root, "rev-parse", "HEAD")
+    tree = git(repository_root, "rev-parse", "HEAD^{tree}")
+    proof = build_committed_review_transition(
+        repository_root=repository_root, context=predecessor,
+        current_admission_head=head, current_admission_tree=tree,
+    )
+    authenticate_review_to_current_admission(
+        repository_root=repository_root, context=predecessor,
+        observed_head=head, observed_tree=tree, committed_review_transitions=[proof],
+    )
+    validate_immutable_context_bindings(repository_root, predecessor)
+    sources = _successor_bootstrap_sources(repository_root, repository_head, repository_tree)
+    cloud, seed = _successor_bootstrap_paths(repository_root, operation_evidence_root)
+    # Never rewrite an existing subject's assets, including incomplete derivations.
+    cloud.parent.mkdir(mode=0o700, parents=False, exist_ok=False)
+    with tempfile.TemporaryDirectory(prefix="fm-nocloud-") as staging:
+        staging_root = Path(staging)
+        for name, raw in sources.items():
+            (staging_root / name).write_bytes(raw)
+        cloud.write_bytes(sources["user-data"])
+        subprocess.run(
+            ["genisoimage", "-output", str(seed), "-volid", "cidata", "-joliet", "-rock",
+             "user-data", "meta-data", "network-config"],
+            cwd=staging_root, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        )
+    return _validate_successor_bootstrap_assets(
+        repository_root, repository_head, repository_tree, operation_evidence_root
+    )
+
+
 def bootstrap_asset_bindings(context: dict[str, Any]) -> dict[str, str]:
     """Select the immutable bootstrap pair bound by this context revision."""
 
     hashes = context.get("wrapper_fc_er_che_schema_hashes", {})
+    seed = context.get("qemu_executable_base_seed_checkout_bindings", {}).get("seed", {})
+    if FRESH_OPERATION_CONTEXT_OWNER_HASH_KEY in hashes:
+        vector = context_vector(context)
+        fixed = current_bootstrap_asset_bindings(vector)
+        if seed.get("path") != fixed["seed_path"]:
+            if vector != fresh_context.WRONG_SCOPE:
+                raise RuntimeError("successor bootstrap vector unsupported")
+            repository_root = Path(__file__).resolve().parents[5]
+            fresh_context.validate_context(context, repository_root=repository_root)
+            if context["candidate_manifest_sha256"] != CANDIDATE_SHA256:
+                raise RuntimeError("successor candidate manifest identity mismatch")
+            assets = _validate_successor_bootstrap_assets(
+                repository_root, context["repository_head"], context["repository_tree"],
+                Path(context["operation_evidence_root"]),
+            )
+            if (seed != {"path": assets["seed_path"], "sha256": assets["seed_sha256"]}
+                    or hashes.get("cloud_init") != assets["cloud_init_sha256"]):
+                raise RuntimeError("successor sealed bootstrap integrity mismatch")
+            return assets
     if FRESH_OPERATION_CONTEXT_OWNER_HASH_KEY in hashes:
         return current_bootstrap_asset_bindings(context_vector(context))
     return {
@@ -2368,12 +2511,24 @@ def build_operation_context(
     operation_evidence_root: Path,
     transient_root: Path,
     candidate_source_path: Path | None = None,
+    predecessor_context_path: Path | None = None,
 ) -> dict[str, Any]:
     """Build and seal one context before any Human authorization can exist."""
 
     vector = fresh_context.operation_vector(generation_identity)
     adapter_path = fresh_context.adapter_source_relative_path(generation_identity)
     bootstrap = current_bootstrap_asset_bindings(vector)
+    if predecessor_context_path is not None:
+        if vector != fresh_context.WRONG_SCOPE:
+            raise RuntimeError("successor bootstrap vector unsupported")
+        _, successor_candidate = resolve_candidate_source(repository_root, candidate_source_path)
+        if sha256_path(successor_candidate) != CANDIDATE_SHA256:
+            raise RuntimeError("successor candidate manifest identity mismatch")
+        bootstrap = derive_successor_bootstrap(
+            repository_root=repository_root, predecessor_context_path=predecessor_context_path,
+            repository_head=repository_head, repository_tree=repository_tree,
+            operation_evidence_root=operation_evidence_root,
+        )
     hashes = {
         "wrapper": sha256_path(repository_root / adapter_path),
         "fc_fk_adapter": FK_ADAPTER_SHA256,
