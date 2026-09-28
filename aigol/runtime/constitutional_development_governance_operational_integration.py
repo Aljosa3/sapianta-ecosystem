@@ -28,10 +28,18 @@ from aigol.runtime.constitutional_development_governance_orchestration import (
     DevelopmentGovernanceRuntimeError,
     DevelopmentGovernanceStageReference,
     DevelopmentGovernanceTaskIntake,
+    READ_ONLY,
+    _validate_evidence_reference,
+    validate_development_governance_task_intake,
     compose_governance_eligible_implementation_turn_durable_work_binding,
     derive_bundle_state,
     orchestrate_constitutional_development_governance,
     reconstruct_constitutional_development_governance_bundle,
+)
+from aigol.runtime.platform_capability_composition_coverage import (
+    COVERAGE_COMPLETE,
+    discover_platform_capability_composition_coverage,
+    validate_platform_capability_composition_coverage,
 )
 from aigol.runtime.platform_capability_certification_registry import (
     lookup_platform_capability_certification,
@@ -86,37 +94,73 @@ EXPLICIT_PROHIBITIONS = tuple(
 def integrate_constitutional_development_governance(
     *,
     request: str,
-    project_objective_artifact: dict[str, Any],
-    knowledge_reuse_artifact: dict[str, Any],
-    workspace_state: dict[str, Any] | None,
+    project_objective_artifact: dict[str, Any] | None = None,
+    knowledge_reuse_artifact: dict[str, Any] | None = None,
+    workspace_state: dict[str, Any] | None = None,
     workspace: str | Path,
     created_at: str,
-    replay_dir: str | Path,
-    reuse_proof_admission: dict[str, Any],
+    replay_dir: str | Path | None = None,
+    reuse_proof_admission: dict[str, Any] | None = None,
+    task_intake: DevelopmentGovernanceTaskIntake | None = None,
 ) -> dict[str, Any]:
-    """Run the certified G47 barrier before invoking the existing planner."""
+    """Apply DG to accepted READ_ONLY intake or run the G47 planner barrier.
 
-    admission = validate_reuse_proof_production_admission(reuse_proof_admission)
-    objective = validate_platform_project_objective(project_objective_artifact)
-    if admission["request_hash"] != replay_hash(request):
-        raise DevelopmentGovernanceRuntimeError(
-            "G47 reuse proof admission request mismatch"
+    READ_ONLY returns the existing canonical bundle as a dictionary, without
+    an operational record, persistence, admission, or planner invocation.
+    Unsupported classification raises before CDD construction.
+    """
+
+    if task_intake is not None:
+        intake = validate_development_governance_task_intake(task_intake)
+        if intake.action_mode != READ_ONLY:
+            raise DevelopmentGovernanceRuntimeError("accepted intake must be READ_ONLY")
+        if intake.request_identity != replay_hash(request):
+            raise DevelopmentGovernanceRuntimeError("READ_ONLY intake request mismatch")
+        if intake.active_baseline_reference != CONSTITUTIONAL_BASELINE:
+            raise DevelopmentGovernanceRuntimeError("READ_ONLY intake baseline mismatch")
+        if any(value is not None for value in (
+            project_objective_artifact, knowledge_reuse_artifact,
+            workspace_state, replay_dir, reuse_proof_admission,
+        )):
+            raise DevelopmentGovernanceRuntimeError(
+                "READ_ONLY assessment cannot consume operational inputs"
+            )
+        coverage = discover_platform_capability_composition_coverage(
+            query=intake.objective,
+            governance_root=Path(__file__).resolve().parents[2],
+            created_at=created_at,
         )
-    if admission["project_objective_hash"] != objective["artifact_hash"]:
-        raise DevelopmentGovernanceRuntimeError(
-            "G47 reuse proof admission Project Objective mismatch"
+        validate_platform_capability_composition_coverage(coverage)
+        objective = {
+            "source_request_hash": intake.request_identity,
+            "canonical_project_objective": intake.objective,
+            "artifact_hash": replay_hash(asdict(intake)),
+        }
+    else:
+        if reuse_proof_admission is None:
+            raise TypeError("reuse_proof_admission is required for operational integration")
+        admission = validate_reuse_proof_production_admission(reuse_proof_admission)
+        objective = validate_platform_project_objective(project_objective_artifact)
+        if admission["request_hash"] != replay_hash(request):
+            raise DevelopmentGovernanceRuntimeError(
+                "G47 reuse proof admission request mismatch"
+            )
+        if admission["project_objective_hash"] != objective["artifact_hash"]:
+            raise DevelopmentGovernanceRuntimeError(
+                "G47 reuse proof admission Project Objective mismatch"
+            )
+        coverage = prepare_implementation_turn_capability_coverage(
+            request=request,
+            knowledge_reuse_artifact=knowledge_reuse_artifact,
+            workspace_state=workspace_state,
+            workspace=workspace,
+            created_at=created_at,
         )
-    coverage = prepare_implementation_turn_capability_coverage(
-        request=request,
-        knowledge_reuse_artifact=knowledge_reuse_artifact,
-        workspace_state=workspace_state,
-        workspace=workspace,
-        created_at=created_at,
-    )
     stage_outputs = _compose_stage_outputs(
         request=request,
         objective=objective,
         coverage=coverage,
+        task_intake=task_intake,
     )
     bundle = orchestrate_constitutional_development_governance(
         bundle_id=_identity("DG-BUNDLE", objective["artifact_hash"]),
@@ -127,6 +171,8 @@ def integrate_constitutional_development_governance(
         governance_disposition=stage_outputs[4],
         planning_eligibility=stage_outputs[5],
     )
+    if task_intake is not None:
+        return asdict(bundle)
     eligibility = stage_outputs[5]
     disposition = stage_outputs[4]
     bound = None
@@ -343,6 +389,7 @@ def _compose_stage_outputs(
     request: str,
     objective: dict[str, Any],
     coverage: dict[str, Any],
+    task_intake: DevelopmentGovernanceTaskIntake | None = None,
 ) -> tuple[Any, ...]:
     planning_scope = implementation_turn_planning_scope_from_coverage(coverage)
     reusable = tuple(
@@ -361,7 +408,10 @@ def _compose_stage_outputs(
         )
     )
     objective_facets = tuple(sorted(set(covered_facets) | set(planning_scope)))
-    intake_id = _identity("DG-INTAKE", objective["source_request_hash"])
+    intake_id = (
+        task_intake.intake_id if task_intake is not None
+        else _identity("DG-INTAKE", objective["source_request_hash"])
+    )
     cdd_id = _identity("DG-CDD", intake_id, *objective_facets)
     snapshot_id = _identity("DG-EVIDENCE", cdd_id, coverage["artifact_hash"])
     evidence = _evidence_items(
@@ -370,6 +420,34 @@ def _compose_stage_outputs(
         covered_facets=covered_facets,
         residual_facets=planning_scope,
     )
+    if task_intake is not None:
+        # Apply Policy §8 identity/mode checks before interpreting impacts.
+        validate_development_governance_task_intake(task_intake)
+        if (
+            task_intake.action_mode != READ_ONLY
+            or task_intake.request_identity != replay_hash(request)
+            or objective["source_request_hash"] != task_intake.request_identity
+            or objective["canonical_project_objective"] != task_intake.objective
+            or task_intake.active_baseline_reference != CONSTITUTIONAL_BASELINE
+        ):
+            raise DevelopmentGovernanceRuntimeError("READ_ONLY stage input mismatch")
+        for item in evidence:
+            _validate_evidence_reference(
+                item, expected_baseline=task_intake.active_baseline_reference
+            )
+        # This existing capability composer can classify only evidence-backed
+        # capability scope. No match is not proof of a new capability need.
+        if (
+            coverage["coverage_status"] != COVERAGE_COMPLETE
+            or not reusable
+            or not objective_facets
+            or objective_facets != task_intake.bounded_scope
+            or task_intake.clarification_requirements
+        ):
+            raise DevelopmentGovernanceRuntimeError(
+                "TERMINATE_WITHOUT_CDD: primary classification not supported "
+                "by evidence for the accepted READ_ONLY scope"
+            )
     evidence_ids = tuple(sorted(item.evidence_id for item in evidence))
     owners = tuple(
         sorted(
@@ -427,7 +505,7 @@ def _compose_stage_outputs(
             )["capability_owner"]
         )
     )
-    task = DevelopmentGovernanceTaskIntake(
+    task = task_intake if task_intake is not None else DevelopmentGovernanceTaskIntake(
         artifact_type=DEVELOPMENT_GOVERNANCE_TASK_INTAKE_ARTIFACT_V1,
         runtime_version=DEVELOPMENT_GOVERNANCE_RUNTIME_VERSION,
         intake_id=intake_id,
@@ -447,14 +525,17 @@ def _compose_stage_outputs(
         cdd_id=cdd_id,
         intake_id=intake_id,
         baseline_reference=CONSTITUTIONAL_BASELINE,
-        action_mode="REPOSITORY_MUTATION_REQUESTED",
+        action_mode=task.action_mode,
         primary_work_class="CAPABILITY",
-        secondary_impacts=("IMPLEMENTATION_PLANNING",),
-        mutation_layer="L3",
+        secondary_impacts=(
+            () if task_intake is not None else ("IMPLEMENTATION_PLANNING",)
+        ),
+        mutation_layer="NOT_APPLICABLE" if task_intake is not None else "L3",
         constitutional_impact="NONE",
         protocol_impact="NONE",
         realization_category="CAPABILITY_RUNTIME",
         realization_impact=(
+            "NONE" if task_intake is not None else
             "NEW" if outcome == "NEW_REALIZATION_JUSTIFIED" else "REFINE"
         ),
         capability_impact=capability_impact,
@@ -462,12 +543,17 @@ def _compose_stage_outputs(
         owner=classified_owner,
         affected_scope=objective_facets,
         required_reviews=(),
-        explicit_prohibitions=EXPLICIT_PROHIBITIONS,
+        explicit_prohibitions=tuple(sorted(
+            set(EXPLICIT_PROHIBITIONS) | set(task.constraints)
+        )),
         unresolved_fields=(
             ("CAPABILITY_OWNER",) if termination != "CLASSIFIED" else ()
         ),
         termination_state=termination,
     )
+    if task_intake is not None:
+        outcome = "NO_IMPLEMENTATION_REQUIRED"
+        disposition_value = "READ_ONLY_WORK_MAY_CONTINUE"
     snapshot = DevelopmentGovernanceEvidenceSnapshot(
         artifact_type=DEVELOPMENT_GOVERNANCE_EVIDENCE_SNAPSHOT_ARTIFACT_V1,
         runtime_version=DEVELOPMENT_GOVERNANCE_RUNTIME_VERSION,
