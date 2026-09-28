@@ -134,6 +134,11 @@ def authenticate_wrong_scope_semantics(repository_root: Path) -> dict[str, Any]:
     return model
 
 
+def current_temporal_coordinates(repository_root: Path) -> dict[str, int]:
+    owner = _load(repository_root / FM_CONTEXT_OWNER, "p11_wrong_scope_current_owner")
+    return owner.authenticate_wrong_scope_current_instance(repository_root)["temporal_coordinates"]
+
+
 def specialize_er_harness(repository_root: Path) -> ModuleType:
     """Preserve host admission while observing the stable runtime checkout."""
 
@@ -143,6 +148,15 @@ def specialize_er_harness(repository_root: Path) -> ModuleType:
     if path.is_symlink() or not path.is_file() or _sha256(path) != ER_HARNESS_SHA256:
         raise WrongScopeAdapterError("ER_HARNESS_BINDING_INVALID")
     source = path.read_text(encoding="utf-8")
+    coordinates = current_temporal_coordinates(root)
+    clock = "    now = time.time_ns()\n    valid_from = now - 1_000_000_000\n    valid_until = now + 300_000_000_000\n"
+    if source.count(clock) != 1:
+        raise WrongScopeAdapterError("ER_VALIDITY_SPECIALIZATION_ANCHOR_INVALID")
+    source = source.replace(clock, (
+        f"    now = {coordinates['submission_time_unix_ns']}\n"
+        f"    valid_from = {coordinates['valid_from_unix_ns']}\n"
+        f"    valid_until = {coordinates['valid_until_unix_ns']}\n"
+    ))
     collapsed_roles = (
         '    if (\n'
         '        context["repository_head"] != observed_head\n'
@@ -325,6 +339,15 @@ def specialize_fc_runtime_source(
         raise WrongScopeAdapterError("FC_WRONG_SCOPE_SPECIALIZATION_INCOMPLETE")
     if 'wrong_value["attempt_identity"] = WRONG_SCOPE_ID' in transformed:
         raise WrongScopeAdapterError("WRONG_ATTEMPT_MUTATION_LEAK")
+    coordinates = current_temporal_coordinates(root)
+    submission = "            input_record_canonical_bytes=authorized_bytes,\n        )\n"
+    if transformed.count(submission) != 1:
+        raise WrongScopeAdapterError("FC_SUBMISSION_TIME_ANCHOR_INVALID")
+    transformed = transformed.replace(submission, (
+        "            input_record_canonical_bytes=authorized_bytes,\n"
+        f"            now_unix_ns={coordinates['submission_time_unix_ns']},\n"
+        "        )\n"
+    ))
     compile(transformed, str(source_path), "exec")
     return transformed
 

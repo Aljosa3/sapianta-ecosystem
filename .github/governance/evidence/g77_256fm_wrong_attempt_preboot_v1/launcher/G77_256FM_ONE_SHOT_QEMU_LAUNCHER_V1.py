@@ -197,8 +197,9 @@ WRONG_SCOPE_RUNTIME_BASE_ADAPTER_SHA256 = (
     "67847030651e8add82dd16bc8741ad0d81f44c7ba873689a521aea85f2ec4949"
 )
 WRONG_SCOPE_ADMISSION_ADAPTER_SHA256 = (
-    "035c3c02cfb4cee26c6af2501b85a547d0376c80c4df376b7a40a8671277136f"
+    "a59efdf4166fbc9c013a7ad7ddb23782d2fc7bc5873792960ec45b789e2df44c"
 )
+WRONG_SCOPE_CURRENT_CONSUMER_SHA256 = "9207bb4a2907225674b38c5fd12a20745363d4a36c7ea83e3aea0dfd7c0a133b"
 P11_CONSUMER_RELATIVE = "tests/p11_da_operational_consumer_v1.py"
 COMMITTED_JM_P11_SHA256 = (
     "38399ab9d1eb74dc2a231eb3a363064ba8b90077d6cdbf1d3494ca937b2127f5"
@@ -214,7 +215,7 @@ FRESH_OPERATION_CONTEXT_OWNER_PROJECTION_FILENAME = (
 )
 FRESH_OPERATION_CONTEXT_OWNER_HASH_KEY = "fresh_operation_context_owner"
 FRESH_OPERATION_CONTEXT_OWNER_SHA256 = (
-    "a3e22af7793063d1482e4e59deb114005bcba6c4b07f914a329c0a3b843db618"
+    "05e9e3306401f99dbf0a33bc1cee6dab0198cdbc9287cd1582c6188304c22d32"
 )
 GUEST_HARNESS_PROJECTION_ROOT_CONSTRUCTION_MODE = 0o700
 GUEST_HARNESS_PROJECTION_ROOT_PRESENTATION_MODE = 0o701
@@ -1452,10 +1453,22 @@ def governed_checkout_identity(
     commits remain the authorization/repository baseline, but cannot become a
     caller-selected bootstrap coordinate or force an N-1 asset rewrite.
 
-    WRONG_SCOPE applies the same role separation to the authenticated LH
-    baseline containing its semantics, FC/ER route, and committed JM P11.
+    WRONG_SCOPE binds the committed CURRENT instance, corrected consumer and
+    guest adapter together in the existing checkout route.
     """
 
+    if vector == fresh_context.WRONG_SCOPE:
+        if git(repository_root, "rev-parse", f"{repository_head}^{{tree}}") != repository_tree:
+            raise RuntimeError("WRONG_SCOPE current checkout HEAD/TREE mismatch")
+        for relative, expected in (
+            (P11_CONSUMER_RELATIVE, WRONG_SCOPE_CURRENT_CONSUMER_SHA256),
+            (fresh_context.WRONG_SCOPE_ADAPTER_SOURCE_RELATIVE_PATH, WRONG_SCOPE_ADMISSION_ADAPTER_SHA256),
+            (fresh_context.WRONG_SCOPE_CURRENT_SPECIFICATION_PATH, fresh_context.WRONG_SCOPE_CURRENT_SPECIFICATION_SHA256),
+        ):
+            committed = subprocess.check_output(["git", "show", f"{repository_head}:{relative}"], cwd=repository_root)
+            if hashlib.sha256(committed).hexdigest() != expected or sha256_path(repository_root / relative) != expected:
+                raise RuntimeError("WRONG_SCOPE current checkout binding mismatch")
+        return repository_head, repository_tree
     if vector not in {fresh_context.EXPIRED, fresh_context.WRONG_SCOPE}:
         return repository_head, repository_tree
     if vector == fresh_context.EXPIRED:

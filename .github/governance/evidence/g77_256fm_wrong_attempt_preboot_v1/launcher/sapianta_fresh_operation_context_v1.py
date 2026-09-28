@@ -443,14 +443,47 @@ def seal_context(context: dict[str, Any]) -> dict[str, Any]:
     return sealed
 
 
+WRONG_SCOPE_CURRENT_SPECIFICATION_PATH = '.github/governance/evidence/p11_wrong_scope_current_binding_v1/WRONG_SCOPE_CURRENT_VECTOR_INSTANCE_V1.json'
+WRONG_SCOPE_CURRENT_SPECIFICATION_SHA256 = '770b8ca7ee8b3df46268acf12b3a48e48792fc05b48f1e7e1ebd2bd62f35bbbe'
+WRONG_SCOPE_CURRENT_SPECIFICATION_IDENTITY = "P11_WRONG_SCOPE_CURRENT_VECTOR_INSTANCE_V1"
+WRONG_SCOPE_GENERATION_SUFFIX = "_ONE_FRESH_HUMAN_AUTHORIZED_WRONG_SCOPE_OPERATIONAL_COMMISSIONING_V1"
+
+
+def authenticate_wrong_scope_current_instance(repository_root: Path) -> dict[str, Any]:
+    """Recover the exact instance and its existing JJ/LE premises, never caller time."""
+    path = repository_root.resolve() / WRONG_SCOPE_CURRENT_SPECIFICATION_PATH
+    raw = path.read_bytes()
+    if path.is_symlink() or sha256_bytes(raw) != WRONG_SCOPE_CURRENT_SPECIFICATION_SHA256:
+        raise ContextError("WRONG_SCOPE CURRENT instance hash mismatch")
+    instance = json.loads(raw, object_pairs_hook=_unique_object)
+    for relative, expected_hash in instance["sources"].items():
+        source = repository_root.resolve() / relative
+        if source.is_symlink() or sha256_bytes(source.read_bytes()) != expected_hash:
+            raise ContextError("WRONG_SCOPE CURRENT premise hash mismatch")
+    return instance
+
+
 def materialize_preclaim_temporal_binding(
     *,
     repository_root: Path,
     generation_identity: str,
     operation_identity: str,
 ) -> dict[str, Any]:
-    """Derive the custody-owned coordinate from the committed JJ specification."""
+    """Derive the custody-owned coordinate from the exact committed vector instance."""
 
+    if generation_identity.endswith(WRONG_SCOPE_GENERATION_SUFFIX):
+        instance = authenticate_wrong_scope_current_instance(repository_root)
+        return {
+            "schema_id": PRECLAIM_TEMPORAL_BINDING_SCHEMA_ID,
+            "policy_owner": PRECLAIM_TEMPORAL_POLICY_OWNER,
+            "producer_identity": PRECLAIM_TEMPORAL_PRODUCER,
+            "vector_specification_path": WRONG_SCOPE_CURRENT_SPECIFICATION_PATH,
+            "vector_specification_sha256": WRONG_SCOPE_CURRENT_SPECIFICATION_SHA256,
+            "vector_specification_identity": WRONG_SCOPE_CURRENT_SPECIFICATION_IDENTITY,
+            "generation_identity": generation_identity,
+            "operation_identity": operation_identity,
+            "coordinate_unix_ns": instance["temporal_coordinates"]["preclaim_time_unix_ns"],
+        }
     specification_path = repository_root.resolve() / PRECLAIM_TEMPORAL_SPECIFICATION_PATH
     if specification_path.is_symlink() or not specification_path.is_file():
         raise ContextError("preclaim temporal vector specification absent or unsafe")

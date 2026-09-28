@@ -213,6 +213,12 @@ def _canonical_context_bytes(value: Any) -> bytes:
         raise FailClosedRuntimeError("fresh operation context is not canonical JSON") from exc
 
 
+WRONG_SCOPE_CURRENT_SPECIFICATION_PATH = '.github/governance/evidence/p11_wrong_scope_current_binding_v1/WRONG_SCOPE_CURRENT_VECTOR_INSTANCE_V1.json'
+WRONG_SCOPE_CURRENT_SPECIFICATION_SHA256 = '770b8ca7ee8b3df46268acf12b3a48e48792fc05b48f1e7e1ebd2bd62f35bbbe'
+WRONG_SCOPE_CURRENT_SPECIFICATION_IDENTITY = "P11_WRONG_SCOPE_CURRENT_VECTOR_INSTANCE_V1"
+WRONG_SCOPE_GENERATION_SUFFIX = "_ONE_FRESH_HUMAN_AUTHORIZED_WRONG_SCOPE_OPERATIONAL_COMMISSIONING_V1"
+
+
 def authenticate_preclaim_temporal_binding(
     context: Any,
 ) -> tuple[Mapping[str, Any], str]:
@@ -246,6 +252,13 @@ def authenticate_preclaim_temporal_binding(
         "operation_identity": value["operation_identity"],
         "coordinate_unix_ns": 1000,
     }
+    if value["generation_identity"].endswith(WRONG_SCOPE_GENERATION_SUFFIX):
+        expected.update({
+            "vector_specification_path": WRONG_SCOPE_CURRENT_SPECIFICATION_PATH,
+            "vector_specification_sha256": WRONG_SCOPE_CURRENT_SPECIFICATION_SHA256,
+            "vector_specification_identity": WRONG_SCOPE_CURRENT_SPECIFICATION_IDENTITY,
+            "coordinate_unix_ns": 500,
+        })
     if binding_value != expected:
         _fail("preclaim temporal binding is not the authenticated policy output")
     return MappingProxyType(binding_value), context_sha256
