@@ -1424,8 +1424,10 @@ def authenticate_current_committed_jm_route(
     repository_root: Path,
     repository_head: str,
     repository_tree: str,
+    *,
+    context: dict[str, Any] | None = None,
 ) -> None:
-    """Bind the sole checkout to current committed bytes containing JM P11."""
+    """Authenticate the current route using its sealed vector binding."""
 
     observed_head = git(repository_root, "rev-parse", "HEAD")
     observed_tree = git(repository_root, "rev-parse", "HEAD^{tree}")
@@ -1433,6 +1435,16 @@ def authenticate_current_committed_jm_route(
         raise RuntimeError("sealed route target is not the current repository identity")
     if git(repository_root, "rev-parse", f"{repository_head}^{{tree}}") != repository_tree:
         raise RuntimeError("sealed route target HEAD/TREE mismatch")
+    if context is not None:
+        fresh_context.validate_context(context, repository_root=repository_root)
+        if context_vector(context) == fresh_context.WRONG_SCOPE:
+            # Reuse the selector's exact committed/working consumer, adapter,
+            # and CURRENT specification checks; never accept a caller hash.
+            governed_checkout_identity(
+                repository_root, fresh_context.WRONG_SCOPE,
+                repository_head, repository_tree,
+            )
+            return
     committed_p11 = subprocess.check_output(
         ["git", "show", f"{repository_head}:{P11_CONSUMER_RELATIVE}"],
         cwd=repository_root,
@@ -2491,6 +2503,7 @@ def materialize_operation_state(
         repository_root,
         context["repository_head"],
         context["repository_tree"],
+        context=context,
     )
     validate_immutable_context_bindings(
         repository_root, context, candidate_source_path
@@ -3146,7 +3159,9 @@ def authority_free_static_readiness(
         observed_tree=observed_tree,
         committed_review_transitions=committed_review_transitions,
     )
-    authenticate_current_committed_jm_route(repository_root, observed_head, observed_tree)
+    authenticate_current_committed_jm_route(
+        repository_root, observed_head, observed_tree, context=context
+    )
     validate_immutable_context_bindings(
         repository_root, context, candidate_source_path
     )
