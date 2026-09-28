@@ -22,8 +22,17 @@ validated. SAME bootstrap-selection R is SATISFIED. The native runtime materiali
 then rejected its retained review-base identity with `sealed route target is not
 the current repository identity`, before any checkout/overlay/runtime effect.
 That second independent source-binding boundary is outside this correction.
-S1 committed review/admission remains pending at this initial report revision;
-final validation evidence and this same report will record its actual endpoint.
+S1 was introduced in commit 8e222e78fcfbd6f54fdef9da7542cbfa2453b689.
+Its independent introduction proof was committed at
+058c9c7155d9ce46c8d979082a8ed820ea7b9b34. Native S1 admission passed there,
+with transition bac4ab34db991e0794cb9bbdf0373830e8aa9d9f3a08affbe3521ba469b750a7.
+The resumed native asset-observation stage failed on the unmaterialized checkout's
+ER harness. `authority_free_static_readiness` itself was not entered because
+its actual observed-assets input could not be collected. No fabricated observation
+was supplied. The existing materializer rejection is the root preparation blocker.
+The original task returned to native preflight preparation, but readiness remains
+blocked. The final evidence commit is reauthenticated by the same native admission
+owner in a separate final-endpoint receipt, avoiding a self-referential Git identity.
 
 # Code Evidence
 
@@ -60,6 +69,8 @@ Canonical evidence root:
 `.github/governance/evidence/g77_256p11s1_wrong_scope_bootstrap_v1/`.
 `PREDECESSOR_RECOVERY_V1.json` retains the minimum authenticated predecessor facts,
 S0's native admission proof, committed recovery reference and preserved hashes.
+`ADMISSION_PREFLIGHT_VALIDATION_V1.json` records the native admission transition
+and the actual resumed asset-observation failure.
 `S0_TO_S1_PROVENANCE_V1.json` records exact input/output identities, SAME-R,
 nontransfer of authority/approval, and the observed materialization blocker.
 The successor review subject and bootstrap pair are retained under `live_binding/`
@@ -73,7 +84,8 @@ S0 canonical bytes, admission and old bootstrap preserved. Twenty-two predecesso
 and runtime file hashes remain equal; the separately authorized FM source is the
 only excluded file from the predecessor's 23-file snapshot. S1 is independently
 sealed and distinct. Native immutable validation and tuple equality passed.
-No S0 approval/admission/authority transfer. CURRENT semantics, route policy,
+S1 independently authenticated admission PASS; no S0 approval/admission/authority
+transfer. CURRENT semantics, route policy,
 base-image bytes and existing default/vector selection are unchanged.
 Source code progress YES; new capability NO; native bootstrap/context frontier
 advanced YES. Human Act creation/consumption/replay and operational attempts are
@@ -81,11 +93,11 @@ zero; E05 remains WRONG_SCOPE 12/18 with no constitutional acceptance progress.
 
 ## Not Verified
 
-S1 admission awaits its additive committed-review sequence at this report revision.
 Runtime materialization is blocked by the existing context-review-base versus
 current-admission identity check. Full non-consuming readiness and operational
-acceptance are not claimed. No global conformance or EX recertification is claimed;
-known partial-conformance limitations remain visible. No second source correction,
+acceptance are not claimed. No global or EX recertification is claimed. Commit hooks reported 20/20
+conformance checks passing at the measured endpoints; the Layer-0 freeze-version
+warning remained visible. This does not redefine the constitutional baseline. No second source correction,
 S2 generation, or authority-dependent validation was attempted.
 
 # Validation Matrix
@@ -102,9 +114,9 @@ S2 generation, or authority-dependent validation was attempted.
 | SAME bootstrap-selection R | actual S1 immutable validator and native parsed tuple equality | PASS |
 | S0 preservation and lineage | PREDECESSOR_RECOVERY and S0_TO_S1_PROVENANCE | PASS |
 | S1 context/seal/assets | native load, immutable validator, actual cloud/seed hashes | PASS |
-| S1 committed review/admission | additive transition pending | NOT_RUN |
+| S1 committed review/admission | native proof at 058c9c71; exact fresh review bytes and nonempty delta | PASS |
 | Runtime materialization | exact native identity mismatch before effects | BLOCKED |
-| Full non-consuming preflight | runtime state not materialized | BLOCKED |
+| Full non-consuming preflight | actual native asset observation fails on absent S1 checkout; static-readiness body not entered | BLOCKED |
 | Authority/operation exclusion | invoked producer/validators only; no authority or QEMU system invocation | PASS |
 | G48 / whitespace | exactly six H1 sections; git diff --check | PASS |
 
@@ -131,4 +143,4 @@ preparation may complete without altering the failed materialization rule.
 
 # Certification Verdict
 
-P11_WRONG_SCOPE_FM_BOOTSTRAP_BINDING_CORRECTION_REVEALED_NEW_TRUE_BOUNDARY
+P11_WRONG_SCOPE_FM_BOOTSTRAP_BINDING_CORRECTED_S1_PREFLIGHT_ADVANCED_TO_NEXT_BLOCKER
