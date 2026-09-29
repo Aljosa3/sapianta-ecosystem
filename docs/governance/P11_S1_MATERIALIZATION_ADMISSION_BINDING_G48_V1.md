@@ -17,9 +17,16 @@ Forty-two focused tests passed. Actual native materialization of the existing S1
 passed with no QEMU system invocation: detached self-contained checkout, overlay,
 runtime projections and empty receipt directory were prepared. Native asset
 observation, checkout validation and guest adapter/bootstrap binding passed.
-SAME materialization requirement R is SATISFIED. Full native preflight follows
-the implementation commit because it requires an actually clean tracked repository.
-This same report will record its actual result; no additional report is created.
+SAME materialization requirement R is SATISFIED. Full native non-consuming
+preflight passed at implementation commit 3b0c434d7fc912b822ab3b00a16c007c4de9c2ff,
+tree 55b567d8d57ef0fbdaeef0eec48f425d726da269. Native result:
+`STATIC_READINESS_PASS`, readiness digest
+e7ce5ed34e98ee3984e2cd98e8c905264ff0a67f616ce80ed6a34fdf9fbdca0b.
+Receipt-parent readiness also passed. No mandatory pre-authority preparation edge
+remains in the native preflight; the next boundary is fresh operational authorization.
+No authorization was issued or consumed and no operation was executed.
+The evidence-only final commit is reauthenticated with the unchanged native owner
+and retained in a separate endpoint receipt, avoiding a self-referential commit hash.
 
 # Code Evidence
 
@@ -53,6 +60,10 @@ Evidence root:
 files and the entry checkpoint. `MATERIALIZATION_VALIDATION_V1.json` contains
 the actual materializer return, native admission proof, receipt readiness,
 asset observations, checkout proof and guest adapter/bootstrap proof.
+`PREFLIGHT_VALIDATION_V1.json` records the full native readiness result and exact
+current-admission proof. `CLOSURE_V1.json` records aggregate acceptance, recovery
+references and the actual authority boundary. No S1 admission object was replaced;
+only the existing native relation was reauthenticated at successive Git endpoints.
 
 # Constitutional Self-Assessment
 
@@ -73,9 +84,11 @@ asset observations, checkout proof and guest adapter/bootstrap proof.
 
 ## Not Verified
 
-Full non-consuming preflight is pending the clean implementation commit at this
-report revision. Authority-dependent validity/consumption and operational acceptance
-are outside scope. No global governance or EX recertification is claimed; existing
+Authority-dependent validity/currentness/revocation/supersession, final invocation
+binding/consumption and operational acceptance are outside scope. The canonical
+handoff proof used the native TEST_ONLY__NON_AUTHORITY__NON_OPERATIONAL fixture;
+it is not a Human Act. Guest fixture freshness remains the existing guest-side
+defense-in-depth check, not an unclosed host pre-authority preparation edge. No global governance or EX recertification is claimed; existing
 constitutional limitations remain visible. Materialization is preparation only.
 
 # Validation Matrix
@@ -93,7 +106,7 @@ constitutional limitations remain visible. Materialization is preparation only.
 | Runtime materialization | Native self-contained detached checkout, overlay and projections | PASS |
 | Receipt preparation | Empty unused directory; no receipts/guest outputs | PASS |
 | Asset/checkout/bootstrap integrity | Actual asset hashes; native checkout and guest-adapter proof | PASS |
-| Full non-consuming preflight | Requires clean committed implementation endpoint | NOT_RUN |
+| Full non-consuming preflight | Actual STATIC_READINESS_PASS at 3b0c434d; PREFLIGHT_VALIDATION_V1.json | PASS |
 | Authority and operation exclusion | Producer/materializer/validators only; zero QEMU system invocation | PASS |
 | G48 and whitespace | Six H1 sections; exact diff review and git diff --check | PASS |
 
@@ -117,7 +130,21 @@ The detached checkout is recoverable from its sealed Git commit/tree; projection
 from their pinned canonical source bytes; the never-booted overlay from the pinned
 base via the existing materializer. Recovery must revalidate all native bindings.
 No unique required subject or proof exists only in temporary diagnostic files.
+The canonical closure also retains pinned base-image recovery coordinates and
+native reconstruction references for transient checkout/overlay state.
+
+Actual initial staging/commit commands (run in /home/pisarna/work/sapianta-fl):
+
+```text
+git add .github/governance/evidence/g77_256fm_wrong_attempt_preboot_v1/launcher/G77_256FM_ONE_SHOT_QEMU_LAUNCHER_V1.py tests/test_p11_s1_materialization_admission_v1.py docs/governance/P11_S1_MATERIALIZATION_ADMISSION_BINDING_G48_V1.md .github/governance/evidence/p11_s1_materialization_admission_binding_v1/ENTRY_PRESERVATION_V1.json .github/governance/evidence/p11_s1_materialization_admission_binding_v1/MATERIALIZATION_VALIDATION_V1.json
+git commit -m "fix(governance): authenticate current admission before S1 materialization"
+```
+
+The implementation commit's hooks passed, including 20/20 measured governance
+conformance checks. The Layer-0 freeze-version warning remained visible. This is
+not a new global certification. Final evidence staging/commit/push commands and
+identities are reported in the final handoff after execution.
 
 # Certification Verdict
 
-P11_WRONG_SCOPE_S1_MATERIALIZATION_BINDING_CORRECTED_PREFLIGHT_ADVANCED_TO_NEXT_BLOCKER
+P11_WRONG_SCOPE_S1_MATERIALIZATION_BINDING_CORRECTED_PREFLIGHT_READY_FOR_OPERATIONAL_AUTHORIZATION
