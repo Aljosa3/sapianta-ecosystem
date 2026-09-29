@@ -197,7 +197,7 @@ WRONG_SCOPE_RUNTIME_BASE_ADAPTER_SHA256 = (
     "67847030651e8add82dd16bc8741ad0d81f44c7ba873689a521aea85f2ec4949"
 )
 WRONG_SCOPE_ADMISSION_ADAPTER_SHA256 = (
-    "a59efdf4166fbc9c013a7ad7ddb23782d2fc7bc5873792960ec45b789e2df44c"
+    "b0c9ddb850e9ed975a5cf5ad8ced1319820608dcdd86a5e358da33c423cedde7"
 )
 WRONG_SCOPE_CURRENT_CONSUMER_SHA256 = "9207bb4a2907225674b38c5fd12a20745363d4a36c7ea83e3aea0dfd7c0a133b"
 P11_CONSUMER_RELATIVE = "tests/p11_da_operational_consumer_v1.py"
@@ -221,7 +221,9 @@ GUEST_HARNESS_PROJECTION_ROOT_CONSTRUCTION_MODE = 0o700
 GUEST_HARNESS_PROJECTION_ROOT_PRESENTATION_MODE = 0o701
 RUNTIME_EXPORT_ROOT_CONSTRUCTION_MODE = 0o700
 RUNTIME_EXPORT_ROOT_PRESENTATION_MODE = 0o701
-ER_HARNESS_SHA256 = "c6539d1cc60940b1999956965bff43923a270598a982cd19f976eadec0a93152"
+ER_HARNESS_SHA256 = "a2a95f3ead2f6077dc877720a0bc405666c5f3a9a9b44330c0d0890083bef312"
+# Stable non-WRONG_SCOPE checkouts retain their authenticated ER bytes.
+PRESERVED_ER_HARNESS_SHA256 = "c6539d1cc60940b1999956965bff43923a270598a982cd19f976eadec0a93152"
 QEMU_EXECUTABLE_SHA256 = "8a35ccba41582fc6c38b9df85fc9e35fa1d42f414d2d7d8090ee9b2f5e7c0854"
 
 MOUNT_TAG = "g77_evidence"
@@ -1720,7 +1722,11 @@ def validate_immutable_context_bindings(
     expected_hashes = {
         "wrapper": sha256_path(repository_root / active_adapter_path(context)),
         "fc_fk_adapter": FK_ADAPTER_SHA256,
-        "er_harness": ER_HARNESS_SHA256,
+        "er_harness": (
+            ER_HARNESS_SHA256
+            if context_vector(context) == fresh_context.WRONG_SCOPE
+            else PRESERVED_ER_HARNESS_SHA256
+        ),
         "canonical_che": "75801995214e81419aab9a02326499c771ec0039658fb49598aa54bd033e13c5",
         "raw_evidence_schema": "95ca9b753b2e4256b6530652d5a6e2a8220fed68c52f774928e1e39721f4ca67",
         "canonicalizer": CANONICALIZER_SHA256,
@@ -2532,7 +2538,11 @@ def build_operation_context(
     hashes = {
         "wrapper": sha256_path(repository_root / adapter_path),
         "fc_fk_adapter": FK_ADAPTER_SHA256,
-        "er_harness": ER_HARNESS_SHA256,
+        "er_harness": (
+            ER_HARNESS_SHA256
+            if vector == fresh_context.WRONG_SCOPE
+            else PRESERVED_ER_HARNESS_SHA256
+        ),
         "canonical_che": "75801995214e81419aab9a02326499c771ec0039658fb49598aa54bd033e13c5",
         "raw_evidence_schema": "95ca9b753b2e4256b6530652d5a6e2a8220fed68c52f774928e1e39721f4ca67",
         "canonicalizer": CANONICALIZER_SHA256,

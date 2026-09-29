@@ -34,6 +34,9 @@ P11_CONSUMER_PATH = CHECKOUT / "tests/p11_da_operational_consumer_v1.py"
 COMMITTED_JM_P11_SHA256 = (
     "38399ab9d1eb74dc2a231eb3a363064ba8b90077d6cdbf1d3494ca937b2127f5"
 )
+WRONG_SCOPE_CURRENT_P11_SHA256 = (
+    "9207bb4a2907225674b38c5fd12a20745363d4a36c7ea83e3aea0dfd7c0a133b"
+)
 RAW_PATH = RAW_ROOT / "G77_256ER_RAW_EXECUTION_EVIDENCE_V1.jsonl"
 EN_HARNESS_PATH = Path("/mnt/dp-harness/G77_256ER_P11_OPERATIONAL_HARNESS_V1.py")
 DN_HARNESS_PATH = Path("/mnt/g77-harness/G77_256DN_P03_DIAGNOSTIC_HARNESS_V1.py")
@@ -110,7 +113,12 @@ def load_authenticated_fresh_operation_context() -> dict[str, Any]:
         sha256_path(Path(__file__))
     ):
         raise RuntimeError("sealed operation context ER harness binding mismatch")
-    if sha256_path(P11_CONSUMER_PATH) != COMMITTED_JM_P11_SHA256:
+    # load_context authenticates the exact vector specification, custody policy
+    # output and coordinate before this lifecycle-specific byte selection.
+    expected_p11_sha256 = COMMITTED_JM_P11_SHA256
+    if owner.operation_vector(context["generation_identity"]) == owner.WRONG_SCOPE:
+        expected_p11_sha256 = WRONG_SCOPE_CURRENT_P11_SHA256
+    if sha256_path(P11_CONSUMER_PATH) != expected_p11_sha256:
         raise RuntimeError("runtime P11 is not the committed JM implementation")
     if (
         _AUTHENTICATED_FRESH_OPERATION_CONTEXT is not None

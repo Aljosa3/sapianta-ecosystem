@@ -40,7 +40,7 @@ ER_HARNESS = Path(
     "G77_256ER_P11_OPERATIONAL_HARNESS_V1.py"
 )
 ER_HARNESS_SHA256 = (
-    "c6539d1cc60940b1999956965bff43923a270598a982cd19f976eadec0a93152"
+    "a2a95f3ead2f6077dc877720a0bc405666c5f3a9a9b44330c0d0890083bef312"
 )
 LE_REDUCTION = Path(
     ".github/governance/evidence/g77_256le_wrong_scope_minimum_governed_delta_v1/"
