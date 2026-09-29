@@ -1,0 +1,346 @@
+# P11_WRONG_SCOPE_AUTHORIZED_FRESH_LIFECYCLE_PREPARATION_RESUMPTION
+# RESUME ORIGINAL TASK
+# PREPARATION + FULL NON-CONSUMING READINESS
+# NO OPERATION
+
+Repository:
+/home/pisarna/work/sapianta-fl
+
+ENTRY CHECKPOINT:
+HEAD = 2225db682446d1742fa55f6d2e0e96d95f3f1844
+TREE = 212e0ca84a3bd3bc99bf549b31969157931b4c89
+BRANCH = g77-256fl-wrong-attempt-preboot-blocker
+TRACKING/LIVE_REMOTE = HEAD
+
+Authenticate once.
+
+PRIMARY HANDOFF:
+P11_WRONG_SCOPE_BOOTSTRAP_PREDECESSOR_SUCCESSOR_BINDING_CORRECTION_COMPACT_CONTINUATION
+
+Carry CLOSED:
+- ER identity correction = PASS
+- ER SAME-R = SATISFIED
+- bootstrap predecessor/successor correction = PASS
+- bootstrap SAME-R = SATISFIED
+- S2 = terminal and immutable
+- S2 authority = consumed/nonreusable
+- Human preparation decision = YES, exactly one preparation-only lifecycle
+- fresh lifecycle count created = 0
+- E05 = 12/18
+
+Do not reopen closed corrections.
+
+
+## CURRENT OBJECTIVE
+
+CURRENT_ORIGINAL_TASK =
+P11/E05 WRONG_SCOPE 12/18 → 13/18
+
+CURRENT_NATIVE_EDGE =
+retained preparation grant
+→ fresh lifecycle construction
+→ materialization
+→ full authority-free native readiness
+
+CURRENT_MINIMUM_VIABLE_CLAIM =
+Resume the already-approved preparation-only lifecycle and, if the retained
+grant remains applicable after the committed corrections, prepare exactly one
+fresh lifecycle through full non-consuming native readiness.
+
+
+## 1. RETAINED-GRANT APPLICABILITY
+
+First authenticate only:
+
+PREPARATION_PERMISSION_STATUS =
+APPLICABLE | NOT_APPLICABLE | UNRESOLVED
+
+Determine from the existing exact Human decision and owner contracts whether
+the unused preparation grant remains applicable after the two bounded source
+corrections.
+
+Facts carried:
+- Human authorized exactly one preparation-only lifecycle;
+- fresh lifecycle count created = 0;
+- no subject/context/runtime lifecycle was created under that grant;
+- no operational authority was granted;
+- corrections changed canonical source/bindings, not the Human-approved
+  preparation cardinality.
+
+Do not infer applicability merely from these facts.
+Authenticate it against the existing authority contract.
+
+If NOT_APPLICABLE:
+STOP at exact Human/authority boundary.
+
+If UNRESOLVED:
+STOP without creating state.
+
+If APPLICABLE:
+continue in the SAME bounded governed closure.
+
+Do not request another Human decision merely because implementation occurred
+unless the authenticated contract requires it.
+
+
+## 2. PREPARE EXACTLY ONE FRESH LIFECYCLE
+
+If permission is APPLICABLE:
+
+FRESH_LIFECYCLE_COUNT_CREATED <= 1
+
+Use the corrected canonical path and existing owners to derive:
+
+fresh operation identity
+→ fresh context
+→ fresh subject/review
+→ admission
+→ fresh checkout
+→ fresh bootstrap projections
+→ fresh overlay/runtime state
+→ materialization
+→ fresh readiness baseline
+→ full authority-free native static readiness.
+
+Continue through ordinary internal technical/proof edges without inter-step
+Human stops while they remain inside this preparation scope.
+
+Use:
+
+- CURRENT WRONG_SCOPE specification;
+- coordinate 500;
+- corrected CURRENT consumer;
+- corrected CURRENT adapter;
+- vector-aware ER identity semantics;
+- historical S2 only as immutable predecessor/provenance evidence;
+- current successor HEAD/TREE and sources independently;
+- existing authenticated predecessor→current lineage;
+- existing FM/LG/FC/context/bootstrap/materialization mechanisms.
+
+
+## 3. PRESERVATION
+
+Require:
+
+S2_MUTATED = NO
+S2_RETRIED = NO
+S2_REPLAYED = NO
+S2_AUTHORITY_REUSED = NO
+
+ER_CORRECTION_PRESERVED = YES
+BOOTSTRAP_ROLE_CORRECTION_PRESERVED = YES
+
+ONE_CANONICAL_PATH_PRESERVED = YES
+PARALLEL_FLOW_CREATED = NO
+
+AUTHORITY_REUSE = NO
+OPERATIONAL_PROOF_TRANSFER = NO.
+
+
+## 4. FAILURE HANDLING
+
+For any materially new failed native edge:
+
+apply:
+FAILURE NOVELTY
+→ CRITICAL_PATH_DEPENDENCY_GATE
+→ NRDRL.
+
+Report:
+
+CURRENT_NATIVE_EDGE
+MANDATORY_REQUIREMENT_R
+REQUIREMENT_OWNER
+REQUIREMENT_VALIDATOR
+CURRENT_REQUIREMENT_RESULT
+MINIMUM_GAP_CLASSIFICATION.
+
+Resolve ordinary directly-derived proof/binding edges only when already inside
+this preparation authority envelope.
+
+If continuation requires:
+- new production-source mutation;
+- new semantics;
+- new Human authority;
+- new operational authority;
+- independent architecture delta;
+
+STOP at TRUE_BOUNDARY.
+
+Do not reopen a closed correction unless fresh authenticated evidence proves
+that its SAME-R no longer holds.
+
+
+## 5. SUCCESS TARGET
+
+If exactly one fresh lifecycle is created and full non-consuming native
+readiness passes:
+
+SELECTED_RESULT =
+P11_WRONG_SCOPE_FRESH_LIFECYCLE_PREPARED_AND_NATIVE_READINESS_PASS
+
+FRESH_LIFECYCLE_COUNT_CREATED = 1
+FULL_MATERIALIZED_READINESS = PASS
+
+LAST_VERIFIED_WORKING_EDGE =
+fresh lifecycle full native non-consuming readiness
+
+FIRST_NON_COMPLETE_WORKING_EDGE =
+fresh subject-bound Human operational authorization
+
+TRUE_BOUNDARY_REACHED = YES
+TRUE_BOUNDARY_CLASS =
+OPERATIONAL_ATTEMPT_AUTHORIZATION_REQUIRED
+
+MINIMUM_MISSING_CAPABILITY = NONE_ESTABLISHED
+MINIMUM_MISSING_BINDING = NONE_ESTABLISHED
+MINIMUM_MISSING_PROOF =
+authenticated operational WRONG_SCOPE acceptance
+
+E05_CREDIT = 12/18
+
+STOP.
+
+Do not create operational authority.
+
+
+## 6. OPERATIONAL LIMIT
+
+OPERATIONAL_ATTEMPT_AUTHORIZED = NO
+OPERATIONAL_ATTEMPT_EXECUTED = NO
+NEW_OPERATIONAL_ATTEMPT_COUNT = 0
+
+No operational QEMU execution.
+No Human operational authority creation/consumption.
+No WRONG_SCOPE operational attempt.
+No E05 credit promotion.
+
+
+## 7. REUSE / AIGOL PROGRESS
+
+Perform CROSS_VECTOR_REUSE_ASSESSMENT.
+
+Report:
+
+AIGOL_CODE_PROGRESS =
+NO unless a separately authorized source mutation actually occurs
+
+AIGOL_CAPABILITY_PROGRESS = NO
+
+TASK_EXECUTION_PROGRESS_THROUGH_AIGOL = YES
+
+AIGOL_NATIVE_FRONTIER_ADVANCED =
+YES if fresh preparation/readiness advances
+
+AIGOL_PROBLEM_LOCALIZATION_PROGRESS =
+YES | NO
+
+AIGOL_SEMANTIC_OPERATIONALIZATION_PROGRESS =
+YES only if existing corrected semantics are exercised through fresh lifecycle
+preparation; otherwise NO
+
+AIGOL_PROGRESS_AREA =
+FRESH_WRONG_SCOPE_LIFECYCLE_PREPARATION
+
+AIGOL_PROGRESS_DESCRIPTION =
+...
+
+AIGOL_NEXT_BLOCKER =
+...
+
+
+## 8. REPORTING
+
+Use standing minimal governance reporting.
+
+Include materially relevant:
+
+PREPARATION_PERMISSION_STATUS
+
+FRESH_LIFECYCLE_COUNT_CREATED
+FRESH_OPERATION_IDENTITY
+FRESH_CONTEXT_IDENTITY
+FRESH_SUBJECT_IDENTITY
+
+FULL_MATERIALIZED_READINESS
+
+E05_STATE
+E05_FRONTIER
+E05_CREDIT
+E05_CREDIT_DELTA
+
+LAST_VERIFIED_WORKING_EDGE
+FIRST_NON_COMPLETE_WORKING_EDGE
+WORKING_FRONTIER_MOVEMENT
+
+MINIMUM_MISSING_CAPABILITY
+MINIMUM_MISSING_BINDING
+MINIMUM_MISSING_PROOF
+MINIMUM_LEGAL_NEXT_DELTA
+
+FAILURE NOVELTY
+CRITICAL_PATH_DEPENDENCY_GATE when triggered
+
+CROSS_VECTOR_REUSE_ASSESSMENT
+EX_REUSED
+EX_RECONSTRUCTED
+
+BOUNDED_GOVERNED_CLOSURE_USED
+TECHNICAL_EDGES_ATTEMPTED
+TECHNICAL_EDGES_CLOSED
+
+TRUE_BOUNDARY_REACHED
+TRUE_BOUNDARY_CLASS
+FRONTIER_MOVEMENT
+INFORMATION_GAIN
+PROOF_YIELD
+
+GOVERNANCE_EFFICIENCE
+OVERENGINEERING_RISK
+GOVERNANCE_TUNNELING_RISK
+PROOF_FRAGMENTATION_RISK
+VERIFICATION_AMPLIFICATION_RISK
+
+AIGOL progress fields
+
+REPOSITORY_CHECKPOINT
+FINAL_HANDOFF_CONSISTENCY.
+
+
+## 9. COMPACT CONTINUATION
+
+End with:
+
+P11_WRONG_SCOPE_AUTHORIZED_FRESH_LIFECYCLE_PREPARATION_COMPACT_CONTINUATION
+
+Preserve only authenticated state needed for the next lawful edge, including
+canonical recovery references for any newly created subject/runtime state.
+
+Generate exactly ONE successor only if positively established.
+
+
+# FINAL DIRECTIVE
+
+THE TWO BINDING CORRECTIONS ARE CLOSED.
+
+THEIR SAME-R CHECKS ARE SATISFIED.
+
+DO NOT AUDIT THEM AGAIN.
+
+THE ORIGINAL TASK HAS CONTROL.
+
+THE CURRENT EDGE IS THE UNUSED HUMAN-AUTHORIZED PREPARATION LIFECYCLE.
+
+FIRST AUTHENTICATE WHETHER THAT RETAINED GRANT REMAINS APPLICABLE AFTER THE
+COMMITTED CORRECTIONS.
+
+IF APPLICABLE:
+CREATE EXACTLY ONE FRESH LIFECYCLE AND CONTINUE THROUGH FULL NON-CONSUMING
+NATIVE READINESS IN THIS SAME BOUNDED CLOSURE.
+
+IF NOT APPLICABLE OR UNRESOLVED:
+STOP AT THE EXACT AUTHORITY BOUNDARY.
+
+NO OPERATION.
+NO S2 REUSE.
+NO E05 CREDIT PROMOTION.
