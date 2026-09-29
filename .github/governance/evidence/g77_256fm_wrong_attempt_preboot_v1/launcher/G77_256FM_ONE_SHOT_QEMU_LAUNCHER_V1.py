@@ -2651,14 +2651,19 @@ def materialize_operation_state(
     context: dict[str, Any],
     context_source_path: Path,
     candidate_source_path: Path | None = None,
+    committed_review_transitions: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Explicit authority-free materialization; never called by governed main()."""
 
+    observed_head = git(repository_root, "rev-parse", "HEAD")
+    observed_tree = git(repository_root, "rev-parse", "HEAD^{tree}")
+    repository_identity = authenticate_review_to_current_admission(
+        repository_root=repository_root, context=context,
+        observed_head=observed_head, observed_tree=observed_tree,
+        committed_review_transitions=committed_review_transitions,
+    )
     authenticate_current_committed_jm_route(
-        repository_root,
-        context["repository_head"],
-        context["repository_tree"],
-        context=context,
+        repository_root, observed_head, observed_tree, context=context,
     )
     validate_immutable_context_bindings(
         repository_root, context, candidate_source_path
@@ -2752,6 +2757,9 @@ def materialize_operation_state(
         "checkout_materialization": checkout_materialization,
         "overlay_materialized": True,
         "qemu_execution_count": 0,
+        "current_admission_head": observed_head,
+        "current_admission_tree": observed_tree,
+        **repository_identity,
     }
 
 
