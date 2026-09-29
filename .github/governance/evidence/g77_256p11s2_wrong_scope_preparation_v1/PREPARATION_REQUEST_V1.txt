@@ -1,0 +1,642 @@
+# P11_WRONG_SCOPE_FRESH_DISTINCT_ATTEMPT_PREPARATION_AND_READINESS
+# EXACTLY ONE NEW LIFECYCLE — PREPARATION ONLY
+# BOUNDED GOVERNED CLOSURE
+# STOP BEFORE ANY OPERATIONAL ATTEMPT
+
+Repository:
+/home/pisarna/work/sapianta-fl
+
+AUTHENTICATED_OBJECTIVE =
+P11/E05 WRONG_SCOPE 12/18 → prepare exactly one newly authorized,
+distinct lifecycle through the next genuine Human/operational authority boundary.
+
+## AUTHORITATIVE PREDECESSOR
+
+Consume the prepared successor handoff from the immediately preceding
+Human lifecycle decision as primary continuation context.
+
+Human Constitutional Authority has explicitly decided:
+
+FRESH_LIFECYCLE_AUTHORIZED = YES
+AUTHORIZED_FRESH_LIFECYCLE_COUNT = 1
+
+AUTHORIZATION_SCOPE =
+Preparation of exactly one new, distinct P11/E05 WRONG_SCOPE lifecycle
+through the next genuine Human/operational authority boundary.
+
+Carry as immutable:
+
+PREVIOUS_S1_FAIL_CLOSED_RESULT =
+READINESS_ERROR__NO_AUTHORITY_CONSUMPTION
+
+S1_RETRY_AUTHORIZED = NO
+S1_REPLAY_AUTHORIZED = NO
+S1_AUTHORITY_REUSE_AUTHORIZED = NO
+
+OLD_S1_DISPOSITION =
+PRESERVE_AS_HISTORICAL_FAIL_CLOSED_EVIDENCE
+
+OLD_AUTHORITY_DISPOSITION =
+PRESERVE_UNCONSUMED_AS_HISTORICAL_AUTHORITY_EVIDENCE;
+NO EXECUTION REUSE
+
+OPERATIONAL_ATTEMPT_AUTHORIZED = NO
+OPERATIONAL_ATTEMPT_EXECUTED = NO
+
+E05_FRONTIER = WRONG_SCOPE
+E05_CREDIT = 12/18.
+
+
+## 1. AUTHENTICATE ENTRY
+
+Authenticate:
+
+- repository HEAD/TREE/branch/tracking/live remote;
+- Human lifecycle decision and successor handoff;
+- S1 historical evidence and stop seal;
+- existing canonical WRONG_SCOPE mechanisms required for preparation.
+
+Do not reconstruct the historical investigation.
+
+Use authenticated predecessor/handoff references.
+
+If the Human decision or exact preparation scope cannot be authenticated:
+
+STOP fail-closed.
+
+
+## 2. CURRENT NATIVE EDGE
+
+NRDRL_USED = YES
+
+CURRENT_ORIGINAL_TASK =
+P11/E05 WRONG_SCOPE 12/18 → 13/18
+
+CURRENT_NATIVE_EDGE =
+AUTHORIZED_FRESH_LIFECYCLE
+→ CANONICAL_FRESH_PREPARATION
+→ NON_CONSUMING_READINESS
+→ NEXT_TRUE_BOUNDARY
+
+MANDATORY_REQUIREMENT_R =
+Exactly one fresh lifecycle must be prepared through existing canonical
+P11 mechanisms, independently of S1, without creating or executing an
+operational attempt.
+
+REQUIREMENT_OWNER =
+existing canonical P11 lifecycle owners
+
+CURRENT_REQUIREMENT_RESULT =
+AUTHORIZED_NOT_YET_INSTANTIATED.
+
+
+## 3. GOVERNED SCOPE
+
+This authorization permits ordinary deterministic preparation required by
+the existing canonical lifecycle.
+
+Permitted when required by authenticated existing mechanisms:
+
+- fresh operation identity;
+- fresh context;
+- fresh subject/review lifecycle;
+- fresh runtime state;
+- fresh readiness baseline;
+- fresh receipt namespace;
+- existing bootstrap/substrate preparation;
+- existing admission lifecycle;
+- existing materialization;
+- non-consuming native preflight/readiness;
+- evidence generation required to authenticate those steps;
+- ordinary repository evidence mutation if the existing lifecycle requires it;
+- focused tests/validation;
+- ordinary staging/commit/push for authorized repository mutations.
+
+It does NOT authorize:
+
+- operational attempt;
+- QEMU operational execution;
+- consumption of operational Human Authority;
+- reuse/replay of S1 authority;
+- S1 retry/replay/repair;
+- bypass of readiness;
+- second fresh lifecycle;
+- new constitutional semantics;
+- new authority source;
+- unrelated capability development;
+- destructive Git/history operations.
+
+
+## 4. FRESHNESS / ISOLATION
+
+The new lifecycle must be semantically distinct from S1.
+
+Establish according to existing canonical mechanisms:
+
+FRESH_OPERATION_IDENTITY
+FRESH_CONTEXT_IDENTITY
+FRESH_SUBJECT_IDENTITY
+FRESH_RUNTIME_STATE
+FRESH_READINESS_BASELINE
+FRESH_RECEIPT_NAMESPACE
+
+as required by their authenticated owners.
+
+Require:
+
+S1_BYTES_UNCHANGED = YES
+S1_AUTHORITY_CONSUMED = NO
+S1_AUTHORITY_REPLAYED = NO
+S1_LIVE_STATE_REUSED = NO unless exact existing semantics explicitly require
+and permit a non-authority mechanical reuse.
+
+Historical evidence reuse is allowed.
+
+Execution authority reuse is not.
+
+
+## 5. CROSS-VECTOR / EXISTING-MECHANISM REUSE
+
+Perform:
+
+CROSS_VECTOR_REUSE_ASSESSMENT.
+
+Prefer reuse of the corrected canonical mechanisms already established for:
+
+- CURRENT temporal binding;
+- route binding;
+- bootstrap candidate binding;
+- fresh subject lifecycle;
+- review/admission;
+- materialization/current-admission binding;
+- substrate/base-image authentication;
+- non-consuming preflight;
+- subject-bound Human Authority preparation mechanics.
+
+Report:
+
+MECHANICAL_REUSE
+SEMANTIC_REUSE
+AUTHORITY_REUSE = NO
+OPERATIONAL_PROOF_TRANSFER = NO
+
+EX_REUSED
+EX_RECONSTRUCTED.
+
+Do not reconstruct historical workaround paths if the corrected canonical
+mechanism now exists.
+
+
+## 6. BOUNDED GOVERNED CLOSURE
+
+BOUNDED_GOVERNED_CLOSURE_USED = YES
+
+Do not STOP after each ordinary technical edge.
+
+Within this already-authorized preparation envelope:
+
+classify
+→ SPCE
+→ execute
+→ evidence
+→ validate
+→ derive next edge
+→ continue
+
+until the first TRUE_BOUNDARY.
+
+An ordinary prerequisite inside preparation is NOT automatically a new
+Human boundary.
+
+For every materially new prerequisite apply:
+
+CRITICAL_PATH_DEPENDENCY_GATE.
+
+Only mandatory prerequisites for this exact fresh preparation may remain
+on the critical path.
+
+
+## 7. FAILURE NOVELTY / ANTI-REPEAT
+
+For every material failure classify:
+
+FAILURE_CLASS
+NOVELTY
+AFFECTED_INVARIANT
+PREVIOUS_CLOSEST_EDGE
+SEMANTIC_DIFFERENCE
+PRODUCTION_BEHAVIOR_IMPACT
+NEW_CAPABILITY_REQUIRED
+NEW_PROOF_REQUIRED
+CONVERGENCE_SIGNAL
+REPETITION_PRESSURE
+VERIFICATION_AMPLIFICATION_RISK.
+
+If the failure is equivalent to a previously corrected WRONG_SCOPE binding
+and the existing correction is reusable:
+
+REUSE_EXISTING_EVIDENCE / REUSE_EXISTING_MECHANISM.
+
+Do not reopen already-closed historical investigations.
+
+Specifically do not automatically reopen:
+
+- S1 ctime causal investigation;
+- S1 post-stop recovery;
+- fresh-attempt admissibility;
+- lifecycle cardinality.
+
+Those questions are closed for this authorized fresh lifecycle.
+
+
+## 8. READINESS STATE MUST BE FRESH
+
+The new lifecycle must not inherit S1's failed readiness observation as its
+baseline.
+
+Use only the existing canonical owner-defined preparation semantics.
+
+If canonical preparation lawfully establishes a new readiness baseline:
+
+authenticate it normally.
+
+Do NOT manually refresh or rewrite a baseline merely to make validation pass.
+
+Any baseline must arise from the canonical fresh lifecycle.
+
+
+## 9. SAME-R DISCIPLINE FOR INTERNAL FAILURES
+
+If an internal mandatory preparation requirement R fails and an already
+authorized minimum binding/implementation correction is lawful within this
+scope:
+
+resolve the minimum gap
+→ fresh authenticated evidence
+→ recompute SAME R
+→ continue fresh preparation.
+
+Do not replace the original P11/E05 objective with an implicit repair objective.
+
+If resolution would require:
+
+- new constitutional semantics;
+- new Human semantic decision;
+- scope expansion;
+- independent architecture delta;
+- unauthorized operational attempt;
+
+STOP at TRUE_BOUNDARY.
+
+
+## 10. PRODUCTION MUTATION BUDGET
+
+ARCHITECTURAL_DELTA_BUDGET =
+
+GOVERNANCE_MUTATION =
+NO unless the already-authorized lifecycle deterministically requires
+ordinary evidence artifacts that do not alter constitutional semantics
+
+PRODUCTION_SOURCE_MUTATION =
+NO by default;
+only an already-established reusable correction may be applied if the
+authenticated fresh path proves the canonical source is not yet carrying it
+
+TEST_OR_HARNESS_MUTATION =
+ONLY_IF_REQUIRED_BY_AN_AUTHORIZED_IMPLEMENTATION_DELTA
+
+EVIDENCE_ARTIFACT_MUTATION =
+YES_FOR_FRESH_LIFECYCLE_PREPARATION
+
+AUTHORITY_MUTATION =
+NO_OPERATIONAL_AUTHORITY_CREATION_OR_CONSUMPTION
+
+PRODUCTION_PATH_DELTA =
+0.
+
+If a genuinely new independent source/architecture correction becomes
+necessary:
+
+TRUE_BOUNDARY_CLASS = SCOPE_EXPANSION
+
+STOP.
+
+
+## 11. HUMAN AUTHORITY BOUNDARY
+
+The current Human decision authorizes lifecycle preparation.
+
+It does NOT itself constitute the future operational Human Authority for the
+new subject.
+
+If preparation reaches a point where the existing canonical lifecycle
+requires a fresh subject-bound Human operational decision/authority:
+
+prepare the exact authenticated Human decision request if permitted by the
+existing mechanism;
+
+then:
+
+TRUE_BOUNDARY_REACHED = YES
+TRUE_BOUNDARY_CLASS = OPERATIONAL_ATTEMPT_AUTHORIZATION_REQUIRED
+
+STOP.
+
+Do not consume or infer Human Authority.
+
+
+## 12. OPERATIONAL DISCIPLINE
+
+OPERATIONAL_ATTEMPT_AUTHORIZED = NO
+OPERATIONAL_ATTEMPT_EXECUTED = NO
+
+OPERATIONAL_ATTEMPT_COUNT must remain 0.
+
+Repository characterization, preparation, materialization and non-consuming
+preflight are not operational proof.
+
+E05 credit remains 12/18 throughout this closure.
+
+
+## 13. SUCCESS TARGET
+
+Preferred successful preparation result:
+
+SELECTED_RESULT =
+P11_WRONG_SCOPE_FRESH_DISTINCT_LIFECYCLE_PREPARED_READY_FOR_HUMAN_OPERATIONAL_AUTHORIZATION
+
+with:
+
+FRESH_LIFECYCLE_COUNT_CREATED = 1
+FRESH_CONTEXT_VALIDATION = PASS
+FRESH_SUBJECT_VALIDATION = PASS
+FRESH_ADMISSION = PASS
+FRESH_RUNTIME_MATERIALIZATION = PASS
+FULL_NON_CONSUMING_PREFLIGHT_RESULT = PASS
+
+S1_PRESERVED = YES
+OLD_AUTHORITY_REUSED = NO
+
+OPERATIONAL_ATTEMPT_COUNT = 0
+
+E05_CREDIT = 12/18
+
+TRUE_BOUNDARY_CLASS =
+OPERATIONAL_ATTEMPT_AUTHORIZATION_REQUIRED.
+
+
+## 14. FAIL-CLOSED RESULTS
+
+If preparation encounters a real true boundary, return the smallest exact
+classification.
+
+Do not force the preferred result.
+
+Possible result classes include only evidence-supported states such as:
+
+P11_WRONG_SCOPE_FRESH_PREPARATION_BLOCKED_AT_EXISTING_BINDING
+
+P11_WRONG_SCOPE_FRESH_PREPARATION_REVEALED_NEW_TRUE_BOUNDARY
+
+P11_WRONG_SCOPE_FRESH_PREPARATION_FAIL_CLOSED
+
+P11_WRONG_SCOPE_FRESH_DISTINCT_LIFECYCLE_PREPARED_READY_FOR_HUMAN_OPERATIONAL_AUTHORIZATION.
+
+Do not promote UNKNOWN into capability development.
+
+
+## 15. AIGOL PROGRESS
+
+Always report:
+
+AIGOL_CODE_PROGRESS =
+YES | NO
+
+AIGOL_CAPABILITY_PROGRESS =
+YES | NO
+
+TASK_EXECUTION_PROGRESS_THROUGH_AIGOL =
+YES | NO
+
+AIGOL_NATIVE_FRONTIER_ADVANCED =
+YES | NO
+
+AIGOL_PROBLEM_LOCALIZATION_PROGRESS =
+YES | NO
+
+AIGOL_SEMANTIC_OPERATIONALIZATION_PROGRESS =
+YES | NO
+
+SEMANTIC_PROGRESS_TYPE =
+...
+
+AIGOL_PROGRESS_AREA =
+FRESH_WRONG_SCOPE_LIFECYCLE
+
+AIGOL_PROGRESS_DESCRIPTION =
+...
+
+AIGOL_NEXT_BLOCKER =
+....
+
+Distinguish reuse/execution progress from new capability development.
+
+
+## 16. MINIMAL GOVERNANCE REPORTING
+
+Report only relevant fields required by the standing Contract, including:
+
+PROJECT_STATE
+INFORMAL_PROJECT_PROGRESS
+
+CONSTITUTIONAL_HEALTH_EVIDENCE
+SHADOW_AUTOMATION_STATUS
+CONSTITUTIONAL_FRONTIER_DISTANCE
+
+E05_STATE
+E05_FRONTIER
+E05_CREDIT
+E05_CREDIT_DELTA
+
+GOVERNANCE_EFFICIENCE
+OVERENGINEERING_RISK
+GOVERNANCE_TUNNELING_RISK
+PROOF_FRAGMENTATION_RISK
+VERIFICATION_AMPLIFICATION_RISK
+
+COGNITION_PROVENANCE
+COGNITION_ASSISTED_HANDOFF
+
+CANDIDATE_CAPABILITY
+SHADOW_DESIGN_TARGET
+
+CONSTITUTIONAL_CONTINUATION_PROGRESS
+
+LAST_VERIFIED_EDGE
+FIRST_BROKEN_EDGE
+
+LAST_VERIFIED_WORKING_EDGE
+FIRST_NON_COMPLETE_WORKING_EDGE
+WORKING_FRONTIER_MOVEMENT
+
+MINIMUM_MISSING_CAPABILITY
+MINIMUM_MISSING_BINDING
+MINIMUM_MISSING_PROOF
+MINIMUM_LEGAL_NEXT_DELTA
+
+ARCHITECTURAL_DELTA_BUDGET
+PROOF_YIELD
+
+EX_REUSED
+EX_RECONSTRUCTED
+
+CROSS_VECTOR_REUSE_ASSESSMENT
+REUSE_IMPACT_ASSESSMENT
+
+HUMAN_ACT_CREATED_COUNT
+HUMAN_ACT_CONSUMED_COUNT
+HUMAN_ACT_REPLAY_COUNT
+
+OPERATIONAL_ATTEMPT_AUTHORIZED
+OPERATIONAL_ATTEMPT_EXECUTED
+OPERATIONAL_ATTEMPT_COUNT
+
+BOUNDED_GOVERNED_CLOSURE_USED
+TECHNICAL_EDGES_ATTEMPTED
+TECHNICAL_EDGES_CLOSED
+TRUE_BOUNDARY_REACHED
+TRUE_BOUNDARY_CLASS
+FRONTIER_MOVEMENT
+INFORMATION_GAIN
+
+COMPACT_CCWIM.
+
+
+## 17. GIT / EVIDENCE
+
+If repository mutation is lawfully required by this preparation scope:
+
+inspect exact diff;
+stage only authorized files;
+run applicable validation;
+produce one G48 report if actual implementation occurred;
+commit once per coherent governed delta unless the canonical lifecycle itself
+requires additive lifecycle commits;
+push normally;
+authenticate post-push HEAD/TREE/tracking/live remote.
+
+No force push.
+No history rewrite.
+No unrelated staging.
+
+If no repository mutation is required:
+
+do not create a commit merely for reporting.
+
+
+## 18. COMPACT CONTINUATION
+
+End with:
+
+P11_WRONG_SCOPE_FRESH_DISTINCT_ATTEMPT_PREPARATION_COMPACT_CONTINUATION
+
+containing only:
+
+SELECTED_RESULT
+
+FRESH_LIFECYCLE_AUTHORIZATION =
+EXACTLY_ONE_PREPARATION_ONLY
+
+FRESH_LIFECYCLE_COUNT_CREATED
+
+FRESH_OPERATION_IDENTITY
+FRESH_CONTEXT_IDENTITY
+FRESH_SUBJECT_IDENTITY
+
+FRESH_CONTEXT_VALIDATION
+FRESH_SUBJECT_VALIDATION
+FRESH_ADMISSION
+FRESH_RUNTIME_MATERIALIZATION
+FULL_NON_CONSUMING_PREFLIGHT_RESULT
+
+S1_PRESERVED
+OLD_AUTHORITY_REUSED
+
+HUMAN_ACT_CREATED_COUNT
+HUMAN_ACT_CONSUMED_COUNT
+HUMAN_ACT_REPLAY_COUNT
+
+OPERATIONAL_ATTEMPT_COUNT
+
+E05_FRONTIER
+E05_CREDIT
+E05_CREDIT_DELTA
+
+AIGOL_CODE_PROGRESS
+AIGOL_CAPABILITY_PROGRESS
+TASK_EXECUTION_PROGRESS_THROUGH_AIGOL
+AIGOL_NATIVE_FRONTIER_ADVANCED
+AIGOL_SEMANTIC_OPERATIONALIZATION_PROGRESS
+AIGOL_PROGRESS_DESCRIPTION
+AIGOL_NEXT_BLOCKER
+
+LAST_VERIFIED_WORKING_EDGE
+FIRST_NON_COMPLETE_WORKING_EDGE
+
+TRUE_BOUNDARY_REACHED
+TRUE_BOUNDARY_CLASS
+
+NEW_AUTHENTICATED_FACT
+FRONTIER_MOVEMENT
+
+MINIMUM_MISSING_CAPABILITY
+MINIMUM_MISSING_BINDING
+MINIMUM_MISSING_PROOF
+
+EXACT_NEXT_BOUNDARY
+MINIMUM_LEGAL_NEXT_DELTA
+
+SUBJECT_RECOVERY_REFERENCE
+REQUIRED_EVIDENCE_RECOVERY_REFERENCES
+RECOVERY_REFERENCE_AUTHENTICATION
+RECOVERY_REFERENCE_STATUS
+
+REPOSITORY_CHECKPOINT
+FINAL_HANDOFF_CONSISTENCY
+
+and exactly ONE proposed successor if a lawful successor remains.
+
+
+# FINAL DIRECTIVE
+
+THE HUMAN HAS AUTHORIZED EXACTLY ONE NEW DISTINCT WRONG_SCOPE LIFECYCLE
+FOR PREPARATION ONLY.
+
+USE THAT AUTHORITY.
+
+DO NOT AUDIT WHETHER THE FRESH LIFECYCLE IS PERMITTED AGAIN.
+THAT HUMAN CONSTITUTIONAL DECISION HAS BEEN MADE.
+
+DO NOT REPAIR OR REPLAY S1.
+
+DO NOT REUSE S1 AUTHORITY.
+
+REUSE THE CORRECTED CANONICAL AIGOL MECHANISMS.
+
+EXECUTE ORDINARY DETERMINISTIC PREPARATION THROUGH THE FULL NON-CONSUMING
+PIPELINE WHILE IT REMAINS INSIDE THIS GOVERNED SCOPE.
+
+DO NOT STOP AT ORDINARY TECHNICAL EDGES.
+
+STOP AT THE FIRST TRUE GOVERNANCE BOUNDARY.
+
+IN PARTICULAR:
+
+IF THE FRESH LIFECYCLE BECOMES READY FOR A NEW SUBJECT-BOUND OPERATIONAL
+HUMAN AUTHORIZATION:
+
+STOP THERE.
+
+DO NOT EXECUTE THE OPERATION.
+
+E05 REMAINS 12/18.

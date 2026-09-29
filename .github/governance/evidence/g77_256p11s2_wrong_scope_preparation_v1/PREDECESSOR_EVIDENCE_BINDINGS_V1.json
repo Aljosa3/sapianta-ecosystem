@@ -1,0 +1,18 @@
+{
+  "repository": "/home/pisarna/work/sapianta-fl",
+  "head": "dc04f8b5d356e05a1610e4236ac6362e30aad797",
+  "sha256": {
+    ".github/governance/evidence/p11_s1_operational_authorization_v1/PRECONSUMPTION_STOP_V1.json": "0896cf3ab6fd3909161223572dafdc51041b8defc57de14c3547f43cb643eb0e",
+    ".github/governance/evidence/g77_256p11s1_wrong_scope_bootstrap_v1/live_binding/SAPIANTA_FRESH_OPERATION_CONTEXT_V1.json": "bd803023d205fc5c4b6861e95294971c27318117271f98f547b7e6033e647578",
+    ".github/governance/evidence/p11_s1_operational_authorization_v1/APPROVAL_TIME_READINESS_V1.json": "7fd1faba1ecedc65ccd133cc76beec06208842d112b9caa7f3306b82e26c328f",
+    ".github/governance/evidence/p11_s1_operational_authorization_v1/COMMITTED_REVIEW_TRANSITION_V1.json": "8909af9aaa762408dee45a2af3af9b0cfedbfe4e443ee5ce8562695e5c50129f",
+    ".github/governance/evidence/p11_s1_operational_authorization_v1/FINAL_PRECONSUMPTION_V1.json": "cfdb4efa45fae8543b2c1edeadacc36a426390f3a34482fac457047fe42e5ee1",
+    ".github/governance/evidence/p11_s1_operational_authorization_v1/FM_INVOCATION_BINDING_V1.json": "66ba7ac37659dce4e20eea61ca9890f0a3009013ba834c5e709bb2e1efc12ece",
+    ".github/governance/evidence/p11_s1_operational_authorization_v1/FRESH_HUMAN_AUTHORITY_V1.json": "98250fb037dd0fa3737c142dcceb6260f7e582e369304fe129ba1d716091ba0b",
+    ".github/governance/evidence/p11_s1_operational_authorization_v1/FRESH_READINESS_REVALIDATION_V1.json": "0f041bb131005026909286d2862068559966dd8677258165a5cd5dd4f151deda",
+    ".github/governance/evidence/p11_s1_operational_authorization_v1/HUMAN_DECISION_REQUEST_V1.json": "5f739080488e9024c31289449ab13f4ea47c4d641f79a054a341a2a6999ae82b",
+    ".github/governance/evidence/p11_s1_operational_authorization_v1/HUMAN_DECISION_SOURCE_V1.json": "b9544708bf454805a5d0b3f9cf77fbffc29ae763e0e4d3b49e1a2805bc73e74e",
+    ".github/governance/evidence/p11_s1_operational_authorization_v1/LT_INVOCATION_BINDING_V1.json": "e95204f7cf03471969bb681cfa903ea378eeb172c1dc328cc5a709939a06fdc4",
+    ".github/governance/evidence/p11_s1_operational_authorization_v1/LT_PARENT_READINESS_V1.json": "3702b5038e0315afccc5bc322f692ea4082915aff3a1e8d77906c745835450ac"
+  }
+}
