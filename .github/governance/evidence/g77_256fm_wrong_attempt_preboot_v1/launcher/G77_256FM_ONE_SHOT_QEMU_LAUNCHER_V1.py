@@ -437,28 +437,93 @@ def _validate_successor_bootstrap_assets(
             "seed_path": str(seed), "seed_sha256": sha256_path(seed)}
 
 
+def _authenticate_bootstrap_predecessor(
+    repository_root: Path, predecessor_context_path: Path,
+    current_head: str, current_tree: str,
+) -> dict[str, Any]:
+    """Authenticate immutable review evidence, never current runtime readiness."""
+    root = repository_root.resolve()
+    path = predecessor_context_path.absolute()
+    if path.is_symlink() or not path.is_file() or path.resolve() != path:
+        raise RuntimeError("historical predecessor context absent or unsafe")
+    predecessor, raw = load_json_without_duplicate_keys(path)
+    if (set(predecessor) != fresh_context.CONTEXT_FIELDS
+            or raw != canonical_bytes(predecessor)
+            or predecessor["context_schema_version"] != fresh_context.SCHEMA_VERSION
+            or predecessor["constitutional_anchor_head"] != CONSTITUTIONAL_ANCHOR_HEAD):
+        raise RuntimeError("historical predecessor context shape mismatch")
+    if path != root / _committed_review_context_path(root, predecessor):
+        raise RuntimeError("historical predecessor is not its canonical review path")
+    proof = build_committed_review_transition(
+        repository_root=root, context=predecessor,
+        current_admission_head=current_head, current_admission_tree=current_tree,
+    )
+    authenticate_review_to_current_admission(
+        repository_root=root, context=predecessor,
+        observed_head=current_head, observed_tree=current_tree,
+        committed_review_transitions=[proof],
+    )
+    if context_vector(predecessor) != fresh_context.WRONG_SCOPE:
+        raise RuntimeError("historical predecessor vector unsupported")
+    base = proof["review_base_head"]
+    introduction = proof["review_object_head"]
+    hashes = predecessor["wrapper_fc_er_che_schema_hashes"]
+    adapter = predecessor["guest_adapter_binding"]
+    adapter_path = fresh_context.WRONG_SCOPE_ADAPTER_SOURCE_RELATIVE_PATH
+    expected_adapter = fresh_context.derive_guest_adapter_binding(
+        predecessor["identity_namespace_prefix"],
+        Path(predecessor["operation_evidence_root"]), hashes["wrapper"],
+        vector=fresh_context.WRONG_SCOPE,
+    )
+    if adapter != expected_adapter:
+        raise RuntimeError("historical predecessor adapter binding mismatch")
+    # Each digest is checked against Git at its own historical role, not HEAD.
+    historical_assets = [
+        (base, adapter_path, hashes["wrapper"]),
+        (base, FK_ADAPTER, hashes["fc_fk_adapter"]),
+        (base, ER_HARNESS_RELATIVE, hashes["er_harness"]),
+        (base, CANONICAL_CHE, hashes["canonical_che"]),
+        (base, RAW_EVIDENCE_SCHEMA, hashes["raw_evidence_schema"]),
+        (base, CANONICALIZER, hashes["canonicalizer"]),
+        (base, FRESH_OPERATION_CONTEXT_OWNER, hashes[FRESH_OPERATION_CONTEXT_OWNER_HASH_KEY]),
+        (base, CANDIDATE, predecessor["candidate_manifest_sha256"]),
+    ]
+    fixed = current_bootstrap_asset_bindings(fresh_context.WRONG_SCOPE)
+    seed = predecessor["qemu_executable_base_seed_checkout_bindings"]["seed"]
+    if seed["path"] == fixed["seed_path"]:
+        cloud_path, seed_path = root / fixed["cloud_init_path"], Path(seed["path"])
+    else:
+        cloud_path, seed_path = _successor_bootstrap_paths(
+            root, Path(predecessor["operation_evidence_root"])
+        )
+        if seed["path"] != str(seed_path):
+            raise RuntimeError("historical predecessor seed path mismatch")
+    historical_assets.extend([
+        (introduction, cloud_path.relative_to(root).as_posix(), hashes["cloud_init"]),
+        (introduction, seed_path.relative_to(root).as_posix(), seed["sha256"]),
+    ])
+    for commit, relative, expected in historical_assets:
+        entry = _git_tree_entry(root, commit, relative)
+        if entry is None or entry["mode"] not in {"100644", "100755"} or entry["sha256"] != expected:
+            raise RuntimeError("historical predecessor asset identity mismatch: " + relative)
+    fresh_context.validate_sealed_canonical_argv(predecessor, validation_repository_root=root)
+    return predecessor
+
+
 def derive_successor_bootstrap(
     *, repository_root: Path, predecessor_context_path: Path,
     repository_head: str, repository_tree: str, operation_evidence_root: Path,
 ) -> dict[str, str]:
     """Reuse FM review authentication and LJ's three-source NoCloud projection."""
-    predecessor = fresh_context.load_context(predecessor_context_path, repository_root=repository_root)
-    if (context_vector(predecessor) != fresh_context.WRONG_SCOPE
-            or (repository_head, repository_tree) !=
-            (predecessor["repository_head"], predecessor["repository_tree"])
-            or operation_evidence_root == Path(predecessor["operation_evidence_root"])):
-        raise RuntimeError("successor candidate/predecessor binding mismatch")
     head = git(repository_root, "rev-parse", "HEAD")
     tree = git(repository_root, "rev-parse", "HEAD^{tree}")
-    proof = build_committed_review_transition(
-        repository_root=repository_root, context=predecessor,
-        current_admission_head=head, current_admission_tree=tree,
+    if (repository_head, repository_tree) != (head, tree):
+        raise RuntimeError("successor target is not the current admitted HEAD/TREE")
+    predecessor = _authenticate_bootstrap_predecessor(
+        repository_root, predecessor_context_path, head, tree
     )
-    authenticate_review_to_current_admission(
-        repository_root=repository_root, context=predecessor,
-        observed_head=head, observed_tree=tree, committed_review_transitions=[proof],
-    )
-    validate_immutable_context_bindings(repository_root, predecessor)
+    if operation_evidence_root == Path(predecessor["operation_evidence_root"]):
+        raise RuntimeError("successor candidate/predecessor binding mismatch")
     sources = _successor_bootstrap_sources(repository_root, repository_head, repository_tree)
     cloud, seed = _successor_bootstrap_paths(repository_root, operation_evidence_root)
     # Never rewrite an existing subject's assets, including incomplete derivations.
