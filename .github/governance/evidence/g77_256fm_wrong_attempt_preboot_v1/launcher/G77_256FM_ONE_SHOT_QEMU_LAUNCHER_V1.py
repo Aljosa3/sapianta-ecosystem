@@ -2720,6 +2720,113 @@ def preauth_fresh_checkout_destination_readiness(
     }
 
 
+NESTED_DEPENDENCY_HEAD = "3183bab71f8f30397c0309dd2e6d846d14a11f66"
+NESTED_DEPENDENCY_TREE = "7c32ec05efc2be43297849bc38ec8766514a523d"
+
+
+def authenticate_pinned_nested_source(repository_root: Path) -> Path:
+    """Bind the independent dependency to this authenticated parent root only."""
+
+    if repository_root != repository_root.resolve(strict=True):
+        raise RuntimeError("nested source parent root is not canonical")
+    source = repository_root / "sapianta_system"
+    if source.is_symlink() or not source.is_dir():
+        raise RuntimeError("fixed nested source missing or redirected")
+    if source.resolve(strict=True) != source:
+        raise RuntimeError("fixed nested source is not canonical")
+    if _er_consumer_git(source, "rev-parse", "--show-toplevel") != str(source):
+        raise RuntimeError("fixed nested source repository root mismatch")
+    if (
+        _er_consumer_git(source, "rev-parse", "HEAD") != NESTED_DEPENDENCY_HEAD
+        or _er_consumer_git(source, "rev-parse", "HEAD^{tree}") != NESTED_DEPENDENCY_TREE
+        or _er_consumer_git(source, "status", "--porcelain")
+    ):
+        raise RuntimeError("nested immutable authority mismatch")
+    return source
+
+
+def authenticate_nested_projection(context: dict[str, Any]) -> dict[str, Any]:
+    """Authenticate nested runtime bytes independently, including ignored bytes.
+
+    Scope is the nested runtime import surface and the two native P05 checkout
+    import roots. This is a preboot observation, not native guest P05 proof.
+    """
+
+    binding = context["qemu_executable_base_seed_checkout_bindings"]["checkout"]
+    parent = Path(binding["path"])
+    if parent != parent.resolve(strict=True) or not parent.is_dir():
+        raise RuntimeError("nested destination parent is not canonical")
+    nested = parent / "sapianta_system"
+    if nested.is_symlink() or not nested.is_dir():
+        raise RuntimeError("nested projection missing or redirected")
+    if nested.resolve(strict=True) != nested:
+        raise RuntimeError("nested projection is not canonical")
+    if _er_consumer_git(parent, "ls-tree", binding["tree"], "--", "sapianta_system"):
+        raise RuntimeError("nested projection collides with parent tracked content")
+    observation = _materialized_checkout_observation(
+        nested, NESTED_DEPENDENCY_HEAD, NESTED_DEPENDENCY_TREE
+    )
+    # Namespace package: a regular package/module in either P05 import root
+    # could supersede this independently authenticated namespace portion.
+    for import_root in (parent, parent / "tests"):
+        if import_root.is_symlink():
+            raise RuntimeError("P05 import root redirected")
+        if not import_root.is_dir():
+            continue
+        for entry in import_root.iterdir():
+            if entry.name == "sapianta_system" and entry == nested:
+                continue
+            if entry.name == "sapianta_system" or entry.name.startswith("sapianta_system."):
+                raise RuntimeError("unauthenticated nested import shadow")
+    for entry in nested.iterdir():
+        if entry.name.startswith("__init__.") or entry.name.startswith("runtime."):
+            raise RuntimeError("unauthenticated nested package shadow")
+    # Compare raw bytes to tree blob identities; status alone can miss ignored
+    # bytecode, assume-unchanged files, filters, and cached stat information.
+    records = _er_consumer_git(
+        nested, "ls-tree", "-rz", NESTED_DEPENDENCY_TREE, "--", "runtime"
+    ).split("\0")
+    expected = {}
+    for record in filter(None, records):
+        metadata, relative = record.split("\t", 1)
+        mode, kind, oid = metadata.split()
+        if mode not in ("100644", "100755") or kind != "blob":
+            raise RuntimeError("nested runtime tree has unsupported import entry")
+        expected[relative] = oid
+    if "runtime/__init__.py" not in expected:
+        raise RuntimeError("pinned nested runtime package missing")
+    runtime = nested / "runtime"
+    if runtime.is_symlink() or not runtime.is_dir():
+        raise RuntimeError("nested runtime missing or redirected")
+    observed = set()
+    for directory, directories, files in os.walk(runtime, followlinks=False):
+        for name in (*directories, *files):
+            entry = Path(directory) / name
+            if entry.is_symlink():
+                raise RuntimeError("nested runtime import path redirected")
+        for name in files:
+            entry = Path(directory) / name
+            relative = entry.relative_to(nested).as_posix()
+            if relative not in expected or not entry.is_file():
+                raise RuntimeError("unauthenticated nested runtime import bytes")
+            data = entry.read_bytes()
+            oid = hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest()
+            if oid != expected[relative]:
+                raise RuntimeError("tampered nested runtime import bytes")
+            observed.add(relative)
+    if observed != expected.keys():
+        raise RuntimeError("nested runtime authenticated bytes missing")
+    return {
+        **observation,
+        "result": "PINNED_NESTED_PROJECTION_AUTHENTICATION_PASS",
+        "guest_visible_path": "/mnt/aigol/sapianta_system",
+        "runtime_blob_count": len(expected),
+        "parent_identity_authenticates_nested_bytes": False,
+        "nested_identity_authenticates_runtime_bytes": True,
+        "native_guest_p05_proven": False,
+    }
+
+
 def materialize_operation_state(
     *,
     repository_root: Path,
@@ -2759,12 +2866,28 @@ def materialize_operation_state(
     if operation_scoped_checkout:
         preauth_fresh_checkout_destination_readiness(repository_root, context)
     checkout_binding = context["qemu_executable_base_seed_checkout_bindings"]["checkout"]
+    nested_source = authenticate_pinned_nested_source(repository_root)
     checkout_materialization = materialize_guest_self_contained_checkout(
         source_repository=repository_root,
         checkout_path=Path(checkout_binding["path"]),
         expected_head=checkout_binding["head"],
         expected_tree=checkout_binding["tree"],
     )
+    checkout_path = Path(checkout_binding["path"])
+    if _er_consumer_git(
+        checkout_path, "ls-tree", checkout_binding["tree"], "--", "sapianta_system"
+    ):
+        raise RuntimeError("nested destination collides with parent tracked content")
+    nested_materialization = materialize_guest_self_contained_checkout(
+        source_repository=nested_source,
+        checkout_path=checkout_path / "sapianta_system",
+        expected_head=NESTED_DEPENDENCY_HEAD,
+        expected_tree=NESTED_DEPENDENCY_TREE,
+    )
+    checkout_materialization = _materialized_checkout_observation(
+        checkout_path, checkout_binding["head"], checkout_binding["tree"]
+    )
+    nested_projection = authenticate_nested_projection(context)
     operation_root.mkdir(mode=0o700, parents=False, exist_ok=False)
     if operation_scoped_checkout:
         if transient_root.is_symlink() or not transient_root.is_dir():
@@ -2830,6 +2953,8 @@ def materialize_operation_state(
             Path(adapter_binding["projected_path"])
         ),
         "checkout_materialization": checkout_materialization,
+        "nested_materialization": nested_materialization,
+        "nested_projection": nested_projection,
         "overlay_materialized": True,
         "qemu_execution_count": 0,
         "current_admission_head": observed_head,
@@ -3359,12 +3484,14 @@ def validate_checkout_preboot_readiness(context: dict[str, Any]) -> dict[str, An
     if not checkout["read_only_mount"] or mount_argument is None or "readonly=on" not in mount_argument:
         raise RuntimeError("checkout read-only certified mount contract missing")
     guest_tree_proof = prove_guest_checkout_tree_precondition(context)
+    nested_projection = authenticate_nested_projection(context)
     result = {
         "checkout_exists": "PASS",
         "checkout_head_tree": "PASS",
         "checkout_clean_detached": "PASS",
         "checkout_read_only_mount": "PASS",
         "preauth_guest_checkout_tree_authentication": guest_tree_proof,
+        "preauth_pinned_nested_projection": nested_projection,
     }
     if FRESH_OPERATION_CONTEXT_OWNER_HASH_KEY in context.get(
         "wrapper_fc_er_che_schema_hashes", {}
@@ -3407,13 +3534,7 @@ def authority_free_static_readiness(
         raise RuntimeError("static readiness repository is dirty")
     if not constitutional_anchor_is_ancestor(repository_root):
         raise RuntimeError("constitutional anchor is not ancestral")
-    nested = repository_root / "sapianta_system"
-    if (
-        git(nested, "rev-parse", "HEAD") != "3183bab71f8f30397c0309dd2e6d846d14a11f66"
-        or git(nested, "rev-parse", "HEAD^{tree}") != "7c32ec05efc2be43297849bc38ec8766514a523d"
-        or git(nested, "status", "--porcelain") != ""
-    ):
-        raise RuntimeError("nested immutable authority mismatch")
+    authenticate_pinned_nested_source(repository_root)
     candidate_relative, _ = resolve_candidate_source(
         repository_root, candidate_source_path
     )

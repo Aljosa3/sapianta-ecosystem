@@ -85,6 +85,15 @@ class GuestSelfContainedCheckoutMaterializationTests(unittest.TestCase):
                 expected_head=head,
                 expected_tree=tree,
             )
+            # Current readiness additionally requires the independently pinned
+            # dependency; the parent fixture keeps that separate Git identity.
+            (checkout / ".git/info/exclude").write_text("sapianta_system/\n")
+            LAUNCHER.materialize_guest_self_contained_checkout(
+                source_repository=REPOSITORY_ROOT / "sapianta_system",
+                checkout_path=checkout / "sapianta_system",
+                expected_head=LAUNCHER.NESTED_DEPENDENCY_HEAD,
+                expected_tree=LAUNCHER.NESTED_DEPENDENCY_TREE,
+            )
             proof = LAUNCHER.validate_checkout_preboot_readiness(
                 context_for(checkout, head, tree)
             )["preauth_guest_checkout_tree_authentication"]
@@ -163,7 +172,7 @@ class GuestSelfContainedCheckoutMaterializationTests(unittest.TestCase):
                     expected_tree=tree,
                 )
 
-    def test_existing_fm_materialization_binds_exact_context_checkout(self):
+    def test_existing_fm_rejects_unbound_context_before_materialization(self):
         with tempfile.TemporaryDirectory(prefix="g77_256gq_binding_") as temporary:
             root = Path(temporary)
             context = LAUNCHER.build_operation_context(
@@ -181,31 +190,16 @@ class GuestSelfContainedCheckoutMaterializationTests(unittest.TestCase):
             )
             context_path = root / "context.json"
             context_path.write_bytes(LAUNCHER.canonical_bytes(context))
-            result = {"result": "TEST_ONLY_MATERIALIZATION_BINDING_PASS"}
-
-            def materialize_nested_checkout(**arguments):
-                arguments["checkout_path"].mkdir(parents=True)
-                return result
-
             with mock.patch.object(
-                LAUNCHER,
-                "materialize_guest_self_contained_checkout",
-                side_effect=materialize_nested_checkout,
+                LAUNCHER, "materialize_guest_self_contained_checkout"
             ) as materialize:
-                observed = LAUNCHER.materialize_operation_state(
-                    repository_root=REPOSITORY_ROOT,
-                    context=context,
-                    context_source_path=context_path,
-                )
-            checkout = context["qemu_executable_base_seed_checkout_bindings"]["checkout"]
-            materialize.assert_called_once_with(
-                source_repository=REPOSITORY_ROOT,
-                checkout_path=Path(checkout["path"]),
-                expected_head=checkout["head"],
-                expected_tree=checkout["tree"],
-            )
-            self.assertEqual(observed["checkout_materialization"], result)
-            self.assertEqual(observed["qemu_execution_count"], 0)
+                with self.assertRaisesRegex(RuntimeError, "transition proof missing"):
+                    LAUNCHER.materialize_operation_state(
+                        repository_root=REPOSITORY_ROOT,
+                        context=context,
+                        context_source_path=context_path,
+                    )
+            materialize.assert_not_called()
 
 
 if __name__ == "__main__":

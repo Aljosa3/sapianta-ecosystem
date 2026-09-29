@@ -85,6 +85,15 @@ class GuestCheckoutTreePreconditionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix="g77_256gp_positive_") as temporary:
             checkout = Path(temporary) / "checkout"
             head, tree = create_repository(checkout)
+            # Current readiness additionally requires the independently pinned
+            # dependency; the parent fixture keeps that separate Git identity.
+            (checkout / ".git/info/exclude").write_text("sapianta_system/\n")
+            LAUNCHER.materialize_guest_self_contained_checkout(
+                source_repository=REPOSITORY_ROOT / "sapianta_system",
+                checkout_path=checkout / "sapianta_system",
+                expected_head=LAUNCHER.NESTED_DEPENDENCY_HEAD,
+                expected_tree=LAUNCHER.NESTED_DEPENDENCY_TREE,
+            )
             proof = LAUNCHER.validate_checkout_preboot_readiness(
                 context_for(checkout, head=head, tree=tree)
             )["preauth_guest_checkout_tree_authentication"]
