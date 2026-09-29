@@ -1,0 +1,22 @@
+{
+  ".github/governance/evidence/p11_s2_operational_authorization_v1/decision_recovery/COMPACT_CONTINUATION_V1.json": {
+    "sha256": "89737c22ec233f96b6e1810d6f3b5866d2c887c574b5c16fcf5f355270d84045",
+    "source": "/home/pisarna/work/sapianta-fl/.github/governance/evidence/g77_256p11s2_wrong_scope_preparation_v1/COMPACT_CONTINUATION_V1.json"
+  },
+  ".github/governance/evidence/p11_s2_operational_authorization_v1/decision_recovery/FINAL_ENDPOINT_VALIDATION_V1.json": {
+    "sha256": "9c0fe4e0b87921e3f87b9ae7a63737bce29a1f8a932d65cf6f69bbe630a4c21a",
+    "source": "/home/pisarna/work/sapianta-fl/.github/governance/evidence/g77_256p11s2_wrong_scope_preparation_v1/FINAL_ENDPOINT_VALIDATION_V1.json"
+  },
+  ".github/governance/evidence/p11_s2_operational_authorization_v1/decision_recovery/HUMAN_DECISION_REQUEST_V1.json": {
+    "sha256": "58bd1abcb53be63a12cd6be6da8e6423f250eaf8e05685102972cc65c541cf86",
+    "source": "/home/pisarna/work/sapianta-fl/.github/governance/evidence/g77_256p11s2_wrong_scope_preparation_v1/HUMAN_DECISION_REQUEST_V1.json"
+  },
+  ".github/governance/evidence/p11_s2_operational_authorization_v1/decision_recovery/NATIVE_READ_ONLY_REVALIDATION_V1.json": {
+    "sha256": "37e20a997423ba62d37985af54ccdc1c3b9614732c102314c3752e43d7376b0d",
+    "source": "/tmp/p11-s2-decision-presentation-v88may94/NATIVE_READ_ONLY_REVALIDATION_V1.json"
+  },
+  ".github/governance/evidence/p11_s2_operational_authorization_v1/decision_recovery/POST_PUSH_AUTHENTICATION_V1.json": {
+    "sha256": "2bb4ad43724bf110d6929bbc9e9f308ce9b9147acae270e52c8cc3af0e1a5bb4",
+    "source": "/home/pisarna/work/sapianta-fl/.github/governance/evidence/g77_256p11s2_wrong_scope_preparation_v1/POST_PUSH_AUTHENTICATION_V1.json"
+  }
+}
